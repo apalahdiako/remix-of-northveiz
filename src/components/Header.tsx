@@ -1,6 +1,7 @@
 import { Menu, ShoppingBag, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -21,7 +22,7 @@ const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
         </Button>
 
         <Link to="/" className="flex items-center">
-          <h1 className="text-3xl font-black tracking-tighter">CALLE</h1>
+          <img src={logo} alt="NRTVZ" className="h-8 w-auto" />
         </Link>
 
         <div className="flex items-center gap-2">
