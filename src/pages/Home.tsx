@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import heroImage from "@/assets/hero-model.jpg";
+import heroVideo from "@/assets/hero-video.mp4";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -10,12 +10,17 @@ const Home = () => {
       {/* Hero Section */}
       <section className="relative h-[600px] md:h-[700px] bg-gradient-hero overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src={heroImage}
-            alt="CALLE Collection"
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
             className="w-full h-full object-cover object-center"
-          />
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
         </div>
+        <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 flex items-center justify-center">
           <Link to="/catalog">
             <Button
