@@ -1,34 +1,48 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package } from "lucide-react";
+import { Package, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Account = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="container px-6 py-8">
         <h1 className="text-3xl font-bold mb-8">My Account</h1>
 
-        {/* Login/Signup Card */}
+        {/* User Info Card */}
         <div className="bg-background rounded-2xl p-6 mb-8 shadow-sm">
-          <h2 className="text-xl font-bold mb-3">
-            Enjoy Special Discounts and Stay Connected
-          </h2>
-          <p className="text-muted-foreground mb-6 leading-relaxed">
-            Get access to exclusive discounts while keeping track of your orders and chats with ease. Stay updated on your purchases and engage with us seamlessly, all in one place.
-          </p>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 h-12 rounded-full font-bold text-base"
-            >
-              Login
-            </Button>
-            <Button
-              className="flex-1 h-12 rounded-full font-bold text-base bg-foreground text-background hover:bg-foreground/90"
-            >
-              Signup
-            </Button>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+              <UserIcon className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">{user.email}</h2>
+              <p className="text-muted-foreground text-sm">Member since {new Date(user.created_at || "").toLocaleDateString()}</p>
+            </div>
           </div>
         </div>
 

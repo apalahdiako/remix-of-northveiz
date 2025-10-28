@@ -1,7 +1,8 @@
-import { Menu, ShoppingBag, User } from "lucide-react";
+import { Menu, ShoppingBag, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -9,6 +10,8 @@ interface HeaderProps {
 }
 
 const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
+  const { user, signOut } = useAuth();
+
   return (
     <header className="sticky top-0 z-40 w-full bg-background border-b border-border">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -34,11 +37,29 @@ const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
           >
             <ShoppingBag className="h-6 w-6" />
           </Button>
-          <Link to="/account">
-            <Button variant="ghost" size="icon" aria-label="Account">
-              <User className="h-6 w-6" />
-            </Button>
-          </Link>
+          {user ? (
+            <>
+              <Link to="/account">
+                <Button variant="ghost" size="icon" aria-label="Account">
+                  <User className="h-6 w-6" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => signOut()}
+                aria-label="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="icon" aria-label="Login">
+                <User className="h-6 w-6" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
