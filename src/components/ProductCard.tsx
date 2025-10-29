@@ -6,16 +6,16 @@ interface ProductCardProps {
   name: string;
   price: string;
   image: string;
-  soldOut?: boolean;
+  comingSoon?: boolean;
 }
 
-const ProductCard = ({ id, name, price, image, soldOut }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, image, comingSoon }: ProductCardProps) => {
   return (
     <Link to={`/product/${id}`} className="group">
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted mb-3">
-        {soldOut && (
+        {comingSoon && (
           <Badge className="absolute top-3 left-3 z-10 bg-foreground text-background font-bold">
-            SOLD OUT
+            COMING SOON
           </Badge>
         )}
         <img

@@ -16,6 +16,7 @@ import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./hooks/useAuth";
+import { CartProvider } from "./hooks/useCart";
 
 const queryClient = new QueryClient();
 
@@ -30,25 +31,27 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <div className="min-h-screen bg-background">
-              <Header 
-                onMenuClick={() => setMenuOpen(true)} 
-                onCartClick={() => setCartOpen(true)}
-              />
-              <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
-              <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
-              
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/catalog" element={<Catalog />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/community" element={<Community />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
+            <CartProvider>
+              <div className="min-h-screen bg-background">
+                <Header 
+                  onMenuClick={() => setMenuOpen(true)} 
+                  onCartClick={() => setCartOpen(true)}
+                />
+                <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+                <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+                
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/catalog" element={<Catalog />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/community" element={<Community />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+            </CartProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Bell } from "lucide-react";
+import { Heart } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "@/hooks/use-toast";
 import productDenim from "@/assets/product-denim.jpg";
 import productDenimBack from "@/assets/product-denim-back.jpg";
 import productJersey from "@/assets/product-jersey.jpg";
@@ -34,9 +36,34 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const { addItem } = useCart();
 
   const product = productData[id || "1"];
   const productImages = product?.images || [productDenim, productDenimBack];
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast({
+        title: "Please select a size",
+        description: "You need to select a size before adding to cart",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addItem({
+      id: id!,
+      name: product.name,
+      price: parseFloat(product.price.replace(/[^0-9]/g, "")),
+      image: product.images[0],
+      size: selectedSize,
+    });
+
+    toast({
+      title: "Added to cart",
+      description: `${product.name} (Size ${selectedSize}) has been added to your cart`,
+    });
+  };
 
   const scrollTo = (index: number) => {
     api?.scrollTo(index);
@@ -113,8 +140,8 @@ const ProductDetail = () => {
 
       <div className="container px-6 pb-6">
         {/* Status Badge */}
-        <Badge className="mb-3 bg-muted text-muted-foreground font-bold">
-          Sold Out
+        <Badge className="mb-3 bg-foreground text-background font-bold">
+          COMING SOON
         </Badge>
 
         {/* Product Title */}
@@ -136,8 +163,12 @@ const ProductDetail = () => {
               <Button
                 key={size}
                 variant="outline"
-                className="h-16 text-lg font-semibold relative opacity-40 line-through"
-                disabled
+                className={`h-16 text-lg font-semibold ${
+                  selectedSize === size
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border"
+                }`}
+                onClick={() => setSelectedSize(size)}
               >
                 {size}
               </Button>
@@ -145,13 +176,12 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Notify Button */}
+        {/* Add to Cart Button */}
         <Button
-          className="w-full h-14 rounded-full text-base font-bold bg-muted text-muted-foreground hover:bg-muted/80"
-          disabled
+          className="w-full h-14 rounded-full text-base font-bold bg-foreground text-background hover:bg-foreground/90"
+          onClick={handleAddToCart}
         >
-          <Bell className="h-5 w-5 mr-2" />
-          Notify Me
+          Add to Cart
         </Button>
       </div>
     </div>

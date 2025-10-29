@@ -10,10 +10,10 @@ import productBall from "@/assets/product-ball.jpg";
 import productHoodie from "@/assets/product-hoodie.jpg";
 
 const products = [
-  { id: "1", name: "DENIM WASHED", price: "Rp 699,000", image: productDenim, soldOut: true },
-  { id: "2", name: "FRANCE JERSEY", price: "Rp 549,000", image: productJersey, soldOut: true },
-  { id: "3", name: "CALLE BALL", price: "Rp 399,000", image: productBall, soldOut: true },
-  { id: "4", name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000", image: productHoodie, soldOut: true },
+  { id: "1", name: "DENIM WASHED", price: "Rp 699,000", image: productDenim, comingSoon: true },
+  { id: "2", name: "FRANCE JERSEY", price: "Rp 549,000", image: productJersey, comingSoon: true },
+  { id: "3", name: "CALLE BALL", price: "Rp 399,000", image: productBall, comingSoon: true },
+  { id: "4", name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000", image: productHoodie, comingSoon: true },
 ];
 
 const sortOptions = [

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
+import { Badge } from "@/components/ui/badge";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -11,6 +13,8 @@ interface HeaderProps {
 
 const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
   const { user, signOut } = useAuth();
+  const { getTotalItems } = useCart();
+  const cartItemCount = getTotalItems();
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background border-b border-border">
@@ -34,8 +38,14 @@ const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
             size="icon"
             onClick={onCartClick}
             aria-label="Shopping cart"
+            className="relative"
           >
             <ShoppingBag className="h-6 w-6" />
+            {cartItemCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-foreground text-background">
+                {cartItemCount}
+              </Badge>
+            )}
           </Button>
           {user ? (
             <>
