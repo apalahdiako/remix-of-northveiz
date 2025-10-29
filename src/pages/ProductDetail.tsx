@@ -1,28 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Bell } from "lucide-react";
 import productDenim from "@/assets/product-denim.jpg";
+import productHoodie from "@/assets/product-hoodie.jpg";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 const sizes = ["S", "M", "L", "XL", "XXL"];
+
+const productImages = [productDenim, productHoodie];
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+
+  const scrollTo = (index: number) => {
+    api?.scrollTo(index);
+  };
+
+  useEffect(() => {
+    if (!api) return;
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Product Image */}
-      <div className="aspect-square w-full bg-muted">
-        <img
-          src={productDenim}
-          alt="DENIM WASHED"
-          className="w-full h-full object-cover"
-        />
+      {/* Product Image Carousel */}
+      <Carousel setApi={setApi} className="w-full">
+        <CarouselContent>
+          {productImages.map((image, index) => (
+            <CarouselItem key={index}>
+              <div className="aspect-square w-full bg-muted">
+                <img
+                  src={image}
+                  alt={`DENIM WASHED ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+      </Carousel>
+
+      {/* Thumbnail Navigation */}
+      <div className="container px-6 py-4">
+        <div className="flex gap-3">
+          {productImages.map((image, index) => (
+            <button
+              key={index}
+              onClick={() => scrollTo(index)}
+              className={`aspect-square w-20 rounded-lg overflow-hidden border-2 transition-all ${
+                current === index
+                  ? "border-foreground"
+                  : "border-transparent opacity-60"
+              }`}
+            >
+              <img
+                src={image}
+                alt={`Thumbnail ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="container px-6 py-6">
+      <div className="container px-6 pb-6">
         {/* Status Badge */}
         <Badge className="mb-3 bg-muted text-muted-foreground font-bold">
           Sold Out
