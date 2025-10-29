@@ -9,6 +9,8 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
 
@@ -39,7 +41,7 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen pb-24">
       {/* Product Image Carousel */}
-      <Carousel setApi={setApi} className="w-full">
+      <Carousel setApi={setApi} className="w-full relative" opts={{ loop: true }}>
         <CarouselContent>
           {productImages.map((image, index) => (
             <CarouselItem key={index}>
@@ -53,6 +55,23 @@ const ProductDetail = () => {
             </CarouselItem>
           ))}
         </CarouselContent>
+        <CarouselPrevious className="left-4" />
+        <CarouselNext className="right-4" />
+        
+        {/* Slide Indicator */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+          {productImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => scrollTo(index)}
+              className={`h-2 rounded-full transition-all ${
+                current === index
+                  ? "w-8 bg-foreground"
+                  : "w-2 bg-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
       </Carousel>
 
       {/* Thumbnail Navigation */}
