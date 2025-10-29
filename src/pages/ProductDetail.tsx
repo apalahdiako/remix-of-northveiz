@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Bell } from "lucide-react";
 import productDenim from "@/assets/product-denim.jpg";
+import productDenimBack from "@/assets/product-denim-back.jpg";
+import productJersey from "@/assets/product-jersey.jpg";
+import productJerseyBack from "@/assets/product-jersey-back.jpg";
+import productBall from "@/assets/product-ball.jpg";
+import productBallBack from "@/assets/product-ball-back.jpg";
 import productHoodie from "@/assets/product-hoodie.jpg";
+import productHoodieBack from "@/assets/product-hoodie-back.jpg";
 import {
   Carousel,
   CarouselContent,
@@ -16,13 +22,21 @@ import {
 
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
-const productImages = [productDenim, productHoodie];
+const productData: Record<string, { images: string[]; name: string; price: string }> = {
+  "1": { images: [productDenim, productDenimBack], name: "DENIM WASHED", price: "Rp 699,000" },
+  "2": { images: [productJersey, productJerseyBack], name: "FRANCE JERSEY", price: "Rp 549,000" },
+  "3": { images: [productBall, productBallBack], name: "CALLE BALL", price: "Rp 399,000" },
+  "4": { images: [productHoodie, productHoodieBack], name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000" },
+};
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+
+  const product = productData[id || "1"];
+  const productImages = product?.images || [productDenim, productDenimBack];
 
   const scrollTo = (index: number) => {
     api?.scrollTo(index);
@@ -48,7 +62,7 @@ const ProductDetail = () => {
               <div className="aspect-square w-full bg-muted">
                 <img
                   src={image}
-                  alt={`DENIM WASHED ${index + 1}`}
+                  alt={`${product?.name || 'Product'} ${index === 0 ? 'front' : 'back'} view`}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -104,11 +118,11 @@ const ProductDetail = () => {
         </Badge>
 
         {/* Product Title */}
-        <h1 className="text-3xl font-bold mb-4 uppercase tracking-tight">DENIM WASHED</h1>
+        <h1 className="text-3xl font-bold mb-4 uppercase tracking-tight">{product?.name || 'Product'}</h1>
 
         {/* Price and Wishlist */}
         <div className="flex items-center justify-between mb-8">
-          <p className="text-2xl font-bold">Rp 699,000</p>
+          <p className="text-2xl font-bold">{product?.price || 'Price'}</p>
           <Button variant="ghost" size="icon">
             <Heart className="h-6 w-6" />
           </Button>
