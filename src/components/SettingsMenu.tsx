@@ -55,10 +55,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
             </label>
             <Select value={deliveryCountry} onValueChange={setDeliveryCountry}>
               <SelectTrigger className="w-full h-14 bg-background border-2 border-border rounded-xl">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🇮🇩</span>
-                  <SelectValue />
-                </div>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Indonesia">
@@ -96,10 +93,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
             </label>
             <Select value={language} onValueChange={setLanguage}>
               <SelectTrigger className="w-full h-14 bg-background border-2 border-border rounded-xl">
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5" />
-                  <SelectValue />
-                </div>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Bahasa Indonesia">
