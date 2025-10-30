@@ -99,13 +99,6 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
             </li>
           </ul>
         </nav>
-
-        <div className="absolute bottom-6 left-6 right-6">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-8 h-5 bg-red-500 rounded-sm" />
-            <span className="font-medium">IDR</span>
-          </div>
-        </div>
       </div>
 
       <SettingsMenu isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
