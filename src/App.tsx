@@ -15,6 +15,9 @@ import Community from "./pages/Community";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import BuyNow from "./pages/BuyNow";
+import Checkout from "./pages/Checkout";
+import Payment from "./pages/Payment";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 
@@ -48,6 +51,9 @@ const App = () => {
                   <Route path="/community" element={<Community />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/buy-now" element={<BuyNow />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/payment" element={<Payment />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>

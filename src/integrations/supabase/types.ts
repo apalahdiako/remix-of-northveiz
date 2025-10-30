@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          city: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          order_number: string
+          paid_at: string | null
+          payment_method: string
+          payment_status: string
+          postal_code: string
+          product_id: string
+          product_image: string
+          product_name: string
+          product_price: string
+          quantity: number
+          shipping_address: string
+          size: string
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          order_number: string
+          paid_at?: string | null
+          payment_method: string
+          payment_status?: string
+          postal_code: string
+          product_id: string
+          product_image: string
+          product_name: string
+          product_price: string
+          quantity?: number
+          shipping_address: string
+          size: string
+          total_amount: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          order_number?: string
+          paid_at?: string | null
+          payment_method?: string
+          payment_status?: string
+          postal_code?: string
+          product_id?: string
+          product_image?: string
+          product_name?: string
+          product_price?: string
+          quantity?: number
+          shipping_address?: string
+          size?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           birthday: string | null

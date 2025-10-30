@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface ProductCardProps {
   id: string;
@@ -10,23 +11,40 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ id, name, price, image, comingSoon }: ProductCardProps) => {
+  const navigate = useNavigate();
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(`/buy-now?id=${id}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}&image=${encodeURIComponent(image)}`);
+  };
+
   return (
-    <Link to={`/product/${id}`} className="group">
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-muted mb-3">
-        {comingSoon && (
-          <Badge className="absolute top-3 left-3 z-10 bg-foreground text-background font-bold">
-            COMING SOON
-          </Badge>
-        )}
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-        />
-      </div>
-      <h3 className="font-bold text-sm mb-1 uppercase tracking-tight">{name}</h3>
-      <p className="font-bold text-sm">{price}</p>
-    </Link>
+    <div className="group">
+      <Link to={`/product/${id}`}>
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-muted mb-3">
+          {comingSoon && (
+            <Badge className="absolute top-3 left-3 z-10 bg-foreground text-background font-bold">
+              COMING SOON
+            </Badge>
+          )}
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          />
+        </div>
+      </Link>
+      <Link to={`/product/${id}`}>
+        <h3 className="font-bold text-sm mb-1 uppercase tracking-tight">{name}</h3>
+        <p className="font-bold text-sm mb-2">{price}</p>
+      </Link>
+      <Button
+        onClick={handleBuyNow}
+        className="w-full h-9 rounded-full text-sm font-bold"
+      >
+        Buy Now
+      </Button>
+    </div>
   );
 };
 
