@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Heart } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
-import productDenim from "@/assets/product-denim.jpg";
-import productDenimBack from "@/assets/product-denim-back.jpg";
+import productHoodiePecahFront from "@/assets/product-hoodie-pecah-front.webp";
+import productHoodiePecahBack from "@/assets/product-hoodie-pecah-back.webp";
 import productJersey from "@/assets/product-jersey.jpg";
 import productJerseyBack from "@/assets/product-jersey-back.jpg";
 import productBall from "@/assets/product-ball.jpg";
@@ -25,7 +25,7 @@ import {
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 const productData: Record<string, { images: string[]; name: string; price: string }> = {
-  "1": { images: [productDenim, productDenimBack], name: "DENIM WASHED", price: "Rp 699,000" },
+  "1": { images: [productHoodiePecahFront, productHoodiePecahBack], name: "HOODIE PECAH POLA", price: "Rp 180,000" },
   "2": { images: [productJersey, productJerseyBack], name: "FRANCE JERSEY", price: "Rp 549,000" },
   "3": { images: [productBall, productBallBack], name: "CALLE BALL", price: "Rp 399,000" },
   "4": { images: [productHoodie, productHoodieBack], name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000" },
@@ -39,7 +39,7 @@ const ProductDetail = () => {
   const { addItem } = useCart();
 
   const product = productData[id || "1"];
-  const productImages = product?.images || [productDenim, productDenimBack];
+  const productImages = product?.images || [productHoodiePecahFront, productHoodiePecahBack];
 
   const handleAddToCart = () => {
     if (!selectedSize) {

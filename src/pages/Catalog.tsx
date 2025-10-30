@@ -4,13 +4,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Checkbox } from "@/components/ui/checkbox";
 import { SlidersHorizontal, ArrowUpDown, Check } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import productDenim from "@/assets/product-denim.jpg";
+import productHoodiePecah from "@/assets/product-hoodie-pecah-front.webp";
 import productJersey from "@/assets/product-jersey.jpg";
 import productBall from "@/assets/product-ball.jpg";
 import productHoodie from "@/assets/product-hoodie.jpg";
 
 const products = [
-  { id: "1", name: "DENIM WASHED", price: "Rp 699,000", image: productDenim, comingSoon: true },
+  { id: "1", name: "HOODIE PECAH POLA", price: "Rp 180,000", image: productHoodiePecah, comingSoon: true },
   { id: "2", name: "FRANCE JERSEY", price: "Rp 549,000", image: productJersey, comingSoon: true },
   { id: "3", name: "CALLE BALL", price: "Rp 399,000", image: productBall, comingSoon: true },
   { id: "4", name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000", image: productHoodie, comingSoon: true },
