@@ -2,6 +2,7 @@ import { X, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
+import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 
 interface CartDrawerProps {
@@ -11,6 +12,12 @@ interface CartDrawerProps {
 
 const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   const { items, removeItem, updateQuantity, getTotalPrice } = useCart();
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    onClose();
+    navigate("/checkout");
+  };
 
   const formatPrice = (price: number) => {
     return `Rp ${price.toLocaleString("id-ID")}`;
@@ -134,7 +141,9 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                 </div>
               </div>
               <Button
-                className="w-full h-12 text-base font-semibold rounded-full bg-foreground text-background hover:bg-foreground/90"
+                onClick={handleCheckout}
+                className="w-full h-14 text-base font-bold rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all duration-300"
+                aria-label="Lanjutkan ke halaman checkout"
               >
                 PROCEED TO CHECKOUT
               </Button>
