@@ -1,9 +1,10 @@
-import { X, ChevronDown, Settings } from "lucide-react";
+import { X, ChevronDown, Settings, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import SettingsMenu from "./SettingsMenu";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface MobileMenuProps {
 const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const [archivesOpen, setArchivesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { isAdmin } = useAdmin();
 
   return (
     <>
@@ -85,6 +87,18 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 ABOUT
               </Link>
             </li>
+            {isAdmin && (
+              <li>
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-2 text-lg font-bold tracking-tight hover:text-muted-foreground transition-colors"
+                  onClick={onClose}
+                >
+                  <Shield className="h-5 w-5" />
+                  ADMIN
+                </Link>
+              </li>
+            )}
             <li>
               <button
                 className="flex items-center gap-2 text-lg font-bold tracking-tight hover:text-muted-foreground transition-colors"

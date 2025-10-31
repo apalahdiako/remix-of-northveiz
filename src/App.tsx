@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import BuyNow from "./pages/BuyNow";
 import Checkout from "./pages/Checkout";
 import Payment from "./pages/Payment";
+import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 
@@ -54,6 +55,7 @@ const App = () => {
                   <Route path="/buy-now" element={<BuyNow />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/payment" element={<Payment />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>
