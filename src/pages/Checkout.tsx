@@ -233,12 +233,30 @@ const Checkout = () => {
           </RadioGroup>
         </div>
 
+        {/* Subtotal Section */}
+        <div className="border-t pt-6 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Subtotal</span>
+            <span className="font-semibold">{productPrice}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Pengiriman</span>
+            <span className="font-semibold">Gratis</span>
+          </div>
+          <div className="border-t pt-3 flex justify-between items-center">
+            <span className="text-lg font-bold">Total</span>
+            <span className="text-lg font-bold">{productPrice}</span>
+          </div>
+        </div>
+
+        {/* Proceed to Checkout Button */}
         <Button
           type="submit"
-          className="w-full h-14 rounded-full text-base font-bold"
+          className="w-full h-14 rounded-full text-base font-bold bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300"
           disabled={loading}
+          aria-label="Lanjutkan ke pembayaran dan konfirmasi pesanan"
         >
-          {loading ? "Memproses..." : "Bayar Sekarang"}
+          {loading ? "Memproses..." : "PROCEED TO CHECKOUT"}
         </Button>
       </form>
     </div>
