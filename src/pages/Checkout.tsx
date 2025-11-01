@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,18 +7,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
+import { Separator } from "@/components/ui/separator";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { items, getTotalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
-  
-  // Get product details from URL
-  const productId = searchParams.get("productId");
-  const productName = searchParams.get("name");
-  const productPrice = searchParams.get("price");
-  const productImage = searchParams.get("image");
-  const size = searchParams.get("size");
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -30,45 +25,59 @@ const Checkout = () => {
     paymentMethod: "bank_transfer",
   });
 
+  const formatPrice = (price: number) => {
+    return `Rp ${price.toLocaleString("id-ID")}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (items.length === 0) {
+      toast({
+        title: "Cart kosong",
+        description: "Silakan tambahkan produk ke cart terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       // Generate order number
       const orderNumber = `ORD-${Date.now()}`;
       
-      // Parse price to number
-      const priceString = productPrice?.replace(/[^\d]/g, '') || "0";
-      const totalAmount = parseInt(priceString);
+      // Calculate total amount
+      const totalAmount = getTotalPrice();
 
       // Get current user if logged in
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Insert order
-      const { data: order, error } = await supabase
+      // Insert orders for each item
+      const orderInserts = items.map(item => ({
+        user_id: user?.id || null,
+        order_number: orderNumber,
+        product_id: item.id,
+        product_name: item.name,
+        product_price: formatPrice(item.price),
+        product_image: item.image,
+        size: item.size,
+        quantity: item.quantity,
+        customer_name: formData.customerName,
+        customer_email: formData.customerEmail,
+        customer_phone: formData.customerPhone,
+        shipping_address: formData.shippingAddress,
+        city: formData.city,
+        postal_code: formData.postalCode,
+        payment_method: formData.paymentMethod,
+        payment_status: "pending",
+        total_amount: totalAmount,
+      }));
+
+      const { data: orders, error } = await supabase
         .from("orders")
-        .insert({
-          user_id: user?.id || null,
-          order_number: orderNumber,
-          product_id: productId,
-          product_name: productName,
-          product_price: productPrice,
-          product_image: productImage,
-          size: size,
-          quantity: 1,
-          customer_name: formData.customerName,
-          customer_email: formData.customerEmail,
-          customer_phone: formData.customerPhone,
-          shipping_address: formData.shippingAddress,
-          city: formData.city,
-          postal_code: formData.postalCode,
-          payment_method: formData.paymentMethod,
-          payment_status: "pending",
-          total_amount: totalAmount,
-        })
-        .select()
-        .single();
+        .insert(orderInserts)
+        .select();
 
       if (error) throw error;
 
@@ -77,8 +86,11 @@ const Checkout = () => {
         description: `Nomor pesanan: ${orderNumber}`,
       });
 
+      // Clear cart after successful order
+      clearCart();
+
       // Redirect to payment page
-      navigate(`/payment?orderId=${order.id}&orderNumber=${orderNumber}`);
+      navigate(`/payment?orderId=${orders[0].id}&orderNumber=${orderNumber}`);
     } catch (error: any) {
       console.error("Error creating order:", error);
       toast({
@@ -106,18 +118,29 @@ const Checkout = () => {
       {/* Order Summary */}
       <div className="bg-muted p-4 rounded-lg mb-6">
         <h2 className="font-bold text-lg mb-4">Ringkasan Pesanan</h2>
-        <div className="flex gap-4">
-          <img
-            src={productImage || ""}
-            alt={productName || ""}
-            className="w-20 h-20 object-cover rounded"
-          />
-          <div className="flex-1">
-            <h3 className="font-bold">{productName}</h3>
-            <p className="text-sm text-muted-foreground">Ukuran: {size}</p>
-            <p className="font-bold mt-2">{productPrice}</p>
+        {items.length === 0 ? (
+          <p className="text-muted-foreground text-center py-4">
+            Cart kosong. Silakan tambahkan produk terlebih dahulu.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {items.map((item) => (
+              <div key={`${item.id}-${item.size}`} className="flex gap-4 pb-4 border-b last:border-0">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-20 h-20 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h3 className="font-bold text-sm uppercase">{item.name}</h3>
+                  <p className="text-sm text-muted-foreground">Ukuran: {item.size}</p>
+                  <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                  <p className="font-bold mt-2">{formatPrice(item.price * item.quantity)}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Shipping Form */}
@@ -237,15 +260,16 @@ const Checkout = () => {
         <div className="border-t pt-6 space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-semibold">{productPrice}</span>
+            <span className="font-semibold">{formatPrice(getTotalPrice())}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Pengiriman</span>
             <span className="font-semibold">Gratis</span>
           </div>
-          <div className="border-t pt-3 flex justify-between items-center">
+          <Separator className="my-2" />
+          <div className="flex justify-between items-center">
             <span className="text-lg font-bold">Total</span>
-            <span className="text-lg font-bold">{productPrice}</span>
+            <span className="text-lg font-bold">{formatPrice(getTotalPrice())}</span>
           </div>
         </div>
 
