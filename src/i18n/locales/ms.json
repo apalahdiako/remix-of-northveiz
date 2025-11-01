@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "home": "Laman Utama",
+    "catalog": "Katalog",
+    "about": "Tentang",
+    "community": "Komuniti",
+    "account": "Akaun",
+    "login": "Log Masuk",
+    "adminDashboard": "Papan Pemuka Admin"
+  },
+  "settings": {
+    "title": "Tetapan",
+    "deliverTo": "Hantar ke",
+    "language": "Bahasa",
+    "currency": "Mata Wang",
+    "save": "Simpan"
+  },
+  "cart": {
+    "title": "Troli Beli-belah",
+    "empty": "Troli anda kosong",
+    "shopNow": "Beli Sekarang",
+    "size": "Saiz",
+    "quantity": "Kuantiti",
+    "subtotal": "Subjumlah",
+    "proceedToCheckout": "TERUSKAN KE PEMBAYARAN"
+  },
+  "checkout": {
+    "title": "Pembayaran",
+    "contactInfo": "Maklumat Hubungan",
+    "email": "E-mel",
+    "phone": "Nombor Telefon",
+    "shippingAddress": "Alamat Penghantaran",
+    "fullName": "Nama Penuh",
+    "address": "Alamat",
+    "city": "Bandar",
+    "postalCode": "Kod Pos",
+    "country": "Negara",
+    "orderSummary": "Ringkasan Pesanan",
+    "subtotal": "Subjumlah",
+    "shipping": "Penghantaran",
+    "total": "Jumlah",
+    "proceedToCheckout": "TERUSKAN KE PEMBAYARAN",
+    "requiredField": "Medan ini wajib diisi",
+    "validEmail": "Sila masukkan e-mel yang sah",
+    "validPhone": "Sila masukkan nombor telefon yang sah",
+    "orderSuccess": "Pesanan berjaya dibuat!",
+    "orderError": "Gagal membuat pesanan"
+  },
+  "product": {
+    "selectSize": "Pilih Saiz",
+    "addToCart": "Tambah ke Troli",
+    "buyNow": "Beli Sekarang",
+    "description": "Penerangan",
+    "careInstructions": "Arahan Penjagaan",
+    "washCold": "Basuh dengan air sejuk",
+    "tumbleDry": "Keringkan dengan suhu rendah",
+    "doNotBleach": "Jangan gunakan peluntur",
+    "ironLow": "Seterika dengan suhu rendah"
+  },
+  "home": {
+    "hero": {
+      "title": "NATIVE INDONESIA",
+      "subtitle": "Streetwear dengan Jiwa Indonesia"
+    },
+    "featured": "Produk Pilihan",
+    "viewAll": "Lihat Semua Produk"
+  },
+  "catalog": {
+    "title": "Koleksi Kami",
+    "allProducts": "Semua Produk"
+  },
+  "about": {
+    "title": "Tentang NRTVZ",
+    "story": "Kisah Kami",
+    "mission": "Misi Kami",
+    "values": "Nilai-nilai Kami"
+  }
+}

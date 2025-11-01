@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { useTranslation } from "react-i18next";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface CartDrawerProps {
 }
 
 const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
+  const { t } = useTranslation();
   const { items, removeItem, updateQuantity, getTotalPrice } = useCart();
   const navigate = useNavigate();
 
@@ -44,7 +46,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
         )}
       >
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-2xl font-bold uppercase">Shopping Cart</h2>
+          <h2 className="text-2xl font-bold uppercase">{t("cart.title")}</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-6 w-6" />
           </Button>
@@ -52,16 +54,16 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
 
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 p-6">
-            <h3 className="text-3xl font-bold mb-4">Your cart is empty</h3>
+            <h3 className="text-3xl font-bold mb-4">{t("cart.empty")}</h3>
             <p className="text-muted-foreground text-center mb-8">
-              Discover products and add them to your cart.
+              {t("cart.shopNow")}
             </p>
             <Button
               variant="outline"
               className="w-full h-12 text-base font-semibold rounded-full"
               onClick={onClose}
             >
-              Continue Shopping
+              {t("cart.shopNow")}
             </Button>
           </div>
         ) : (
@@ -81,7 +83,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-bold text-sm uppercase">{item.name}</h4>
-                        <p className="text-sm text-muted-foreground">Size: {item.size}</p>
+                        <p className="text-sm text-muted-foreground">{t("cart.size")}: {item.size}</p>
                       </div>
                       <Button
                         variant="ghost"
@@ -124,34 +126,34 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
             </div>
 
             <div className="p-6 border-t border-border space-y-4">
-              <h3 className="font-bold text-lg uppercase">Order Summary</h3>
+              <h3 className="font-bold text-lg uppercase">{t("checkout.orderSummary")}</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotal</span>
+                  <span>{t("cart.subtotal")}</span>
                   <span className="font-bold">{formatPrice(getTotalPrice())}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Shipping</span>
+                  <span>{t("checkout.shipping")}</span>
                   <span className="text-muted-foreground">{shippingCost}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
+                  <span>{t("checkout.total")}</span>
                   <span>{formatPrice(getTotalPrice())}</span>
                 </div>
               </div>
               <Button
                 onClick={handleCheckout}
                 className="w-full h-14 text-base font-bold rounded-full bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all duration-300"
-                aria-label="Lanjutkan ke halaman checkout"
+                aria-label={t("cart.proceedToCheckout")}
               >
-                PROCEED TO CHECKOUT
+                {t("cart.proceedToCheckout")}
               </Button>
               <button
                 onClick={onClose}
                 className="w-full text-center text-sm underline hover:no-underline"
               >
-                Continue Shopping
+                {t("cart.shopNow")}
               </button>
             </div>
           </>

@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "about": "About",
+    "community": "Community",
+    "account": "Account",
+    "login": "Login",
+    "adminDashboard": "Admin Dashboard"
+  },
+  "settings": {
+    "title": "Settings",
+    "deliverTo": "Deliver to",
+    "language": "Language",
+    "currency": "Currency",
+    "save": "Save"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "shopNow": "Shop Now",
+    "size": "Size",
+    "quantity": "Quantity",
+    "subtotal": "Subtotal",
+    "proceedToCheckout": "PROCEED TO CHECKOUT"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "contactInfo": "Contact Information",
+    "email": "Email",
+    "phone": "Phone Number",
+    "shippingAddress": "Shipping Address",
+    "fullName": "Full Name",
+    "address": "Address",
+    "city": "City",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "total": "Total",
+    "proceedToCheckout": "PROCEED TO CHECKOUT",
+    "requiredField": "This field is required",
+    "validEmail": "Please enter a valid email",
+    "validPhone": "Please enter a valid phone number",
+    "orderSuccess": "Order placed successfully!",
+    "orderError": "Failed to place order"
+  },
+  "product": {
+    "selectSize": "Select Size",
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "description": "Description",
+    "careInstructions": "Care Instructions",
+    "washCold": "Machine wash cold",
+    "tumbleDry": "Tumble dry low",
+    "doNotBleach": "Do not bleach",
+    "ironLow": "Iron low heat"
+  },
+  "home": {
+    "hero": {
+      "title": "NATIVE INDONESIA",
+      "subtitle": "Streetwear with Indonesian Soul"
+    },
+    "featured": "Featured Products",
+    "viewAll": "View All Products"
+  },
+  "catalog": {
+    "title": "Our Collection",
+    "allProducts": "All Products"
+  },
+  "about": {
+    "title": "About NRTVZ",
+    "story": "Our Story",
+    "mission": "Our Mission",
+    "values": "Our Values"
+  }
+}

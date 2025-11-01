@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import SettingsMenu from "./SettingsMenu";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useTranslation } from "react-i18next";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface MobileMenuProps {
 }
 
 const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
+  const { t } = useTranslation();
   const [archivesOpen, setArchivesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { isAdmin } = useAdmin();
@@ -52,7 +54,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 className="text-lg font-bold tracking-tight hover:text-muted-foreground transition-colors"
                 onClick={onClose}
               >
-                CATALOG
+                {t("nav.catalog").toUpperCase()}
               </Link>
             </li>
             <li>
@@ -61,7 +63,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 className="text-lg font-bold tracking-tight hover:text-muted-foreground transition-colors"
                 onClick={onClose}
               >
-                COMMUNITY
+                {t("nav.community").toUpperCase()}
               </Link>
             </li>
             <li>
@@ -84,7 +86,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 className="text-lg font-bold tracking-tight hover:text-muted-foreground transition-colors"
                 onClick={onClose}
               >
-                ABOUT
+                {t("nav.about").toUpperCase()}
               </Link>
             </li>
             {isAdmin && (
@@ -95,7 +97,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                   onClick={onClose}
                 >
                   <Shield className="h-5 w-5" />
-                  ADMIN
+                  {t("nav.adminDashboard").toUpperCase()}
                 </Link>
               </li>
             )}
@@ -108,7 +110,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 }}
               >
                 <Settings className="h-5 w-5" />
-                SETTINGS
+                {t("settings.title").toUpperCase()}
               </button>
             </li>
           </ul>
