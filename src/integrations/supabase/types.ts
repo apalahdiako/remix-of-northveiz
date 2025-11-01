@@ -17,11 +17,14 @@ export type Database = {
       orders: {
         Row: {
           city: string
+          country_code: string | null
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string
           id: string
+          latitude: number | null
+          longitude: number | null
           order_number: string
           paid_at: string | null
           payment_method: string
@@ -40,11 +43,14 @@ export type Database = {
         }
         Insert: {
           city: string
+          country_code?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone: string
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           order_number: string
           paid_at?: string | null
           payment_method: string
@@ -63,11 +69,14 @@ export type Database = {
         }
         Update: {
           city?: string
+          country_code?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           order_number?: string
           paid_at?: string | null
           payment_method?: string
@@ -128,6 +137,63 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      visitor_sessions: {
+        Row: {
+          city: string | null
+          country_code: string | null
+          country_name: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          last_activity_at: string | null
+          latitude: number | null
+          longitude: number | null
+          page_path: string | null
+          referrer: string | null
+          session_id: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country_code?: string | null
+          country_name?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_activity_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          page_path?: string | null
+          referrer?: string | null
+          session_id: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country_code?: string | null
+          country_name?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_activity_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          page_path?: string | null
+          referrer?: string | null
+          session_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

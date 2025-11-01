@@ -8,8 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
+import AnalyticsCards from "@/components/admin/AnalyticsCards";
 
 interface UserProfile {
   id: string;
@@ -34,6 +37,16 @@ Sekali lagi, terima kasih atas dukungan Anda, dan kami berharap dapat melayani A
 
 Salam hangat,
 Tim NORTHVEIZ`);
+  
+  // Analytics state
+  const [locations, setLocations] = useState<any[]>([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    totalVisitors: 0,
+    activeVisitors: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    topCountries: [] as Array<{ country: string; count: number }>,
+  });
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -45,6 +58,27 @@ Tim NORTHVEIZ`);
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
+      fetchAnalytics();
+      
+      // Set up realtime subscription for visitor sessions
+      const channel = supabase
+        .channel('visitor-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'visitor_sessions'
+          },
+          () => {
+            fetchAnalytics();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [isAdmin]);
 
@@ -97,6 +131,90 @@ Tim NORTHVEIZ`);
     }
   };
 
+  const fetchAnalytics = async () => {
+    try {
+      // Fetch active visitors by location
+      const { data: visitorData, error: visitorError } = await supabase
+        .from("visitor_sessions")
+        .select("*")
+        .eq("is_active", true);
+
+      if (visitorError) throw visitorError;
+
+      // Fetch all visitor sessions for total count
+      const { count: totalCount } = await supabase
+        .from("visitor_sessions")
+        .select("*", { count: "exact", head: true });
+
+      // Fetch orders with location data
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("*");
+
+      if (ordersError) throw ordersError;
+
+      // Group data by country
+      const locationMap = new Map();
+      
+      // Add visitor data
+      visitorData?.forEach((session) => {
+        if (!session.country_code || !session.latitude || !session.longitude) return;
+        
+        const key = session.country_code;
+        if (!locationMap.has(key)) {
+          locationMap.set(key, {
+            country_code: session.country_code,
+            country_name: session.country_name,
+            latitude: session.latitude,
+            longitude: session.longitude,
+            visitor_count: 0,
+            order_count: 0,
+            total_sales: 0,
+          });
+        }
+        
+        const loc = locationMap.get(key);
+        loc.visitor_count += 1;
+      });
+
+      // Add order data
+      let totalRevenue = 0;
+      ordersData?.forEach((order) => {
+        const amount = parseFloat(String(order.total_amount || "0"));
+        totalRevenue += amount;
+        
+        if (order.country_code && locationMap.has(order.country_code)) {
+          const loc = locationMap.get(order.country_code);
+          loc.order_count += 1;
+          loc.total_sales += amount;
+        }
+      });
+
+      const locationsArray = Array.from(locationMap.values());
+      setLocations(locationsArray);
+
+      // Calculate top countries
+      const topCountries = locationsArray
+        .sort((a, b) => (b.visitor_count + b.order_count) - (a.visitor_count + a.order_count))
+        .slice(0, 5)
+        .map((loc) => ({
+          country: loc.country_name,
+          count: loc.visitor_count + loc.order_count,
+        }));
+
+      setAnalyticsData({
+        totalVisitors: totalCount || 0,
+        activeVisitors: visitorData?.length || 0,
+        totalOrders: ordersData?.length || 0,
+        totalRevenue,
+        topCountries,
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      toast.error("Gagal memuat data analytics");
+    }
+  };
+
   const sendEmails = async () => {
     if (selectedUsers.length === 0) {
       toast.error("Pilih minimal satu pengguna");
@@ -144,7 +262,7 @@ Tim NORTHVEIZ`);
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <Button
         variant="ghost"
         onClick={() => navigate("/")}
@@ -156,7 +274,36 @@ Tim NORTHVEIZ`);
 
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <Tabs defaultValue="globe" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="globe">
+            <GlobeIcon className="mr-2 h-4 w-4" />
+            Peta Global
+          </TabsTrigger>
+          <TabsTrigger value="email">
+            <MailIcon className="mr-2 h-4 w-4" />
+            Kirim Email
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="globe" className="space-y-6">
+          <AnalyticsCards data={analyticsData} />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Peta Interaktif Pengunjung & Pesanan</CardTitle>
+              <CardDescription>
+                Putar peta untuk melihat lokasi pengunjung dan pesanan dari berbagai negara
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InteractiveGlobe locations={locations} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="email">
+          <div className="grid gap-6 md:grid-cols-2">
         {/* User Selection */}
         <Card>
           <CardHeader>
@@ -267,7 +414,9 @@ Tim NORTHVEIZ`);
             </div>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
