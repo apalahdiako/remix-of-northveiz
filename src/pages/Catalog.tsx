@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,11 +29,35 @@ const sortOptions = [
 ];
 
 const Catalog = () => {
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
   const [sortBy, setSortBy] = useState("Featured");
   const [sortOpen, setSortOpen] = useState(false);
 
+  // Filter products based on search query
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    
+    const query = searchQuery.toLowerCase();
+    return products.filter((product) =>
+      product.name.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
   return (
     <div className="container px-4 py-6">
+      {/* Search Results Header */}
+      {searchQuery && (
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-2">
+            Hasil pencarian untuk "{searchQuery}"
+          </h2>
+          <p className="text-muted-foreground">
+            {filteredProducts.length} produk ditemukan
+          </p>
+        </div>
+      )}
+
       {/* Filter and Sort Controls */}
       <div className="flex gap-3 mb-6">
         <Sheet>
@@ -159,9 +184,17 @@ const Catalog = () => {
 
       {/* Products Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} {...product} />
-        ))}
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <ProductCard key={product.id} {...product} />
+          ))
+        ) : (
+          <div className="col-span-2 md:col-span-3 lg:col-span-4 text-center py-12">
+            <p className="text-lg text-muted-foreground">
+              Produk tidak ditemukan
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

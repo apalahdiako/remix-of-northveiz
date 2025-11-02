@@ -1,4 +1,4 @@
-import { Menu, ShoppingBag, User, LogOut } from "lucide-react";
+import { Menu, ShoppingBag, User, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 interface HeaderProps {
   onMenuClick: () => void;
   onCartClick: () => void;
+  onSearchClick: () => void;
 }
 
-const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
+const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
   const { user, signOut } = useAuth();
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
@@ -33,6 +34,14 @@ const Header = ({ onMenuClick, onCartClick }: HeaderProps) => {
         </Link>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSearchClick}
+            aria-label="Search products"
+          >
+            <Search className="h-6 w-6" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

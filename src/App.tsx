@@ -8,6 +8,7 @@ import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import Header from "./components/Header";
 import MobileMenu from "./components/MobileMenu";
 import CartDrawer from "./components/CartDrawer";
+import SearchSheet from "./components/SearchSheet";
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
 import ProductDetail from "./pages/ProductDetail";
@@ -29,15 +30,18 @@ function AppContent() {
   useVisitorTracking();
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
       <Header 
         onMenuClick={() => setMenuOpen(true)} 
         onCartClick={() => setCartOpen(true)}
+        onSearchClick={() => setSearchOpen(true)}
       />
       <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <SearchSheet open={searchOpen} onOpenChange={setSearchOpen} />
       
       <Routes>
         <Route path="/" element={<Home />} />
