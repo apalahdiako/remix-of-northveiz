@@ -1,25 +1,82 @@
+import { Instagram } from "lucide-react";
+import { SiTiktok } from "react-icons/si";
+import founderPhoto from "@/assets/founder-photo.png";
+import logo from "@/assets/logo.png";
+
 const About = () => {
   return (
-    <div className="container px-6 py-8 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-6">ABOUT</h1>
-      
-      <div className="space-y-4 text-muted-foreground leading-relaxed">
-        <p>
-          Didirikan pada tahun 2024 di Cirebon oleh anak muda bernama Bayu Raja Syah saat masih sekolah di umur 17, <span className="font-bold text-foreground">NORTHVEIZ</span> lahir dari tekad untuk tidak hanya menciptakan apa yang dilihat orang tapi juga apa yang mereka rasakan.
-        </p>
+    <div className="min-h-screen flex flex-col">
+      <div className="container px-6 py-12 max-w-4xl mx-auto flex-grow">
+        {/* Title */}
+        <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">
+          Founder Brand
+        </h1>
         
-        <p>
-          Setiap desain yang lahir dari karya tangan bukan hanya sebuah hasil tetapi sebuah cerita tentang proses yang penuh makna, tentang keputusan yang diambil dengan hati dan tentang semangat untuk selalu memberikan yang terbaik.
-        </p>
-        
-        <p className="pt-4">
-          <span className="font-bold text-foreground">Visi kami:</span> Ingin menjadi brand yang menginspirasi generasi muda untuk berani tampil beda dan percaya diri dalam segala situasi. Dengan terus berkembang, kami bertekad untuk memberikan produk yang tidak hanya mengikuti tren tetapi juga menciptakan standar baru dalam dunia fashion.
-        </p>
-        
-        <p className="pt-4 font-medium text-foreground">
-          Ini masih dari bagian perjalanan brand dan kami tidak sabar untuk melanjutkan kisah ini bersama, karna ini baru awal bukan akhir dari suatu perjalanan tetapi sesuatu yang jauh lebih besar di masa depan.
-        </p>
+        {/* Founder Photo */}
+        <div className="flex justify-center mb-8 md:mb-12">
+          <div className="w-full max-w-sm md:max-w-md">
+            <img 
+              src={founderPhoto} 
+              alt="Founder - Bayu Raja Syah" 
+              className="w-full h-auto rounded-lg shadow-lg object-cover"
+            />
+          </div>
+        </div>
+
+        {/* Brand Logo */}
+        <div className="flex justify-center mb-8 md:mb-12">
+          <img 
+            src={logo} 
+            alt="NORTHVEIZ Logo" 
+            className="w-32 h-32 md:w-40 md:h-40 object-contain"
+          />
+        </div>
+
+        {/* Brand Story */}
+        <div className="space-y-4 text-muted-foreground leading-relaxed text-center mb-12 md:mb-16">
+          <p className="text-sm md:text-base">
+            Didirikan pada tahun 2024 di cirebon oleh anak muda bernama Bayu raja syah saat masih sekolah di umur 17, NORTHVEIZ lahir dari tekad untuk tidak hanya menciptakan apa yang dilihat orang tapi juga apa yang mereka rasakan dengan tangan bukan hanya sebuah hasil tetapi sebuah cerita tentang proses yang penuh makna tentang keputusan yang diambil dengan hati dan tentang semangat untuk selalu memberikan yang terbaik..dan visi kami ingin menjadi brand yang menginspirasi generasi muda untuk berani tampil beda dan percaya diri dalam segala situasi dengan terus berkembang kami bertekad untuk memberikan produk yang tidak hanya mengikuti tren tetapi juga menciptakan standar baru dalam dunia fashion..ini masih dari bagian perjalanan brand dan kami tidak sabar untuk melanjutkan kisah ini bersama karna ini baru awal bukan akhir dari suatu perjalanan tetapi sesuatu yang jauh lebih besar di masa depan..
+          </p>
+        </div>
+
+        {/* Social Media Section */}
+        <div className="text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 tracking-wider">
+            SOCIAL MEDIA
+          </h2>
+          
+          <div className="flex justify-center items-center gap-8 md:gap-12">
+            {/* Instagram */}
+            <a
+              href="https://www.instagram.com/northveiz?igsh=MWEwZzFpeHJzdzNhbg=="
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-2 hover:opacity-70 transition-opacity group"
+            >
+              <Instagram className="w-10 h-10 md:w-12 md:h-12" />
+              <span className="text-xs md:text-sm font-medium uppercase">Instagram</span>
+            </a>
+
+            {/* TikTok */}
+            <a
+              href="https://www.tiktok.com/@northveiz?_r=1&_t=ZS-913KuZQgX6g"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-2 hover:opacity-70 transition-opacity group"
+            >
+              <SiTiktok className="w-10 h-10 md:w-12 md:h-12" />
+              <span className="text-xs md:text-sm font-medium uppercase">TikTok</span>
+            </a>
+          </div>
+        </div>
       </div>
+
+      {/* Footer */}
+      <footer className="py-6 text-center border-t">
+        <p className="text-xs md:text-sm text-muted-foreground">
+          © 2025 - NORTHVEIZ - STREETWEAR
+        </p>
+      </footer>
     </div>
   );
 };
