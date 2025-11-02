@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -102,6 +110,18 @@ const Checkout = () => {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="container px-4 py-6 max-w-2xl flex items-center justify-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="container px-4 py-6 max-w-2xl">

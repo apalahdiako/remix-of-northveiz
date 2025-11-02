@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
@@ -9,6 +10,13 @@ const BuyNow = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedSize, setSelectedSize] = useState("");
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
   const productId = searchParams.get("id");
   const productName = searchParams.get("name");
@@ -28,6 +36,18 @@ const BuyNow = () => {
 
     navigate(checkoutUrl);
   };
+
+  if (loading) {
+    return (
+      <div className="container px-4 py-6 flex items-center justify-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="container px-4 py-6">
