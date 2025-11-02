@@ -12,7 +12,7 @@ import productHoodie from "@/assets/product-hoodie.jpg";
 
 const products = [
   { id: "1", name: "HOODIE PECAH POLA", price: "Rp 180,000", image: productHoodiePecah, comingSoon: true },
-  { id: "2", name: "FRANCE JERSEY", price: "Rp 549,000", image: productJersey, comingSoon: true },
+  { id: "2", name: "KEMEJA STREETWEAR", price: "Rp 549,000", image: productJersey, comingSoon: true },
   { id: "3", name: "CALLE BALL", price: "Rp 399,000", image: productBall, comingSoon: true },
   { id: "4", name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000", image: productHoodie, comingSoon: true },
 ];

@@ -26,7 +26,7 @@ const sizes = ["S", "M", "L", "XL", "XXL"];
 
 const productData: Record<string, { images: string[]; name: string; price: string }> = {
   "1": { images: [productHoodiePecahFront, productHoodiePecahBack], name: "HOODIE PECAH POLA", price: "Rp 180,000" },
-  "2": { images: [productJersey, productJerseyBack], name: "FRANCE JERSEY", price: "Rp 549,000" },
+  "2": { images: [productJersey, productJerseyBack], name: "KEMEJA STREETWEAR", price: "Rp 549,000" },
   "3": { images: [productBall, productBallBack], name: "CALLE BALL", price: "Rp 399,000" },
   "4": { images: [productHoodie, productHoodieBack], name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000" },
 };
