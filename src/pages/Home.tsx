@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import heroVideo from "@/assets/hero-video.mp4";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { GlobalTimer } from "@/components/GlobalTimer";
 
 const Home = () => {
   return (
@@ -32,6 +33,9 @@ const Home = () => {
           </Link>
         </div>
       </section>
+
+      {/* Global Timer Section */}
+      <GlobalTimer />
 
       {/* Info Sections */}
       <section className="bg-foreground text-background">

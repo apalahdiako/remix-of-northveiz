@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
 import AnalyticsCards from "@/components/admin/AnalyticsCards";
+import { TimerManagement } from "@/components/admin/TimerManagement";
 
 interface UserProfile {
   id: string;
@@ -280,6 +281,9 @@ Tim NORTHVEIZ`);
             <GlobeIcon className="mr-2 h-4 w-4" />
             Peta Global
           </TabsTrigger>
+          <TabsTrigger value="timer">
+            Timer Global
+          </TabsTrigger>
           <TabsTrigger value="email">
             <MailIcon className="mr-2 h-4 w-4" />
             Kirim Email
@@ -300,6 +304,10 @@ Tim NORTHVEIZ`);
               <InteractiveGlobe locations={locations} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="timer">
+          <TimerManagement />
         </TabsContent>
 
         <TabsContent value="email">

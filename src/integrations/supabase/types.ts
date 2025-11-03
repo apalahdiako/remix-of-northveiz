@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      global_timer: {
+        Row: {
+          action_link: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          target_date: string | null
+          timer_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_link?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          target_date?: string | null
+          timer_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          action_link?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          target_date?: string | null
+          timer_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           city: string
