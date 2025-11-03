@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 interface TimerSettings {
   id: string;
   title: string;
+  timer_type: string;
   target_date: string;
   is_active: boolean;
   action_link: string;
@@ -22,6 +24,7 @@ export function TimerManagement() {
   const [settings, setSettings] = useState<TimerSettings>({
     id: "",
     title: "Flash Sale Berakhir Dalam",
+    timer_type: "countdown",
     target_date: "",
     is_active: false,
     action_link: "/catalog",
@@ -44,6 +47,7 @@ export function TimerManagement() {
         setSettings({
           id: data.id,
           title: data.title,
+          timer_type: data.timer_type || "countdown",
           target_date: data.target_date ? new Date(data.target_date).toISOString().slice(0, 16) : "",
           is_active: data.is_active,
           action_link: data.action_link || "/catalog",
@@ -61,14 +65,20 @@ export function TimerManagement() {
     try {
       setSaving(true);
 
-      if (!settings.title || !settings.target_date) {
-        toast.error("Judul dan tanggal target harus diisi");
+      if (!settings.title) {
+        toast.error("Judul harus diisi");
+        return;
+      }
+
+      if (settings.timer_type === "countdown" && !settings.target_date) {
+        toast.error("Tanggal target harus diisi untuk countdown");
         return;
       }
 
       const updateData = {
         title: settings.title,
-        target_date: new Date(settings.target_date).toISOString(),
+        timer_type: settings.timer_type,
+        target_date: settings.target_date ? new Date(settings.target_date).toISOString() : null,
         is_active: settings.is_active,
         action_link: settings.action_link,
       };
@@ -134,19 +144,42 @@ export function TimerManagement() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="target_date">Tanggal & Waktu Target</Label>
-          <Input
-            id="target_date"
-            type="datetime-local"
-            value={settings.target_date}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, target_date: e.target.value }))
+          <Label htmlFor="timer_type">Tipe Timer</Label>
+          <Select
+            value={settings.timer_type}
+            onValueChange={(value) =>
+              setSettings((prev) => ({ ...prev, timer_type: value }))
             }
-          />
+          >
+            <SelectTrigger id="timer_type">
+              <SelectValue placeholder="Pilih tipe timer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="countdown">Hitung Mundur (Countdown)</SelectItem>
+              <SelectItem value="current_time">Waktu Saat Ini</SelectItem>
+            </SelectContent>
+          </Select>
           <p className="text-sm text-muted-foreground">
-            Pilih tanggal dan waktu berakhirnya timer
+            Pilih apakah timer menghitung mundur atau menampilkan waktu saat ini
           </p>
         </div>
+
+        {settings.timer_type === "countdown" && (
+          <div className="space-y-2">
+            <Label htmlFor="target_date">Tanggal & Waktu Target</Label>
+            <Input
+              id="target_date"
+              type="datetime-local"
+              value={settings.target_date}
+              onChange={(e) =>
+                setSettings((prev) => ({ ...prev, target_date: e.target.value }))
+              }
+            />
+            <p className="text-sm text-muted-foreground">
+              Pilih tanggal dan waktu berakhirnya timer
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="action_link">Link Tombol "View More"</Label>
