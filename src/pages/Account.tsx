@@ -328,7 +328,7 @@ const Account = () => {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">SHIPPING ADDRESSES</h2>
-              <Button onClick={() => toast({ title: "Add address feature coming soon" })}>
+              <Button onClick={() => {}}>
                 <Plus className="w-4 h-4 mr-2" />
                 ADD NEW
               </Button>
