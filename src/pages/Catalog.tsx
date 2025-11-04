@@ -1,21 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SlidersHorizontal, ArrowUpDown, Check } from "lucide-react";
+import { SlidersHorizontal, ArrowUpDown, Check, Loader2 } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import productHoodiePecah from "@/assets/product-hoodie-pecah-front.webp";
-import productJersey from "@/assets/product-jersey.jpg";
-import productBall from "@/assets/product-ball.jpg";
-import productHoodie from "@/assets/product-hoodie.jpg";
 
-const products = [
-  { id: "1", name: "HOODIE PECAH POLA", price: "Rp 180,000", image: productHoodiePecah, comingSoon: true },
-  { id: "2", name: "KEMEJA STREETWEAR", price: "Rp 549,000", image: productJersey, comingSoon: true },
-  { id: "3", name: "CALLE BALL", price: "Rp 399,000", image: productBall, comingSoon: true },
-  { id: "4", name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000", image: productHoodie, comingSoon: true },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  image: string;
+  stock_status: 'available' | 'out_of_stock' | 'coming_soon';
+}
 
 const sortOptions = [
   "Featured",
@@ -33,6 +31,48 @@ const Catalog = () => {
   const searchQuery = searchParams.get("search") || "";
   const [sortBy, setSortBy] = useState("Featured");
   const [sortOpen, setSortOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('products-catalog')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setProducts((data || []) as Product[]);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter products based on search query
   const filteredProducts = useMemo(() => {
@@ -42,7 +82,7 @@ const Catalog = () => {
     return products.filter((product) =>
       product.name.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [searchQuery, products]);
 
   return (
     <div className="container px-4 py-6">
@@ -183,19 +223,30 @@ const Catalog = () => {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))
-        ) : (
-          <div className="col-span-2 md:col-span-3 lg:col-span-4 text-center py-12">
-            <p className="text-lg text-muted-foreground">
-              Produk tidak ditemukan
-            </p>
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                {...product}
+                comingSoon={product.stock_status === 'coming_soon'}
+                outOfStock={product.stock_status === 'out_of_stock'}
+              />
+            ))
+          ) : (
+            <div className="col-span-2 md:col-span-3 lg:col-span-4 text-center py-12">
+              <p className="text-lg text-muted-foreground">
+                Produk tidak ditemukan
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

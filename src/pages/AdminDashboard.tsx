@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
 import AnalyticsCards from "@/components/admin/AnalyticsCards";
 import { TimerManagement } from "@/components/admin/TimerManagement";
+import ProductManagement from "@/components/admin/ProductManagement";
 
 interface UserProfile {
   id: string;
@@ -284,6 +285,9 @@ Tim NORTHVEIZ`);
           <TabsTrigger value="timer">
             Timer Global
           </TabsTrigger>
+          <TabsTrigger value="products">
+            Produk
+          </TabsTrigger>
           <TabsTrigger value="email">
             <MailIcon className="mr-2 h-4 w-4" />
             Kirim Email
@@ -308,6 +312,10 @@ Tim NORTHVEIZ`);
 
         <TabsContent value="timer">
           <TimerManagement />
+        </TabsContent>
+
+        <TabsContent value="products">
+          <ProductManagement />
         </TabsContent>
 
         <TabsContent value="email">

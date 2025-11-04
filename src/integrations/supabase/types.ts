@@ -128,6 +128,36 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          created_at: string | null
+          id: string
+          image: string
+          name: string
+          price: string
+          stock_status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          image: string
+          name: string
+          price: string
+          stock_status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image?: string
+          name?: string
+          price?: string
+          stock_status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           birthday: string | null

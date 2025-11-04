@@ -8,9 +8,10 @@ interface ProductCardProps {
   price: string;
   image: string;
   comingSoon?: boolean;
+  outOfStock?: boolean;
 }
 
-const ProductCard = ({ id, name, price, image, comingSoon }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, image, comingSoon, outOfStock }: ProductCardProps) => {
   const navigate = useNavigate();
 
   const handleBuyNow = (e: React.MouseEvent) => {
@@ -25,6 +26,11 @@ const ProductCard = ({ id, name, price, image, comingSoon }: ProductCardProps) =
           {comingSoon && (
             <Badge className="absolute top-3 left-3 z-10 bg-foreground text-background font-bold">
               COMING SOON
+            </Badge>
+          )}
+          {outOfStock && (
+            <Badge className="absolute top-3 left-3 z-10 bg-destructive text-destructive-foreground font-bold">
+              STOK HABIS
             </Badge>
           )}
           <img
