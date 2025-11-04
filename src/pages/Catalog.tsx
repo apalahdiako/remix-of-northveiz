@@ -32,6 +32,7 @@ const Catalog = () => {
   const [sortBy, setSortBy] = useState("Featured");
   const [sortOpen, setSortOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productImages, setProductImages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,6 +68,20 @@ const Catalog = () => {
 
       if (error) throw error;
       setProducts((data || []) as Product[]);
+
+      // Fetch primary images for all products
+      const { data: imagesData } = await supabase
+        .from('product_images')
+        .select('product_id, image_url')
+        .eq('is_primary', true);
+
+      if (imagesData) {
+        const imagesMap: Record<string, string> = {};
+        imagesData.forEach((img: any) => {
+          imagesMap[img.product_id] = img.image_url;
+        });
+        setProductImages(imagesMap);
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -234,6 +249,7 @@ const Catalog = () => {
               <ProductCard 
                 key={product.id} 
                 {...product}
+                image={productImages[product.id] || product.image}
                 comingSoon={product.stock_status === 'coming_soon'}
                 outOfStock={product.stock_status === 'out_of_stock'}
               />
