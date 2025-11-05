@@ -235,6 +235,14 @@ const ProductDetail = () => {
                         alt={`${product?.name} ${thumb.label}`}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (thumb.type === 'front') {
+                            img.src = fallback?.front || '/placeholder.svg';
+                          } else {
+                            img.src = fallback?.back || '/placeholder.svg';
+                          }
+                        }}
                       />
                     </button>
                   </CarouselItem>
