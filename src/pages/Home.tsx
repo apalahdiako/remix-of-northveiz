@@ -5,6 +5,27 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalTimer } from "@/components/GlobalTimer";
 
+// Payment method logos
+import qrisLogo from "@/assets/payment/qris.png";
+import ovoLogo from "@/assets/payment/ovo.png";
+import shopeepayLogo from "@/assets/payment/shopeepay.png";
+import akulakuLogo from "@/assets/payment/akulaku.png";
+import alfamartLogo from "@/assets/payment/alfamart.png";
+import mandiriLogo from "@/assets/payment/mandiri.png";
+import briLogo from "@/assets/payment/bri.png";
+import bniLogo from "@/assets/payment/bni.png";
+import permataLogo from "@/assets/payment/permata.png";
+import danamonLogo from "@/assets/payment/danamon.png";
+import bsiLogo from "@/assets/payment/bsi.png";
+import cimbLogo from "@/assets/payment/cimb.png";
+import visaLogo from "@/assets/payment/visa.png";
+import jcbLogo from "@/assets/payment/jcb.png";
+import mastercardLogo from "@/assets/payment/mastercard.png";
+
+// Shipping method logos
+import jneLogo from "@/assets/shipping/jne.png";
+import dhlLogo from "@/assets/shipping/dhl.png";
+
 const Home = () => {
   return (
     <div className="min-h-screen">
@@ -47,57 +68,57 @@ const Home = () => {
           <CollapsibleContent className="px-6 pb-6">
             <div className="grid grid-cols-3 md:grid-cols-6 gap-4 items-center">
               {/* E-Wallets & QR */}
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">QRIS</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={qrisLogo} alt="QRIS" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">OVO</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={ovoLogo} alt="OVO" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">ShopeePay</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={shopeepayLogo} alt="ShopeePay" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">Akulaku</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={akulakuLogo} alt="Akulaku" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">Alfamart</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={alfamartLogo} alt="Alfamart" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">Mandiri</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={mandiriLogo} alt="Mandiri" className="h-full w-auto object-contain" />
               </div>
               
               {/* Banks */}
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">BRI</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={briLogo} alt="BRI" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">BNI</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={bniLogo} alt="BNI" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">PermataBank</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={permataLogo} alt="PermataBank" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">PermataSyariah</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={permataLogo} alt="PermataBank Syariah" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">Danamon</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={danamonLogo} alt="Danamon" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">BSI</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={bsiLogo} alt="BSI" className="h-full w-auto object-contain" />
               </div>
               
               {/* Cards */}
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">CIMB Niaga</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={cimbLogo} alt="CIMB Niaga" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">VISA</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={visaLogo} alt="VISA" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">JCB</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={jcbLogo} alt="JCB" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">MasterCard</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={mastercardLogo} alt="MasterCard" className="h-full w-auto object-contain" />
               </div>
             </div>
           </CollapsibleContent>
@@ -110,11 +131,11 @@ const Home = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center max-w-md">
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">JNE</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={jneLogo} alt="JNE" className="h-full w-auto object-contain" />
               </div>
-              <div className="bg-background rounded p-3 flex items-center justify-center h-12">
-                <span className="text-foreground font-bold text-xs">DHL</span>
+              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
+                <img src={dhlLogo} alt="DHL" className="h-full w-auto object-contain" />
               </div>
             </div>
           </CollapsibleContent>
