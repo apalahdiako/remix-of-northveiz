@@ -69,17 +69,36 @@ const Catalog = () => {
       if (error) throw error;
       setProducts((data || []) as Product[]);
 
-      // Fetch primary images for all products
+      // Fetch images for all products with priority: front > primary > any image
       const { data: imagesData } = await supabase
         .from('product_images')
-        .select('product_id, image_url')
-        .eq('is_primary', true);
+        .select('product_id, image_url, image_type, is_primary, display_order')
+        .order('display_order', { ascending: true });
 
       if (imagesData) {
         const imagesMap: Record<string, string> = {};
-        imagesData.forEach((img: any) => {
-          imagesMap[img.product_id] = img.image_url;
+        
+        // Group images by product_id
+        const imagesByProduct = imagesData.reduce((acc: any, img: any) => {
+          if (!acc[img.product_id]) {
+            acc[img.product_id] = [];
+          }
+          acc[img.product_id].push(img);
+          return acc;
+        }, {});
+
+        // For each product, select the best image to display
+        Object.keys(imagesByProduct).forEach(productId => {
+          const images = imagesByProduct[productId];
+          
+          // Priority: front type > primary flag > first by display order
+          const frontImage = images.find((img: any) => img.image_type === 'front');
+          const primaryImage = images.find((img: any) => img.is_primary);
+          const firstImage = images[0];
+          
+          imagesMap[productId] = frontImage?.image_url || primaryImage?.image_url || firstImage?.image_url;
         });
+        
         setProductImages(imagesMap);
       }
     } catch (error) {
