@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, Upload, X, Star, ArrowUp, ArrowDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
 
 interface Product {
   id: string;
@@ -19,14 +18,17 @@ interface ProductImage {
   image_url: string;
   display_order: number;
   is_primary: boolean;
+  image_type: 'front' | 'back' | 'gallery';
 }
 
 const ProductImageManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
-  const [images, setImages] = useState<ProductImage[]>([]);
+  const [frontImage, setFrontImage] = useState<ProductImage | null>(null);
+  const [backImage, setBackImage] = useState<ProductImage | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingFront, setUploadingFront] = useState(false);
+  const [uploadingBack, setUploadingBack] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -61,74 +63,84 @@ const ProductImageManagement = () => {
         .from('product_images')
         .select('*')
         .eq('product_id', productId)
-        .order('display_order');
+        .in('image_type', ['front', 'back']);
 
       if (error) throw error;
-      setImages(data || []);
+      
+      const front = (data?.find(img => img.image_type === 'front') as ProductImage) || null;
+      const back = (data?.find(img => img.image_type === 'back') as ProductImage) || null;
+      
+      setFrontImage(front || null);
+      setBackImage(back || null);
     } catch (error) {
       console.error('Error fetching images:', error);
       toast.error('Gagal memuat gambar produk');
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !selectedProduct) return;
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    imageType: 'front' | 'back'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProduct) return;
 
-    // Check if adding these files would exceed 5 images
-    if (images.length + files.length > 5) {
-      toast.error('Maksimal 5 gambar per produk');
-      return;
-    }
-
+    const setUploading = imageType === 'front' ? setUploadingFront : setUploadingBack;
     setUploading(true);
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        // Validate file size (2MB)
-        if (file.size > 2097152) {
-          toast.error(`${file.name} terlalu besar (maks 2MB)`);
-          continue;
-        }
-
-        // Validate file type
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-          toast.error(`${file.name} format tidak didukung`);
-          continue;
-        }
-
-        // Upload to storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${selectedProduct}_${Date.now()}_${i}.${fileExt}`;
-        const filePath = `${selectedProduct}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-
-        // Insert into database
-        const { error: dbError } = await supabase
-          .from('product_images')
-          .insert({
-            product_id: selectedProduct,
-            image_url: publicUrl,
-            display_order: images.length + i,
-            is_primary: images.length === 0 && i === 0
-          });
-
-        if (dbError) throw dbError;
+      // Validate file size (5MB as per requirements)
+      if (file.size > 5242880) {
+        toast.error('File terlalu besar (maksimal 5MB)');
+        return;
       }
 
-      toast.success('Gambar berhasil diunggah');
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        toast.error('Format tidak didukung (hanya JPG, PNG, WEBP)');
+        return;
+      }
+
+      // Delete existing image if any
+      const existingImage = imageType === 'front' ? frontImage : backImage;
+      if (existingImage) {
+        await deleteImage(existingImage.id, existingImage.image_url);
+      }
+
+      // Upload to storage with cache-busting timestamp
+      const fileExt = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const fileName = `${selectedProduct}_${imageType}_${timestamp}.${fileExt}`;
+      const filePath = `${selectedProduct}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL with cache-busting
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      // Add timestamp parameter for cache-busting
+      const cacheBustedUrl = `${publicUrl}?v=${timestamp}`;
+
+      // Insert into database
+      const { error: dbError } = await supabase
+        .from('product_images')
+        .insert({
+          product_id: selectedProduct,
+          image_url: cacheBustedUrl,
+          display_order: imageType === 'front' ? 0 : 1,
+          is_primary: imageType === 'front',
+          image_type: imageType
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success(`Gambar ${imageType === 'front' ? 'Depan' : 'Belakang'} berhasil diunggah`);
       fetchProductImages(selectedProduct);
     } catch (error) {
       console.error('Error uploading:', error);
@@ -141,8 +153,8 @@ const ProductImageManagement = () => {
 
   const deleteImage = async (imageId: string, imageUrl: string) => {
     try {
-      // Extract file path from URL
-      const url = new URL(imageUrl);
+      // Extract file path from URL (remove query params for storage)
+      const url = new URL(imageUrl.split('?')[0]);
       const pathParts = url.pathname.split('/');
       const filePath = pathParts.slice(-2).join('/');
 
@@ -151,7 +163,7 @@ const ProductImageManagement = () => {
         .from('product-images')
         .remove([filePath]);
 
-      if (storageError) throw storageError;
+      if (storageError) console.warn('Storage deletion warning:', storageError);
 
       // Delete from database
       const { error: dbError } = await supabase
@@ -161,68 +173,11 @@ const ProductImageManagement = () => {
 
       if (dbError) throw dbError;
 
-      toast.success('Gambar berhasil dihapus');
       fetchProductImages(selectedProduct);
     } catch (error) {
       console.error('Error deleting:', error);
       toast.error('Gagal menghapus gambar');
     }
-  };
-
-  const setPrimaryImage = async (imageId: string) => {
-    try {
-      // Set all images to non-primary
-      await supabase
-        .from('product_images')
-        .update({ is_primary: false })
-        .eq('product_id', selectedProduct);
-
-      // Set selected image as primary
-      const { error } = await supabase
-        .from('product_images')
-        .update({ is_primary: true })
-        .eq('id', imageId);
-
-      if (error) throw error;
-
-      toast.success('Gambar utama berhasil diatur');
-      fetchProductImages(selectedProduct);
-    } catch (error) {
-      console.error('Error setting primary:', error);
-      toast.error('Gagal mengatur gambar utama');
-    }
-  };
-
-  const updateDisplayOrder = async (imageId: string, newOrder: number) => {
-    try {
-      const { error } = await supabase
-        .from('product_images')
-        .update({ display_order: newOrder })
-        .eq('id', imageId);
-
-      if (error) throw error;
-
-      fetchProductImages(selectedProduct);
-    } catch (error) {
-      console.error('Error updating order:', error);
-      toast.error('Gagal mengubah urutan');
-    }
-  };
-
-  const moveImage = (index: number, direction: 'up' | 'down') => {
-    if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === images.length - 1)
-    ) {
-      return;
-    }
-
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    const currentImage = images[index];
-    const swapImage = images[newIndex];
-
-    updateDisplayOrder(currentImage.id, newIndex);
-    updateDisplayOrder(swapImage.id, index);
   };
 
   if (loading) {
@@ -233,12 +188,95 @@ const ProductImageManagement = () => {
     );
   }
 
+  const renderImageSlot = (
+    type: 'front' | 'back',
+    image: ProductImage | null,
+    uploading: boolean
+  ) => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">
+          {type === 'front' ? 'Gambar Utama (Tampilan Depan)' : 'Gambar Alternatif (Tampilan Belakang)'}
+        </CardTitle>
+        <CardDescription>
+          {type === 'front' 
+            ? 'Gambar utama yang akan ditampilkan pertama kali' 
+            : 'Gambar belakang produk - pengguna dapat toggle untuk melihat'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {image ? (
+          <div className="space-y-4">
+            <div className="relative aspect-square w-full max-w-md mx-auto bg-muted rounded-lg overflow-hidden">
+              <img
+                src={image.image_url}
+                alt={`${type} view`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Label htmlFor={`upload-${type}`} className="flex-1">
+                <Button asChild variant="outline" className="w-full" disabled={uploading}>
+                  <span>
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Ganti Gambar
+                      </>
+                    )}
+                  </span>
+                </Button>
+              </Label>
+              <Button
+                variant="destructive"
+                onClick={() => deleteImage(image.id, image.image_url)}
+                disabled={uploading}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Hapus
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Label htmlFor={`upload-${type}`}>
+              <div className="aspect-square w-full max-w-md mx-auto border-2 border-dashed rounded-lg hover:border-foreground/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-4 p-8 bg-muted/20">
+                <ImageIcon className="w-16 h-16 text-muted-foreground" />
+                <div className="text-center">
+                  <p className="font-medium mb-1">
+                    {uploading ? 'Uploading...' : 'Klik untuk upload gambar'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    JPG, PNG, WEBP (maks. 5MB)
+                  </p>
+                </div>
+              </div>
+            </Label>
+          </div>
+        )}
+        <Input
+          id={`upload-${type}`}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => handleFileUpload(e, type)}
+          className="hidden"
+          disabled={uploading}
+        />
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Manajemen Gambar Produk</h2>
+        <h2 className="text-2xl font-bold mb-2">Upload Gambar Produk (Depan & Belakang)</h2>
         <p className="text-muted-foreground">
-          Upload dan kelola gambar produk (maksimal 5 gambar per produk, maks 2MB per file)
+          Upload gambar depan dan belakang produk. Perubahan akan langsung terlihat oleh pengguna secara realtime.
         </p>
       </div>
 
@@ -263,111 +301,10 @@ const ProductImageManagement = () => {
       </Card>
 
       {selectedProduct && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Gambar Produk ({images.length}/5)</span>
-              {images.length < 5 && (
-                <Label htmlFor="file-upload" className="cursor-pointer">
-                  <Button asChild disabled={uploading}>
-                    <span>
-                      {uploading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload Gambar
-                        </>
-                      )}
-                    </span>
-                  </Button>
-                </Label>
-              )}
-              <Input
-                id="file-upload"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {images.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Belum ada gambar. Upload gambar pertama untuk produk ini.
-              </p>
-            ) : (
-              <div className="grid gap-4">
-                {images.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className="flex items-center gap-4 p-4 border rounded-lg"
-                  >
-                    <img
-                      src={image.image_url}
-                      alt={`Product ${index + 1}`}
-                      className="w-24 h-24 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium">Gambar {index + 1}</span>
-                        {image.is_primary && (
-                          <Badge className="bg-yellow-500">
-                            <Star className="w-3 h-3 mr-1" />
-                            Utama
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Urutan tampilan: {image.display_order + 1}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => moveImage(index, 'up')}
-                        disabled={index === 0}
-                      >
-                        <ArrowUp className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => moveImage(index, 'down')}
-                        disabled={index === images.length - 1}
-                      >
-                        <ArrowDown className="w-4 h-4" />
-                      </Button>
-                      {!image.is_primary && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setPrimaryImage(image.id)}
-                        >
-                          <Star className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteImage(image.id, image.image_url)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="grid md:grid-cols-2 gap-6">
+          {renderImageSlot('front', frontImage, uploadingFront)}
+          {renderImageSlot('back', backImage, uploadingBack)}
+        </div>
       )}
     </div>
   );

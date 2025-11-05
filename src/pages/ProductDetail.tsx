@@ -2,18 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, RotateCw } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  type CarouselApi,
-} from "@/components/ui/carousel";
 
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
@@ -30,16 +22,17 @@ interface ProductImage {
   image_url: string;
   display_order: number;
   is_primary: boolean;
+  image_type: 'front' | 'back' | 'gallery';
 }
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
+  const [showBack, setShowBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
-  const [images, setImages] = useState<ProductImage[]>([]);
+  const [frontImage, setFrontImage] = useState<ProductImage | null>(null);
+  const [backImage, setBackImage] = useState<ProductImage | null>(null);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -62,15 +55,20 @@ const ProductDetail = () => {
       if (productError) throw productError;
       setProduct(productData as Product);
 
-      // Fetch product images
+      // Fetch product images (front and back)
       const { data: imagesData, error: imagesError } = await supabase
         .from('product_images')
         .select('*')
         .eq('product_id', id)
-        .order('display_order');
+        .in('image_type', ['front', 'back']);
 
       if (imagesError) throw imagesError;
-      setImages(imagesData || []);
+      
+      const front = imagesData?.find(img => img.image_type === 'front') as ProductImage || null;
+      const back = imagesData?.find(img => img.image_type === 'back') as ProductImage || null;
+      
+      setFrontImage(front || null);
+      setBackImage(back || null);
     } catch (error) {
       console.error('Error fetching product:', error);
       toast({
@@ -99,7 +97,7 @@ const ProductDetail = () => {
       id: id!,
       name: product.name,
       price: parseFloat(product.price.replace(/[^0-9]/g, "")),
-      image: images[0]?.image_url || '',
+      image: frontImage?.image_url || '',
       size: selectedSize,
     });
 
@@ -109,19 +107,30 @@ const ProductDetail = () => {
     });
   };
 
-  const scrollTo = (index: number) => {
-    api?.scrollTo(index);
-  };
-
+  // Setup realtime subscription for image updates
   useEffect(() => {
-    if (!api) return;
+    if (!id) return;
 
-    setCurrent(api.selectedScrollSnap());
+    const channel = supabase
+      .channel('product-images-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'product_images',
+          filter: `product_id=eq.${id}`
+        },
+        () => {
+          fetchProductDetails();
+        }
+      )
+      .subscribe();
 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap());
-    });
-  }, [api]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
 
   if (loading) {
     return (
@@ -139,71 +148,36 @@ const ProductDetail = () => {
     );
   }
 
-  const productImages = images.length > 0 ? images : [];
+  const currentImage = showBack && backImage ? backImage : frontImage;
+  const hasBackImage = !!backImage;
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Product Image Carousel */}
-      {productImages.length > 0 && (
-        <>
-          <Carousel setApi={setApi} className="w-full relative" opts={{ loop: true }}>
-            <CarouselContent>
-              {productImages.map((image, index) => (
-                <CarouselItem key={image.id}>
-                  <div className="aspect-square w-full bg-muted">
-                    <img
-                      src={image.image_url}
-                      alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
+      {/* Product Image with Toggle */}
+      {currentImage && (
+        <div className="relative">
+          <div className="aspect-square w-full bg-muted relative overflow-hidden">
+            <img
+              src={currentImage.image_url}
+              alt={`${product?.name} ${showBack ? 'belakang' : 'depan'}`}
+              className="w-full h-full object-cover transition-opacity duration-300"
+              key={currentImage.id}
+            />
             
-            {/* Slide Indicator */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-              {productImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => scrollTo(index)}
-                  className={`h-2 rounded-full transition-all ${
-                    current === index
-                      ? "w-8 bg-foreground"
-                      : "w-2 bg-foreground/30"
-                  }`}
-                />
-              ))}
-            </div>
-          </Carousel>
-
-          {/* Thumbnail Navigation */}
-          {productImages.length > 1 && (
-            <div className="container px-6 py-4">
-              <div className="flex gap-3 overflow-x-auto">
-                {productImages.map((image, index) => (
-                  <button
-                    key={image.id}
-                    onClick={() => scrollTo(index)}
-                    className={`aspect-square w-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                      current === index
-                        ? "border-foreground"
-                        : "border-transparent opacity-60"
-                    }`}
-                  >
-                    <img
-                      src={image.image_url}
-                      alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+            {/* Toggle Button */}
+            {hasBackImage && (
+              <Button
+                variant="secondary"
+                size="lg"
+                className="absolute bottom-4 right-4 gap-2 shadow-lg"
+                onClick={() => setShowBack(!showBack)}
+              >
+                <RotateCw className="w-4 h-4" />
+                {showBack ? 'Lihat Depan' : 'Lihat Belakang'}
+              </Button>
+            )}
+          </div>
+        </div>
       )}
 
       <div className="container px-6 pb-6">
