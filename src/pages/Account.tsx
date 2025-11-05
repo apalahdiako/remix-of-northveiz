@@ -7,23 +7,9 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import productHoodie from "@/assets/product-hoodie.jpg";
+import { OrdersList } from "@/components/orders/OrdersList";
 
 type MenuTab = "profile" | "orders" | "addresses" | "logout";
-
-interface Order {
-  id: string;
-  date: string;
-  status: "delivered" | "processing" | "cancelled";
-  items: {
-    image: string;
-    name: string;
-    size: string;
-    quantity: number;
-    price: number;
-  }[];
-  total: number;
-}
 
 interface Address {
   id: string;
@@ -33,62 +19,6 @@ interface Address {
   city: string;
   phone: string;
 }
-
-// Mock data for demonstration
-const mockOrders: Order[] = [
-  {
-    id: "ORD-2025-001",
-    date: "15/11/2025",
-    status: "delivered",
-    items: [
-      {
-        image: productHoodie,
-        name: "Black Oversized Hoodie",
-        size: "M",
-        quantity: 1,
-        price: 450000
-      }
-    ],
-    total: 450000
-  },
-  {
-    id: "ORD-2025-002",
-    date: "18/11/2025",
-    status: "processing",
-    items: [
-      {
-        image: productHoodie,
-        name: "Grey Essential Hoodie",
-        size: "L",
-        quantity: 1,
-        price: 425000
-      },
-      {
-        image: productHoodie,
-        name: "Streetwear Black Jacket",
-        size: "M",
-        quantity: 1,
-        price: 650000
-      }
-    ],
-    total: 925000
-  },
-  {
-    id: "ORD-2025-003",
-    date: "10/11/2025",
-    status: "cancelled",
-    items: [
-      {
-        image: productHoodie,
-        name: "Classic Black Tee",
-        size: "M",
-        quantity: 1,
-        price: 250000
-      }
-    ],
-    total: 250000
-  }
-];
 
 const mockAddresses: Address[] = [
   {
@@ -137,19 +67,6 @@ const Account = () => {
   if (!user) {
     return null;
   }
-
-  const getStatusBadge = (status: Order["status"]) => {
-    const variants = {
-      delivered: "bg-green-100 text-green-800",
-      processing: "bg-blue-100 text-blue-800",
-      cancelled: "bg-red-100 text-red-800"
-    };
-    return (
-      <Badge className={`${variants[status]} capitalize`} variant="secondary">
-        {status}
-      </Badge>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -264,62 +181,9 @@ const Account = () => {
 
         {/* Orders View */}
         {activeTab === "orders" && (
-          <div>
-            <h2 className="text-xl font-bold mb-6">ORDER HISTORY</h2>
-            <div className="space-y-4">
-              {mockOrders.map((order) => (
-                <div key={order.id} className="bg-background rounded-2xl p-6 shadow-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-bold">{order.id}</h3>
-                      <p className="text-sm text-muted-foreground">Placed on {order.date}</p>
-                    </div>
-                    {getStatusBadge(order.status)}
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="flex gap-4">
-                        <img 
-                          src={item.image} 
-                          alt={item.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <div className="flex-1">
-                          <h4 className="font-medium">{item.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Size: {item.size} • Qty: {item.quantity}
-                          </p>
-                          <p className="font-medium">Rp {item.price.toLocaleString()}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-muted-foreground">Total</span>
-                      <span className="text-xl font-bold">Rp {order.total.toLocaleString()}</span>
-                    </div>
-                    <div className="flex gap-3">
-                      {order.status === "processing" && (
-                        <Button 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={() => toast({ title: "Order cancelled" })}
-                        >
-                          Cancel Order
-                        </Button>
-                      )}
-                      {order.status === "delivered" && (
-                        <Button variant="outline" className="flex-1">Track Order</Button>
-                      )}
-                      <Button variant="default" className="flex-1">View Details</Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="bg-background rounded-2xl p-6 shadow-sm">
+            <h2 className="text-xl font-bold mb-6">PESANAN SAYA</h2>
+            <OrdersList />
           </div>
         )}
 

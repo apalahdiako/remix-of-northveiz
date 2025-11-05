@@ -49,7 +49,10 @@ export type Database = {
       }
       orders: {
         Row: {
+          cancelled_at: string | null
+          cancelled_reason: string | null
           city: string
+          completed_at: string | null
           country_code: string | null
           created_at: string
           customer_email: string
@@ -59,6 +62,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           order_number: string
+          order_status: Database["public"]["Enums"]["order_status"] | null
           paid_at: string | null
           payment_method: string
           payment_status: string
@@ -68,14 +72,19 @@ export type Database = {
           product_name: string
           product_price: string
           quantity: number
+          return_reason: string | null
           shipping_address: string
           size: string
           total_amount: number
+          tracking_number: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
           city: string
+          completed_at?: string | null
           country_code?: string | null
           created_at?: string
           customer_email: string
@@ -85,6 +94,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           order_number: string
+          order_status?: Database["public"]["Enums"]["order_status"] | null
           paid_at?: string | null
           payment_method: string
           payment_status?: string
@@ -94,14 +104,19 @@ export type Database = {
           product_name: string
           product_price: string
           quantity?: number
+          return_reason?: string | null
           shipping_address: string
           size: string
           total_amount: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
           city?: string
+          completed_at?: string | null
           country_code?: string | null
           created_at?: string
           customer_email?: string
@@ -111,6 +126,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           order_number?: string
+          order_status?: Database["public"]["Enums"]["order_status"] | null
           paid_at?: string | null
           payment_method?: string
           payment_status?: string
@@ -120,9 +136,11 @@ export type Database = {
           product_name?: string
           product_price?: string
           quantity?: number
+          return_reason?: string | null
           shipping_address?: string
           size?: string
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -316,6 +334,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      order_status:
+        | "pending_payment"
+        | "processing"
+        | "in_transit"
+        | "completed"
+        | "return_requested"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -444,6 +469,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      order_status: [
+        "pending_payment",
+        "processing",
+        "in_transit",
+        "completed",
+        "return_requested",
+        "cancelled",
+      ],
     },
   },
 } as const

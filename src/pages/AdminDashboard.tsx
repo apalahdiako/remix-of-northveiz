@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
@@ -16,6 +16,7 @@ import AnalyticsCards from "@/components/admin/AnalyticsCards";
 import { TimerManagement } from "@/components/admin/TimerManagement";
 import ProductManagement from "@/components/admin/ProductManagement";
 import ProductImageManagement from "@/components/admin/ProductImageManagement";
+import { OrderManagement } from "@/components/admin/OrderManagement";
 
 interface UserProfile {
   id: string;
@@ -292,6 +293,10 @@ Tim NORTHVEIZ`);
           <TabsTrigger value="images">
             Gambar Produk
           </TabsTrigger>
+          <TabsTrigger value="orders">
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Pesanan
+          </TabsTrigger>
           <TabsTrigger value="email">
             <MailIcon className="mr-2 h-4 w-4" />
             Kirim Email
@@ -324,6 +329,10 @@ Tim NORTHVEIZ`);
 
         <TabsContent value="images">
           <ProductImageManagement />
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <OrderManagement />
         </TabsContent>
 
         <TabsContent value="email">
