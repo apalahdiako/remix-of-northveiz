@@ -6,7 +6,7 @@ import { Heart, Loader2, RotateCw } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
+import { getProductImageFallback } from "@/lib/productImageFallbacks";
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 interface Product {
@@ -60,15 +60,33 @@ const ProductDetail = () => {
         .from('product_images')
         .select('*')
         .eq('product_id', id)
-        .in('image_type', ['front', 'back']);
+        .order('display_order', { ascending: true });
 
       if (imagesError) throw imagesError;
       
-      const front = imagesData?.find(img => img.image_type === 'front') as ProductImage || null;
+      // Priority: explicit 'front' > is_primary=true > first by display_order
+      const front = (imagesData?.find(img => img.image_type === 'front') as ProductImage)
+        || (imagesData?.find(img => img.is_primary) as ProductImage)
+        || (imagesData && (imagesData[0] as ProductImage))
+        || null;
+
+      // Back image only when explicitly set as 'back'
       const back = imagesData?.find(img => img.image_type === 'back') as ProductImage || null;
-      
-      setFrontImage(front || null);
-      setBackImage(back || null);
+
+      if (!front && (productData as any)?.image) {
+        // Fallback to legacy products.image field
+        setFrontImage({
+          id: 'fallback',
+          product_id: id!,
+          image_url: (productData as any).image,
+          display_order: 0,
+          is_primary: true,
+          image_type: 'front'
+        });
+      } else {
+        setFrontImage(front);
+      }
+      setBackImage(back);
     } catch (error) {
       console.error('Error fetching product:', error);
       toast({
@@ -149,38 +167,39 @@ const ProductDetail = () => {
   }
 
   const currentImage = showBack && backImage ? backImage : frontImage;
-  const hasBackImage = !!backImage;
+  const fallback = getProductImageFallback(id || undefined);
+  const hasBackImage = !!backImage || !!fallback?.back;
 
   return (
     <div className="min-h-screen pb-24">
       {/* Product Image with Toggle */}
-      {currentImage && (
-        <div className="relative">
-          <div className="aspect-square w-full bg-muted relative overflow-hidden">
-            <img
-              src={currentImage.image_url}
-              alt={`${product?.name} ${showBack ? 'belakang' : 'depan'}`}
-              className="w-full h-full object-cover transition-opacity duration-300"
-              key={currentImage.id}
-            />
-            
-            {/* Toggle Button */}
-            {hasBackImage && (
-              <Button
-                variant="secondary"
-                size="lg"
-                className="absolute bottom-4 right-4 gap-2 shadow-lg"
-                onClick={() => setShowBack(!showBack)}
-              >
-                <RotateCw className="w-4 h-4" />
-                {showBack ? 'Lihat Depan' : 'Lihat Belakang'}
-              </Button>
-            )}
-          </div>
+      <div className="relative">
+        <div className="aspect-square w-full bg-muted relative overflow-hidden">
+          <img
+            src={(currentImage?.image_url || (product as any)?.image || '/placeholder.svg') + (currentImage ? `?v=${currentImage.id}` : '')}
+            alt={`${product?.name} ${showBack ? 'belakang' : 'depan'}`}
+            className="w-full h-full object-cover transition-opacity duration-300"
+            key={currentImage?.id || 'placeholder'}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+          />
+          
+          {/* Toggle Button */}
+          {hasBackImage && (
+            <Button
+              variant="secondary"
+              size="lg"
+              className="absolute bottom-4 right-4 gap-2 shadow-lg"
+              onClick={() => setShowBack(!showBack)}
+            >
+              <RotateCw className="w-4 h-4" />
+              {showBack ? 'Lihat Depan' : 'Lihat Belakang'}
+            </Button>
+          )}
         </div>
-      )}
-
-      <div className="container px-6 pb-6">
+      </div>
+        <div className="container px-6 pb-6">
         {/* Status Badge */}
         {product.stock_status === 'coming_soon' && (
           <Badge className="mb-3 bg-foreground text-background font-bold">
