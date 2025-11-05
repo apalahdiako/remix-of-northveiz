@@ -169,6 +169,10 @@ const ProductDetail = () => {
   const currentImage = showBack && backImage ? backImage : frontImage;
   const fallback = getProductImageFallback(id || undefined);
   const hasBackImage = !!backImage || !!fallback?.back;
+  const displayUrl = (showBack
+    ? (backImage?.image_url || fallback?.back)
+    : (frontImage?.image_url || fallback?.front)
+  ) || (product as any)?.image || '/placeholder.svg';
 
   return (
     <div className="min-h-screen pb-24">
@@ -176,13 +180,13 @@ const ProductDetail = () => {
       <div className="relative">
         <div className="aspect-square w-full bg-muted relative overflow-hidden">
           <img
-            src={(currentImage?.image_url || (product as any)?.image || '/placeholder.svg') + (currentImage ? `?v=${currentImage.id}` : '')}
+            src={displayUrl + (currentImage ? `?v=${currentImage.id}` : '')}
             alt={`${product?.name} ${showBack ? 'belakang' : 'depan'}`}
-            className="w-full h-full object-cover transition-opacity duration-300"
-            key={currentImage?.id || 'placeholder'}
+            className="w-full h-full object-cover transition-opacity duration-300 animate-fade-in"
+            key={`${showBack ? 'back' : 'front'}-${currentImage?.id || (showBack ? 'fallback-back' : 'fallback-front')}`}
             loading="lazy"
             decoding="async"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback?.front || '/placeholder.svg'; }}
           />
           
           {/* Toggle Button */}
@@ -199,7 +203,7 @@ const ProductDetail = () => {
           )}
         </div>
       </div>
-        <div className="container px-6 pb-6">
+      <div className="container px-6 pb-6">
         {/* Status Badge */}
         {product.stock_status === 'coming_soon' && (
           <Badge className="mb-3 bg-foreground text-background font-bold">
