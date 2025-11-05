@@ -7,6 +7,11 @@ import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getProductImageFallback } from "@/lib/productImageFallbacks";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 interface Product {
@@ -174,6 +179,20 @@ const ProductDetail = () => {
     : (frontImage?.image_url || fallback?.front)
   ) || (product as any)?.image || '/placeholder.svg';
 
+  // Prepare thumbnail images array
+  const thumbnailImages = [
+    {
+      url: frontImage?.image_url || fallback?.front || (product as any)?.image || '/placeholder.svg',
+      type: 'front',
+      label: 'Depan'
+    },
+    ...(hasBackImage ? [{
+      url: backImage?.image_url || fallback?.back || '/placeholder.svg',
+      type: 'back',
+      label: 'Belakang'
+    }] : [])
+  ];
+
   return (
     <div className="min-h-screen pb-24">
       {/* Product Image with Toggle */}
@@ -188,20 +207,42 @@ const ProductDetail = () => {
             decoding="async"
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback?.front || '/placeholder.svg'; }}
           />
-          
-          {/* Toggle Button */}
-          {hasBackImage && (
-            <Button
-              variant="secondary"
-              size="lg"
-              className="absolute bottom-4 right-4 gap-2 shadow-lg"
-              onClick={() => setShowBack(!showBack)}
-            >
-              <RotateCw className="w-4 h-4" />
-              {showBack ? 'Lihat Depan' : 'Lihat Belakang'}
-            </Button>
-          )}
         </div>
+
+        {/* Thumbnail Slider */}
+        {hasBackImage && (
+          <div className="px-4 py-4">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: false,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2">
+                {thumbnailImages.map((thumb, index) => (
+                  <CarouselItem key={thumb.type} className="basis-1/4 pl-2">
+                    <button
+                      onClick={() => setShowBack(thumb.type === 'back')}
+                      className={`relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all ${
+                        (showBack && thumb.type === 'back') || (!showBack && thumb.type === 'front')
+                          ? 'border-foreground scale-95'
+                          : 'border-border hover:border-foreground/50'
+                      }`}
+                    >
+                      <img
+                        src={thumb.url}
+                        alt={`${product?.name} ${thumb.label}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </button>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+        )}
       </div>
       <div className="container px-6 pb-6">
         {/* Status Badge */}
