@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getProductImageFallback } from "@/lib/productImageFallbacks";
 
 interface ProductCardProps {
   id: string;
@@ -13,10 +14,12 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, name, price, image, comingSoon, outOfStock }: ProductCardProps) => {
   const navigate = useNavigate();
+  const fallback = getProductImageFallback(id);
+  const displaySrc = image || fallback?.front || '/placeholder.svg';
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate(`/buy-now?id=${id}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}&image=${encodeURIComponent(image)}`);
+    navigate(`/buy-now?id=${id}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}&image=${encodeURIComponent(displaySrc)}`);
   };
 
   return (
@@ -34,9 +37,12 @@ const ProductCard = ({ id, name, price, image, comingSoon, outOfStock }: Product
             </Badge>
           )}
           <img
-            src={image}
+            src={displaySrc}
             alt={name}
             className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => { e.currentTarget.src = fallback?.front || '/placeholder.svg'; }}
           />
         </div>
       </Link>

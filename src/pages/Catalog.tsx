@@ -38,8 +38,8 @@ const Catalog = () => {
   useEffect(() => {
     fetchProducts();
 
-    // Subscribe to realtime updates
-    const channel = supabase
+    // Subscribe to realtime updates for products and product_images
+    const productsChannel = supabase
       .channel('products-catalog')
       .on(
         'postgres_changes',
@@ -54,8 +54,24 @@ const Catalog = () => {
       )
       .subscribe();
 
+    const imagesChannel = supabase
+      .channel('product-images-catalog')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'product_images'
+        },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(imagesChannel);
     };
   }, []);
 
