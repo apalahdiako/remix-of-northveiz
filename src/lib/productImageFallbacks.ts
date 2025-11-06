@@ -17,7 +17,7 @@ const map: Record<string, FallbackPair> = {
   hoodie: { front: hoodieGeneric },
   ball: { front: ballFront, back: ballBack },
   jersey: { front: jerseyFront, back: jerseyBack },
-  KEMEJA: { front: jerseyFront }, // loose fallback for uppercase demo item
+  KEMEJA: { front: jerseyFront, back: jerseyBack }, // loose fallback for uppercase demo item
 };
 
 export const getProductImageFallback = (productId?: string): FallbackPair | undefined => {
