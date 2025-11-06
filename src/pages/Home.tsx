@@ -18,8 +18,8 @@ import bcaLogo from "@/assets/payment/bca.jpg";
 
 
 // Shipping method logos
-import jneLogo from "@/assets/shipping/jne.png";
-import dhlLogo from "@/assets/shipping/dhl.png";
+import jneLogo from "@/assets/shipping/jne-new.jpg";
+import jntLogo from "@/assets/shipping/jnt.jpg";
 
 const Home = () => {
   return (
@@ -99,12 +99,12 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <div className="flex gap-12 items-center">
-              <div className="flex items-center justify-center h-12">
-                <img src={jneLogo} alt="JNE Express" className="h-10 w-auto object-contain filter brightness-0 invert" />
+            <div className="flex gap-8 items-center">
+              <div className="flex items-center justify-center p-2">
+                <img src={jneLogo} alt="JNE Express" className="h-10 w-auto object-contain" />
               </div>
-              <div className="flex items-center justify-center h-12">
-                <img src={dhlLogo} alt="DHL" className="h-8 w-auto object-contain filter brightness-0 invert" />
+              <div className="flex items-center justify-center p-2">
+                <img src={jntLogo} alt="J&T Express" className="h-10 w-auto object-contain" />
               </div>
             </div>
           </CollapsibleContent>
