@@ -89,6 +89,15 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 {t("nav.about").toUpperCase()}
               </Link>
             </li>
+            <li>
+              <Link
+                to="/contact"
+                className="text-lg font-bold tracking-tight hover:text-muted-foreground transition-colors"
+                onClick={onClose}
+              >
+                CONTACT
+              </Link>
+            </li>
             {isAdmin && (
               <li>
                 <Link
