@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
@@ -17,6 +17,7 @@ import { TimerManagement } from "@/components/admin/TimerManagement";
 import ProductManagement from "@/components/admin/ProductManagement";
 import ProductImageManagement from "@/components/admin/ProductImageManagement";
 import { OrderManagement } from "@/components/admin/OrderManagement";
+import { InboxManagement } from "@/components/admin/InboxManagement";
 
 interface UserProfile {
   id: string;
@@ -284,6 +285,10 @@ Tim NORTHVEIZ`);
             <GlobeIcon className="mr-2 h-4 w-4" />
             Peta Global
           </TabsTrigger>
+          <TabsTrigger value="inbox">
+            <Inbox className="mr-2 h-4 w-4" />
+            Inbox
+          </TabsTrigger>
           <TabsTrigger value="timer">
             Timer Global
           </TabsTrigger>
@@ -317,6 +322,10 @@ Tim NORTHVEIZ`);
               <InteractiveGlobe locations={locations} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="inbox">
+          <InboxManagement />
         </TabsContent>
 
         <TabsContent value="timer">

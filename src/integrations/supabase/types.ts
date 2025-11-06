@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_messages: {
+        Row: {
+          category: string
+          created_at: string
+          email: string
+          error: string | null
+          id: string
+          message: string
+          name: string
+          send_status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          email: string
+          error?: string | null
+          id?: string
+          message: string
+          name: string
+          send_status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email?: string
+          error?: string | null
+          id?: string
+          message?: string
+          name?: string
+          send_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       global_timer: {
         Row: {
           action_link: string | null

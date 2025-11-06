@@ -71,19 +71,19 @@ const Contact = () => {
       if (error) {
         console.error("❌ Error from edge function:", error);
         toast.error(
-          "Maaf, pesan Anda tidak dapat dikirim. Silakan coba lagi atau hubungi melalui WhatsApp.",
+          "Maaf, pesan Anda tidak dapat dikirim.",
           {
-            description: error.message || "Terjadi kesalahan pada server. Pastikan semua field terisi dengan benar."
+            description: "Silakan coba lagi atau hubungi kami melalui WhatsApp."
           }
         );
         return;
       }
 
-      console.log("✅ Email sent successfully");
+      console.log("✅ Message saved successfully:", responseData);
       toast.success(
-        "Terima kasih! Pesan Anda telah kami terima dan akan dibalas secepatnya.",
+        "Terima kasih! Pesan Anda telah kami terima.",
         {
-          description: "Kami akan menghubungi Anda melalui email yang Anda berikan."
+          description: "Tim kami akan segera memproses pesan Anda dan menghubungi Anda secepatnya."
         }
       );
       form.reset();

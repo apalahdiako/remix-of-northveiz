@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,6 +55,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending contact email:", { name: safeName, email: safeEmail, category: safeCategory });
 
+    // First, save to database
+    const { data: savedMessage, error: dbError } = await supabase
+      .from('contact_messages')
+      .insert({
+        name: safeName,
+        email: safeEmail,
+        category: safeCategory,
+        message: safeMessage,
+        send_status: 'received'
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      return new Response(JSON.stringify({ error: "Failed to save message" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("Message saved to database:", savedMessage.id);
+
     const categoryLabel = categoryLabels[safeCategory] || safeCategory;
 
     const emailResponse = await resend.emails.send({
@@ -88,15 +116,43 @@ const handler = async (req: Request): Promise<Response> => {
     if ((emailResponse as any).error) {
       const err: any = (emailResponse as any).error;
       console.error("Resend send error:", err);
-      return new Response(JSON.stringify({ error: err.message || "Email provider error" }), {
-        status: 502,
+      
+      // Update database with failed status
+      await supabase
+        .from('contact_messages')
+        .update({ 
+          send_status: 'fallback_notified',
+          error: err.message 
+        })
+        .eq('id', savedMessage.id);
+      
+      // Still return success since message is saved in database
+      console.log("Email failed but message saved in inbox");
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Pesan Anda telah kami terima dan akan segera kami proses",
+        saved: true,
+        email_sent: false 
+      }), {
+        status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
+    // Update database with notified status
+    await supabase
+      .from('contact_messages')
+      .update({ send_status: 'notified' })
+      .eq('id', savedMessage.id);
+
     console.log("Email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Pesan berhasil dikirim dan email notifikasi terkirim",
+      saved: true,
+      email_sent: true 
+    }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
