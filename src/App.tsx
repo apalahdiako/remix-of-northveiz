@@ -15,6 +15,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Account from "./pages/Account";
 import Community from "./pages/Community";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import BuyNow from "./pages/BuyNow";
@@ -50,6 +51,7 @@ function AppContent() {
         <Route path="/account" element={<Account />} />
         <Route path="/community" element={<Community />} />
         <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/buy-now" element={<BuyNow />} />
         <Route path="/checkout" element={<Checkout />} />
