@@ -216,6 +216,26 @@ export const ProductReviews = ({ productId, productName }: ProductReviewsProps) 
 
   return (
     <div className="space-y-8">
+      {/* Prominent Rating Summary */}
+      {reviews.length > 0 && (
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="flex items-center gap-3">
+                {renderStars(Math.round(parseFloat(averageRating.toString())))}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-5xl font-bold text-primary">{averageRating}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm text-muted-foreground">dari 5.0</span>
+                  <span className="text-sm font-semibold">({reviews.length} Ulasan)</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Review Form - Only for logged-in users who haven't reviewed */}
       {user && !hasUserReviewed && (
         <Card>
@@ -272,17 +292,15 @@ export const ProductReviews = ({ productId, productName }: ProductReviewsProps) 
 
       {/* Reviews Display */}
       <div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h3 className="text-2xl font-bold">
             Ulasan Pelanggan untuk {productName}
+            {reviews.length > 0 && (
+              <span className="ml-2 text-lg text-muted-foreground">
+                ({reviews.length})
+              </span>
+            )}
           </h3>
-          {reviews.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-              <span className="font-bold text-lg">{averageRating}</span>
-              <span className="text-muted-foreground">({reviews.length} Ulasan)</span>
-            </div>
-          )}
         </div>
 
         {loading ? (
