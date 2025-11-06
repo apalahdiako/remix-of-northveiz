@@ -5,6 +5,17 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalTimer } from "@/components/GlobalTimer";
 
+// Payment method logos
+import qrisLogo from "@/assets/payment/qris-new.jpg";
+import alfamartLogo from "@/assets/payment/alfamart-new.jpg";
+import indomaretLogo from "@/assets/payment/indomaret.jpg";
+import akulakuLogo from "@/assets/payment/akulaku-new.jpg";
+import shopeepayLogo from "@/assets/payment/shopeepay-new.jpg";
+import ovoLogo from "@/assets/payment/ovo-new.jpg";
+import briLogo from "@/assets/payment/bri-new.jpg";
+import bniLogo from "@/assets/payment/bni-new.jpg";
+import bcaLogo from "@/assets/payment/bca.jpg";
+
 
 // Shipping method logos
 import jneLogo from "@/assets/shipping/jne.png";
@@ -50,7 +61,35 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <p className="text-sm">Metode pembayaran tersedia saat checkout.</p>
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-4 items-center">
+              <div className="flex items-center justify-center p-2">
+                <img src={qrisLogo} alt="QRIS" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={ovoLogo} alt="OVO" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={shopeepayLogo} alt="ShopeePay" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={akulakuLogo} alt="Akulaku" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={alfamartLogo} alt="Alfamart" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={indomaretLogo} alt="Indomaret" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={briLogo} alt="BRI" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={bniLogo} alt="BNI" className="h-10 w-auto object-contain" />
+              </div>
+              <div className="flex items-center justify-center p-2">
+                <img src={bcaLogo} alt="BCA" className="h-10 w-auto object-contain" />
+              </div>
+            </div>
           </CollapsibleContent>
         </Collapsible>
 
