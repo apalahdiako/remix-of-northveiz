@@ -5,22 +5,6 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalTimer } from "@/components/GlobalTimer";
 
-// Payment method logos
-import qrisLogo from "@/assets/payment/qris.png";
-import ovoLogo from "@/assets/payment/ovo.png";
-import shopeepayLogo from "@/assets/payment/shopeepay.png";
-import akulakuLogo from "@/assets/payment/akulaku.png";
-import alfamartLogo from "@/assets/payment/alfamart.png";
-import mandiriLogo from "@/assets/payment/mandiri.png";
-import briLogo from "@/assets/payment/bri.png";
-import bniLogo from "@/assets/payment/bni.png";
-import permataLogo from "@/assets/payment/permata.png";
-import danamonLogo from "@/assets/payment/danamon.png";
-import bsiLogo from "@/assets/payment/bsi.png";
-import cimbLogo from "@/assets/payment/cimb.png";
-import visaLogo from "@/assets/payment/visa.png";
-import jcbLogo from "@/assets/payment/jcb.png";
-import mastercardLogo from "@/assets/payment/mastercard.png";
 
 // Shipping method logos
 import jneLogo from "@/assets/shipping/jne.png";
@@ -66,67 +50,7 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <div className="flex flex-col gap-6">
-              {/* Row 1: E-Wallets & QR */}
-              <div className="grid grid-cols-6 gap-6 items-center">
-                <div className="flex items-center justify-center h-12">
-                  <img src={qrisLogo} alt="QRIS" className="h-8 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={ovoLogo} alt="OVO" className="h-8 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={shopeepayLogo} alt="ShopeePay" className="h-8 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={akulakuLogo} alt="Akulaku" className="h-10 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={alfamartLogo} alt="Alfamart" className="h-6 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={mandiriLogo} alt="Mandiri" className="h-6 w-auto object-contain filter brightness-0 invert" />
-                </div>
-              </div>
-              
-              {/* Row 2: Banks */}
-              <div className="grid grid-cols-6 gap-6 items-center">
-                <div className="flex items-center justify-center h-12">
-                  <img src={briLogo} alt="BRI" className="h-8 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={bniLogo} alt="BNI" className="h-8 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={permataLogo} alt="PermataBank" className="h-7 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={permataLogo} alt="PermataBank Syariah" className="h-7 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={danamonLogo} alt="Danamon" className="h-6 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={bsiLogo} alt="BSI" className="h-10 w-auto object-contain filter brightness-0 invert" />
-                </div>
-              </div>
-              
-              {/* Row 3: Cards */}
-              <div className="grid grid-cols-6 gap-6 items-center">
-                <div className="flex items-center justify-center h-12">
-                  <img src={cimbLogo} alt="CIMB Niaga" className="h-8 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={visaLogo} alt="VISA" className="h-5 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={jcbLogo} alt="JCB" className="h-10 w-auto object-contain filter brightness-0 invert" />
-                </div>
-                <div className="flex items-center justify-center h-12">
-                  <img src={mastercardLogo} alt="MasterCard" className="h-10 w-auto object-contain filter brightness-0 invert" />
-                </div>
-              </div>
-            </div>
+            <p className="text-sm">Metode pembayaran tersedia saat checkout.</p>
           </CollapsibleContent>
         </Collapsible>
 
