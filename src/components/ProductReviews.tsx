@@ -50,24 +50,33 @@ export const ProductReviews = ({ productId, productName }: ProductReviewsProps) 
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: reviewsData, error } = await supabase
         .from('product_reviews')
-        .select(`
-          id,
-          rating,
-          comment,
-          is_verified_buyer,
-          created_at,
-          profiles:user_id (
-            full_name
-          )
-        `)
+        .select('id, rating, comment, is_verified_buyer, created_at, user_id')
         .eq('product_id', productId)
         .eq('is_moderated', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReviews(data as any || []);
+
+      // Fetch profiles separately
+      if (reviewsData && reviewsData.length > 0) {
+        const userIds = reviewsData.map(r => r.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+
+        // Merge reviews with profiles
+        const reviewsWithProfiles = reviewsData.map(review => ({
+          ...review,
+          profiles: profilesData?.find(p => p.id === review.user_id) || { full_name: null }
+        }));
+        
+        setReviews(reviewsWithProfiles as any);
+      } else {
+        setReviews([]);
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error);
     } finally {

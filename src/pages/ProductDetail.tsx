@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Star } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,13 +39,36 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [frontImage, setFrontImage] = useState<ProductImage | null>(null);
   const [backImage, setBackImage] = useState<ProductImage | null>(null);
+  const [averageRating, setAverageRating] = useState<number>(0);
+  const [totalReviews, setTotalReviews] = useState<number>(0);
   const { addItem } = useCart();
 
   useEffect(() => {
     if (id) {
       fetchProductDetails();
+      fetchProductRating();
     }
   }, [id]);
+
+  const fetchProductRating = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select('rating')
+        .eq('product_id', id)
+        .eq('is_moderated', true);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const avg = data.reduce((sum, review) => sum + review.rating, 0) / data.length;
+        setAverageRating(avg);
+        setTotalReviews(data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching rating:', error);
+    }
+  };
 
   const fetchProductDetails = async () => {
     try {
@@ -267,7 +290,27 @@ const ProductDetail = () => {
         )}
 
         {/* Product Title */}
-        <h1 className="text-3xl font-bold mb-4 uppercase tracking-tight">{product.name}</h1>
+        <h1 className="text-3xl font-bold mb-2 uppercase tracking-tight">{product.name}</h1>
+        
+        {/* Rating Display */}
+        {totalReviews > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-5 h-5 ${
+                    star <= Math.round(averageRating)
+                      ? 'fill-yellow-500 text-yellow-500'
+                      : 'text-muted-foreground'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-base font-bold">{averageRating.toFixed(1)}</span>
+            <span className="text-sm text-muted-foreground">({totalReviews})</span>
+          </div>
+        )}
 
         {/* Price and Wishlist */}
         <div className="flex items-center justify-between mb-8">
