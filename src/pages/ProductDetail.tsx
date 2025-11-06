@@ -7,7 +7,11 @@ import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getProductImageFallback } from "@/lib/productImageFallbacks";
-import { Product360Viewer } from "@/components/Product360Viewer";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 interface Product {
@@ -29,9 +33,11 @@ interface ProductImage {
 const ProductDetail = () => {
   const { id } = useParams();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [showBack, setShowBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
-  const [productImages, setProductImages] = useState<string[]>([]);
+  const [frontImage, setFrontImage] = useState<ProductImage | null>(null);
+  const [backImage, setBackImage] = useState<ProductImage | null>(null);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -54,7 +60,7 @@ const ProductDetail = () => {
       if (productError) throw productError;
       setProduct(productData as Product);
 
-      // Fetch product images
+      // Fetch product images (front and back)
       const { data: imagesData, error: imagesError } = await supabase
         .from('product_images')
         .select('*')
@@ -62,44 +68,30 @@ const ProductDetail = () => {
         .order('display_order', { ascending: true });
 
       if (imagesError) throw imagesError;
+      
+      // Priority: explicit 'front' > is_primary=true > first by display_order
+      const front = (imagesData?.find(img => img.image_type === 'front') as ProductImage)
+        || (imagesData?.find(img => img.is_primary) as ProductImage)
+        || (imagesData && (imagesData[0] as ProductImage))
+        || null;
 
-      // Get fallback images if database images don't exist
-      const fallback = getProductImageFallback(id);
-      
-      // Build 360° image array - prioritize database images, then fallbacks
-      const images: string[] = [];
-      
-      // Add front image
-      const frontImg = imagesData?.find(img => img.image_type === 'front') 
-        || imagesData?.find(img => img.is_primary) 
-        || imagesData?.[0];
-      
-      if (frontImg) {
-        images.push(frontImg.image_url);
-      } else if (fallback?.front) {
-        images.push(fallback.front);
-      } else if ((productData as any)?.image) {
-        images.push((productData as any).image);
+      // Back image only when explicitly set as 'back'
+      const back = imagesData?.find(img => img.image_type === 'back') as ProductImage || null;
+
+      if (!front && (productData as any)?.image) {
+        // Fallback to legacy products.image field
+        setFrontImage({
+          id: 'fallback',
+          product_id: id!,
+          image_url: (productData as any).image,
+          display_order: 0,
+          is_primary: true,
+          image_type: 'front'
+        });
+      } else {
+        setFrontImage(front);
       }
-
-      // Add back image
-      const backImg = imagesData?.find(img => img.image_type === 'back');
-      if (backImg) {
-        images.push(backImg.image_url);
-      } else if (fallback?.back) {
-        images.push(fallback.back);
-      }
-
-      // Add any additional gallery images
-      const galleryImgs = imagesData?.filter(img => 
-        img.image_type === 'gallery' && 
-        img.id !== frontImg?.id && 
-        img.id !== backImg?.id
-      ) || [];
-      
-      galleryImgs.forEach(img => images.push(img.image_url));
-
-      setProductImages(images.length > 0 ? images : ['/placeholder.svg']);
+      setBackImage(back);
     } catch (error) {
       console.error('Error fetching product:', error);
       toast({
@@ -128,7 +120,7 @@ const ProductDetail = () => {
       id: id!,
       name: product.name,
       price: parseFloat(product.price.replace(/[^0-9]/g, "")),
-      image: productImages[0] || '',
+      image: frontImage?.image_url || '',
       size: selectedSize,
     });
 
@@ -179,20 +171,87 @@ const ProductDetail = () => {
     );
   }
 
+  const currentImage = showBack && backImage ? backImage : frontImage;
+  const fallback = getProductImageFallback(id || undefined);
+  const hasBackImage = !!backImage || !!fallback?.back;
+  const displayUrl = (showBack
+    ? (backImage?.image_url || fallback?.back)
+    : (frontImage?.image_url || fallback?.front)
+  ) || (product as any)?.image || '/placeholder.svg';
+
+  // Prepare thumbnail images array
+  const thumbnailImages = [
+    {
+      url: frontImage?.image_url || fallback?.front || (product as any)?.image || '/placeholder.svg',
+      type: 'front',
+      label: 'Depan'
+    },
+    ...(hasBackImage ? [{
+      url: backImage?.image_url || fallback?.back || '/placeholder.svg',
+      type: 'back',
+      label: 'Belakang'
+    }] : [])
+  ];
+
   return (
     <div className="min-h-screen pb-24">
-      {/* 360° Product Viewer */}
-      <Product360Viewer
-        images={productImages}
-        productName={product.name}
-        onError={() => {
-          toast({
-            title: "Error loading images",
-            description: "Failed to load product images",
-            variant: "destructive",
-          });
-        }}
-      />
+      {/* Product Image with Toggle */}
+      <div className="relative">
+        <div className="aspect-square w-full bg-muted relative overflow-hidden">
+          <img
+            src={displayUrl + (currentImage ? `?v=${currentImage.id}` : '')}
+            alt={`${product?.name} ${showBack ? 'belakang' : 'depan'}`}
+            className="w-full h-full object-cover transition-opacity duration-300 animate-fade-in"
+            key={`${showBack ? 'back' : 'front'}-${currentImage?.id || (showBack ? 'fallback-back' : 'fallback-front')}`}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback?.front || '/placeholder.svg'; }}
+          />
+        </div>
+
+        {/* Thumbnail Slider */}
+        {hasBackImage && (
+          <div className="px-4 py-4">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: false,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2">
+                {thumbnailImages.map((thumb, index) => (
+                  <CarouselItem key={thumb.type} className="basis-1/4 pl-2">
+                    <button
+                      onClick={() => setShowBack(thumb.type === 'back')}
+                      className={`relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all ${
+                        (showBack && thumb.type === 'back') || (!showBack && thumb.type === 'front')
+                          ? 'border-foreground scale-95'
+                          : 'border-border hover:border-foreground/50'
+                      }`}
+                    >
+                      <img
+                        src={thumb.url}
+                        alt={`${product?.name} ${thumb.label}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (thumb.type === 'front') {
+                            img.src = fallback?.front || '/placeholder.svg';
+                          } else {
+                            img.src = fallback?.back || '/placeholder.svg';
+                          }
+                        }}
+                      />
+                    </button>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+        )}
+      </div>
       <div className="container px-6 pb-6">
         {/* Status Badge */}
         {product.stock_status === 'coming_soon' && (
