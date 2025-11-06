@@ -12,6 +12,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { ProductReviews } from "@/components/ProductReviews";
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 interface Product {
@@ -310,6 +311,14 @@ const ProductDetail = () => {
             ? 'Coming Soon'
             : 'Add to Cart'}
         </Button>
+
+        {/* Product Reviews Section */}
+        <div className="mt-12 border-t pt-8">
+          <ProductReviews 
+            productId={id!} 
+            productName={product.name}
+          />
+        </div>
       </div>
     </div>
   );
