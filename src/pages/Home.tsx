@@ -100,11 +100,11 @@ const Home = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
             <div className="flex gap-8 items-center">
-              <div className="flex items-center justify-center p-2">
-                <img src={jneLogo} alt="JNE Express" className="h-10 w-auto object-contain" />
+              <div className="flex items-center justify-center p-2 w-32">
+                <img src={jneLogo} alt="JNE Express" className="w-full h-auto object-contain" />
               </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={jntLogo} alt="J&T Express" className="h-10 w-auto object-contain" />
+              <div className="flex items-center justify-center p-2 w-32">
+                <img src={jntLogo} alt="J&T Express" className="w-full h-auto object-contain" />
               </div>
             </div>
           </CollapsibleContent>
