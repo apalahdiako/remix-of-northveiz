@@ -322,6 +322,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          phone: string | null
           updated_at: string | null
         }
         Insert: {
@@ -329,6 +330,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          phone?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -336,7 +338,47 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_addresses: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          phone: string
+          postal_code: string
+          street: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          phone: string
+          postal_code: string
+          street: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          phone?: string
+          postal_code?: string
+          street?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
