@@ -48,8 +48,16 @@ const Contact = () => {
 
   const onSubmit = async (data: ContactFormValues) => {
     setIsSubmitting(true);
+    
     try {
-      const { error } = await supabase.functions.invoke("send-contact-email", {
+      console.log("📧 Sending contact form:", {
+        name: data.name,
+        email: data.email,
+        category: data.category,
+        messageLength: data.message.length
+      });
+      
+      const { data: responseData, error } = await supabase.functions.invoke("send-contact-email", {
         body: {
           name: data.name,
           email: data.email,
@@ -58,13 +66,36 @@ const Contact = () => {
         },
       });
 
-      if (error) throw error;
+      console.log("📬 Response:", { responseData, error });
 
-      toast.success("Terima kasih! Pesan Anda telah kami terima dan akan dibalas secepatnya.");
+      if (error) {
+        console.error("❌ Error from edge function:", error);
+        toast.error(
+          "Maaf, pesan Anda tidak dapat dikirim. Silakan coba lagi atau hubungi melalui WhatsApp.",
+          {
+            description: error.message || "Terjadi kesalahan pada server. Pastikan semua field terisi dengan benar."
+          }
+        );
+        return;
+      }
+
+      console.log("✅ Email sent successfully");
+      toast.success(
+        "Terima kasih! Pesan Anda telah kami terima dan akan dibalas secepatnya.",
+        {
+          description: "Kami akan menghubungi Anda melalui email yang Anda berikan."
+        }
+      );
       form.reset();
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error("Gagal mengirim pesan. Silakan coba lagi.");
+      
+    } catch (error: any) {
+      console.error("💥 Unexpected error:", error);
+      toast.error(
+        "Maaf, pesan Anda tidak dapat dikirim. Silakan coba lagi atau hubungi melalui WhatsApp.",
+        {
+          description: error.message || "Terjadi kesalahan jaringan. Periksa koneksi internet Anda."
+        }
+      );
     } finally {
       setIsSubmitting(false);
     }
