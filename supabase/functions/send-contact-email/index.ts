@@ -6,6 +6,7 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface ContactEmailRequest {
@@ -30,15 +31,32 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, category, message }: ContactEmailRequest = await req.json();
 
-    console.log("Sending contact email:", { name, email, category });
+    // Basic server-side validation and sanitization
+    if (
+      !name || name.trim().length < 2 ||
+      !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ||
+      !message || message.trim().length < 10
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid payload" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
-    const categoryLabel = categoryLabels[category] || category;
+    const safeName = name.trim().slice(0, 100);
+    const safeEmail = email.trim().slice(0, 255);
+    const safeCategory = (category || "general").toLowerCase();
+    const safeMessage = message.trim().slice(0, 2000);
+
+    console.log("Sending contact email:", { name: safeName, email: safeEmail, category: safeCategory });
+
+    const categoryLabel = categoryLabels[safeCategory] || safeCategory;
 
     const emailResponse = await resend.emails.send({
       from: "Northveiz Store <onboarding@resend.dev>",
       to: ["northveiz@gmail.com"],
-      replyTo: email,
-      subject: `[WEBSITE CONTACT] ${categoryLabel} - ${name}`,
+      replyTo: safeEmail,
+      subject: `[WEBSITE CONTACT] ${categoryLabel} - ${safeName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333; border-bottom: 2px solid #000; padding-bottom: 10px;">
@@ -46,15 +64,15 @@ const handler = async (req: Request): Promise<Response> => {
           </h2>
           
           <div style="margin: 20px 0;">
-            <p style="margin: 10px 0;"><strong>Name:</strong> ${name}</p>
-            <p style="margin: 10px 0;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 10px 0;"><strong>Name:</strong> ${safeName}</p>
+            <p style="margin: 10px 0;"><strong>Email:</strong> ${safeEmail}</p>
             <p style="margin: 10px 0;"><strong>Category:</strong> ${categoryLabel}</p>
           </div>
           
           <div style="margin: 20px 0;">
             <p style="margin: 10px 0;"><strong>Message:</strong></p>
             <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap;">
-              ${message}
+              ${safeMessage}
             </div>
           </div>
           
@@ -66,6 +84,15 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `,
     });
+
+    if ((emailResponse as any).error) {
+      const err: any = (emailResponse as any).error;
+      console.error("Resend send error:", err);
+      return new Response(JSON.stringify({ error: err.message || "Email provider error" }), {
+        status: 502,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     console.log("Email sent successfully:", emailResponse);
 
