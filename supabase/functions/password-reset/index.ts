@@ -68,10 +68,12 @@ const handler = async (req: Request): Promise<Response> => {
       const maskedEmail = `${localPart[0]}${"*".repeat(Math.min(localPart.length - 2, 3))}${localPart[localPart.length - 1]}@${domain}`;
 
       // Send email with code
+      console.log(`Sending verification code email to: ${email}`);
+      
       const emailResponse = await resend.emails.send({
         from: "NRTVZ <onboarding@resend.dev>",
         to: [email],
-        subject: "Kode Verifikasi Reset Password - NRTVZ",
+        subject: "🔒 Kode Verifikasi Reset Password - NRTVZ",
         html: `
           <!DOCTYPE html>
           <html>
