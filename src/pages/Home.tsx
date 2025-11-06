@@ -66,59 +66,65 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 items-center">
-              {/* E-Wallets & QR */}
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={qrisLogo} alt="QRIS" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={ovoLogo} alt="OVO" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={shopeepayLogo} alt="ShopeePay" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={akulakuLogo} alt="Akulaku" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={alfamartLogo} alt="Alfamart" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={mandiriLogo} alt="Mandiri" className="h-full w-auto object-contain" />
-              </div>
-              
-              {/* Banks */}
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={briLogo} alt="BRI" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={bniLogo} alt="BNI" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={permataLogo} alt="PermataBank" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={permataLogo} alt="PermataBank Syariah" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={danamonLogo} alt="Danamon" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={bsiLogo} alt="BSI" className="h-full w-auto object-contain" />
+            <div className="flex flex-col gap-6">
+              {/* Row 1: E-Wallets & QR */}
+              <div className="grid grid-cols-6 gap-6 items-center">
+                <div className="flex items-center justify-center h-12">
+                  <img src={qrisLogo} alt="QRIS" className="h-8 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={ovoLogo} alt="OVO" className="h-8 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={shopeepayLogo} alt="ShopeePay" className="h-8 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={akulakuLogo} alt="Akulaku" className="h-10 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={alfamartLogo} alt="Alfamart" className="h-6 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={mandiriLogo} alt="Mandiri" className="h-6 w-auto object-contain filter brightness-0 invert" />
+                </div>
               </div>
               
-              {/* Cards */}
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={cimbLogo} alt="CIMB Niaga" className="h-full w-auto object-contain" />
+              {/* Row 2: Banks */}
+              <div className="grid grid-cols-6 gap-6 items-center">
+                <div className="flex items-center justify-center h-12">
+                  <img src={briLogo} alt="BRI" className="h-8 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={bniLogo} alt="BNI" className="h-8 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={permataLogo} alt="PermataBank" className="h-7 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={permataLogo} alt="PermataBank Syariah" className="h-7 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={danamonLogo} alt="Danamon" className="h-6 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={bsiLogo} alt="BSI" className="h-10 w-auto object-contain filter brightness-0 invert" />
+                </div>
               </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={visaLogo} alt="VISA" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={jcbLogo} alt="JCB" className="h-full w-auto object-contain" />
-              </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={mastercardLogo} alt="MasterCard" className="h-full w-auto object-contain" />
+              
+              {/* Row 3: Cards */}
+              <div className="grid grid-cols-6 gap-6 items-center">
+                <div className="flex items-center justify-center h-12">
+                  <img src={cimbLogo} alt="CIMB Niaga" className="h-8 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={visaLogo} alt="VISA" className="h-5 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={jcbLogo} alt="JCB" className="h-10 w-auto object-contain filter brightness-0 invert" />
+                </div>
+                <div className="flex items-center justify-center h-12">
+                  <img src={mastercardLogo} alt="MasterCard" className="h-10 w-auto object-contain filter brightness-0 invert" />
+                </div>
               </div>
             </div>
           </CollapsibleContent>
@@ -130,12 +136,12 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center max-w-md">
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={jneLogo} alt="JNE" className="h-full w-auto object-contain" />
+            <div className="flex gap-12 items-center">
+              <div className="flex items-center justify-center h-12">
+                <img src={jneLogo} alt="JNE Express" className="h-10 w-auto object-contain filter brightness-0 invert" />
               </div>
-              <div className="bg-background rounded p-2 flex items-center justify-center h-16">
-                <img src={dhlLogo} alt="DHL" className="h-full w-auto object-contain" />
+              <div className="flex items-center justify-center h-12">
+                <img src={dhlLogo} alt="DHL" className="h-8 w-auto object-contain filter brightness-0 invert" />
               </div>
             </div>
           </CollapsibleContent>
