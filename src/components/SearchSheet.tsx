@@ -23,9 +23,6 @@ const availableProducts = [
 const popularSearches = [
   "HOODIE PECAH POLA",
   "KEMEJA STREETWEAR", 
-  "CALLE BALL",
-  "ZIP HOODIE",
-  "BRAZIL",
   "STREETWEAR",
 ];
 
