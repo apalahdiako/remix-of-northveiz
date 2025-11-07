@@ -84,7 +84,15 @@
   },
   "community": {
     "title": "KOMUNITAS",
-    "comingSoon": "Segera hadir..."
+    "comingSoon": "Segera hadir...",
+    "loginRequired": "Silakan login untuk melihat feed komunitas",
+    "noPostsYet": "Belum ada postingan",
+    "likes": "Suka",
+    "comments": "Komentar",
+    "addComment": "Tambahkan komentar...",
+    "post": "Kirim",
+    "viewComments": "Lihat komentar",
+    "hideComments": "Sembunyikan komentar"
   },
   "notFound": {
     "title": "404",

@@ -18,6 +18,7 @@ import ProductManagement from "@/components/admin/ProductManagement";
 import ProductImageManagement from "@/components/admin/ProductImageManagement";
 import { OrderManagement } from "@/components/admin/OrderManagement";
 import { InboxManagement } from "@/components/admin/InboxManagement";
+import { CommunityManagement } from "@/components/admin/CommunityManagement";
 
 interface UserProfile {
   id: string;
@@ -302,6 +303,9 @@ Tim NORTHVEIZ`);
             <ShoppingBag className="mr-2 h-4 w-4" />
             Pesanan
           </TabsTrigger>
+          <TabsTrigger value="community">
+            Komunitas
+          </TabsTrigger>
           <TabsTrigger value="email">
             <MailIcon className="mr-2 h-4 w-4" />
             Kirim Email
@@ -342,6 +346,10 @@ Tim NORTHVEIZ`);
 
         <TabsContent value="orders">
           <OrderManagement />
+        </TabsContent>
+
+        <TabsContent value="community">
+          <CommunityManagement />
         </TabsContent>
 
         <TabsContent value="email">

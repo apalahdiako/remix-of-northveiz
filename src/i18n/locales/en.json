@@ -84,7 +84,15 @@
   },
   "community": {
     "title": "COMMUNITY",
-    "comingSoon": "Coming soon..."
+    "comingSoon": "Coming soon...",
+    "loginRequired": "Please login to view community feed",
+    "noPostsYet": "No posts yet",
+    "likes": "Likes",
+    "comments": "Comments",
+    "addComment": "Add a comment...",
+    "post": "Post",
+    "viewComments": "View comments",
+    "hideComments": "Hide comments"
   },
   "notFound": {
     "title": "404",
