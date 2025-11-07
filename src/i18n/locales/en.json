@@ -63,7 +63,10 @@
       "subtitle": "Streetwear with Indonesian Soul"
     },
     "featured": "Featured Products",
-    "viewAll": "View All Products"
+    "viewAll": "View All Products",
+    "shopButton": "SHOP HERE",
+    "paymentMethods": "Payment Methods",
+    "shippingMethods": "Shipping Methods"
   },
   "catalog": {
     "title": "Our Collection",
@@ -73,6 +76,19 @@
     "title": "About NRTVZ",
     "story": "Our Story",
     "mission": "Our Mission",
-    "values": "Our Values"
+    "values": "Our Values",
+    "founderTitle": "Founder Brand",
+    "brandStory": "Founded in 2024 in Cirebon by a young man named Bayu Raja Syah while still in school at the age of 17, NORTHVEIZ was born from a determination to not only create what people see but also what they feel with their hands, not just a result but a story about a meaningful process, about decisions made with the heart and about the spirit to always give the best. Our vision is to become a brand that inspires the younger generation to dare to be different and confident in all situations. By continuing to grow, we are determined to provide products that not only follow trends but also create new standards in the fashion world. This is still part of the brand's journey and we can't wait to continue this story together because this is just the beginning, not the end of a journey, but something much bigger in the future.",
+    "socialMedia": "Social Media",
+    "footer": "© 2025 - NORTHVEIZ - STREETWEAR"
+  },
+  "community": {
+    "title": "COMMUNITY",
+    "comingSoon": "Coming soon..."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Oops! Page not found",
+    "returnHome": "Return to Home"
   }
 }

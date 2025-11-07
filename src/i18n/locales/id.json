@@ -63,7 +63,10 @@
       "subtitle": "Streetwear dengan Jiwa Indonesia"
     },
     "featured": "Produk Unggulan",
-    "viewAll": "Lihat Semua Produk"
+    "viewAll": "Lihat Semua Produk",
+    "shopButton": "BELANJA SEKARANG",
+    "paymentMethods": "Metode Pembayaran",
+    "shippingMethods": "Metode Pengiriman"
   },
   "catalog": {
     "title": "Koleksi Kami",
@@ -73,6 +76,19 @@
     "title": "Tentang NRTVZ",
     "story": "Kisah Kami",
     "mission": "Misi Kami",
-    "values": "Nilai-nilai Kami"
+    "values": "Nilai-nilai Kami",
+    "founderTitle": "Founder Brand",
+    "brandStory": "Didirikan pada tahun 2024 di cirebon oleh anak muda bernama Bayu raja syah saat masih sekolah di umur 17, NORTHVEIZ lahir dari tekad untuk tidak hanya menciptakan apa yang dilihat orang tapi juga apa yang mereka rasakan dengan tangan bukan hanya sebuah hasil tetapi sebuah cerita tentang proses yang penuh makna tentang keputusan yang diambil dengan hati dan tentang semangat untuk selalu memberikan yang terbaik..dan visi kami ingin menjadi brand yang menginspirasi generasi muda untuk berani tampil beda dan percaya diri dalam segala situasi dengan terus berkembang kami bertekad untuk memberikan produk yang tidak hanya mengikuti tren tetapi juga menciptakan standar baru dalam dunia fashion..ini masih dari bagian perjalanan brand dan kami tidak sabar untuk melanjutkan kisah ini bersama karna ini baru awal bukan akhir dari suatu perjalanan tetapi sesuatu yang jauh lebih besar di masa depan..",
+    "socialMedia": "Media Sosial",
+    "footer": "© 2025 - NORTHVEIZ - STREETWEAR"
+  },
+  "community": {
+    "title": "KOMUNITAS",
+    "comingSoon": "Segera hadir..."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Oops! Halaman tidak ditemukan",
+    "returnHome": "Kembali ke Beranda"
   }
 }

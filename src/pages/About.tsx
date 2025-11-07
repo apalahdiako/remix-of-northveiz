@@ -1,15 +1,18 @@
 import { Instagram } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
+import { useTranslation } from "react-i18next";
 import founderPhoto from "@/assets/founder-photo.png";
 import logo from "@/assets/logo.png";
 
 const About = () => {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen flex flex-col">
       <div className="container px-6 py-12 max-w-4xl mx-auto flex-grow">
         {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">
-          Founder Brand
+          {t("about.founderTitle")}
         </h1>
         
         {/* Founder Photo */}
@@ -35,14 +38,14 @@ const About = () => {
         {/* Brand Story */}
         <div className="space-y-4 text-muted-foreground leading-relaxed text-center mb-12 md:mb-16">
           <p className="text-sm md:text-base">
-            Didirikan pada tahun 2024 di cirebon oleh anak muda bernama Bayu raja syah saat masih sekolah di umur 17, NORTHVEIZ lahir dari tekad untuk tidak hanya menciptakan apa yang dilihat orang tapi juga apa yang mereka rasakan dengan tangan bukan hanya sebuah hasil tetapi sebuah cerita tentang proses yang penuh makna tentang keputusan yang diambil dengan hati dan tentang semangat untuk selalu memberikan yang terbaik..dan visi kami ingin menjadi brand yang menginspirasi generasi muda untuk berani tampil beda dan percaya diri dalam segala situasi dengan terus berkembang kami bertekad untuk memberikan produk yang tidak hanya mengikuti tren tetapi juga menciptakan standar baru dalam dunia fashion..ini masih dari bagian perjalanan brand dan kami tidak sabar untuk melanjutkan kisah ini bersama karna ini baru awal bukan akhir dari suatu perjalanan tetapi sesuatu yang jauh lebih besar di masa depan..
+            {t("about.brandStory")}
           </p>
         </div>
 
         {/* Social Media Section */}
         <div className="text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 tracking-wider">
-            SOCIAL MEDIA
+            {t("about.socialMedia").toUpperCase()}
           </h2>
           
           <div className="flex justify-center items-center gap-8 md:gap-12">
@@ -74,7 +77,7 @@ const About = () => {
       {/* Footer */}
       <footer className="py-6 text-center border-t">
         <p className="text-xs md:text-sm text-muted-foreground">
-          © 2025 - NORTHVEIZ - STREETWEAR
+          {t("about.footer")}
         </p>
       </footer>
     </div>

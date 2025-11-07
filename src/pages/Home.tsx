@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import heroVideo from "@/assets/hero-video.mp4";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -21,6 +22,8 @@ import bcaLogo from "@/assets/payment/bca.jpg";
 import jneLogo from "@/assets/shipping/jne-new.jpg";
 
 const Home = () => {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -43,7 +46,7 @@ const Home = () => {
               size="lg"
               className="h-14 px-12 text-lg font-bold rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all hover:scale-105"
             >
-              SHOP HERE
+              {t("home.shopButton")}
             </Button>
           </Link>
         </div>
@@ -56,7 +59,7 @@ const Home = () => {
       <section className="bg-foreground text-background">
         <Collapsible className="border-b border-background/20">
           <CollapsibleTrigger className="flex items-center justify-between w-full px-6 py-5 text-left">
-            <h3 className="text-xl font-bold">Metode Pembayaran</h3>
+            <h3 className="text-xl font-bold">{t("home.paymentMethods")}</h3>
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
@@ -94,7 +97,7 @@ const Home = () => {
 
         <Collapsible className="border-b border-background/20">
           <CollapsibleTrigger className="flex items-center justify-between w-full px-6 py-5 text-left">
-            <h3 className="text-xl font-bold">Metode Pengiriman</h3>
+            <h3 className="text-xl font-bold">{t("home.shippingMethods")}</h3>
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
