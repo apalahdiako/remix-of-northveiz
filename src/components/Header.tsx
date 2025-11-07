@@ -48,7 +48,7 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
         </Button>
 
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="NRTVZ" className="h-10 w-auto md:h-12" />
+          <img src={logo} alt="NRTVZ" className="h-[27px] w-auto" />
         </Link>
 
         <div className="flex items-center gap-2">
