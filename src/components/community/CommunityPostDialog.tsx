@@ -143,18 +143,18 @@ export function CommunityPostDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
-        <div className="grid md:grid-cols-2 gap-0 h-full">
+        <div className="grid md:grid-cols-2 gap-0 h-full max-h-[90vh]">
           {/* Image Section */}
-          <div className="relative bg-black flex items-center justify-center">
+          <div className="relative bg-black flex items-center justify-center max-h-[90vh] md:max-h-full">
             <img
               src={post.image_url}
               alt={post.caption || "Community post"}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]"
             />
           </div>
 
           {/* Content Section */}
-          <div className="flex flex-col h-full max-h-[90vh]">
+          <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
             {/* Instagram Link */}
             {post.instagram_username && (
               <div className="p-4 border-b">
@@ -206,7 +206,7 @@ export function CommunityPostDialog({
             {/* Comments Section */}
             {showComments && (
               <>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                   {comments.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
                       {t("community.noPostsYet")}
