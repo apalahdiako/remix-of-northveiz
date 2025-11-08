@@ -16,6 +16,7 @@ interface Post {
   caption: string | null;
   created_at: string;
   is_visible: boolean;
+  instagram_username: string | null;
 }
 
 interface Comment {
@@ -37,6 +38,7 @@ export function CommunityManagement() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [caption, setCaption] = useState("");
+  const [instagramUsername, setInstagramUsername] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -112,6 +114,7 @@ export function CommunityManagement() {
     const { error } = await supabase.from("community_posts").insert({
       image_url: imageUrl.trim(),
       caption: caption.trim() || null,
+      instagram_username: instagramUsername.trim() || null,
       user_id: userData.user.id,
     });
 
@@ -122,6 +125,7 @@ export function CommunityManagement() {
       toast.success("Post added successfully");
       setImageUrl("");
       setCaption("");
+      setInstagramUsername("");
       fetchPosts();
     }
     setLoading(false);
@@ -215,6 +219,17 @@ export function CommunityManagement() {
               placeholder="Add a caption..."
               rows={3}
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Instagram Username (Optional)</label>
+            <Input
+              value={instagramUsername}
+              onChange={(e) => setInstagramUsername(e.target.value)}
+              placeholder="@username"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Enter Instagram username (with or without @). Will be displayed as a clickable link.
+            </p>
           </div>
           <Button onClick={handleAddPost} disabled={loading}>
             <Upload className="h-4 w-4 mr-2" />

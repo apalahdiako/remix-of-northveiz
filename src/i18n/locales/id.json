@@ -92,7 +92,8 @@
     "addComment": "Tambahkan komentar...",
     "post": "Kirim",
     "viewComments": "Lihat komentar",
-    "hideComments": "Sembunyikan komentar"
+    "hideComments": "Sembunyikan komentar",
+    "viewAllComments": "Lihat {{count}} komentar"
   },
   "notFound": {
     "title": "404",

@@ -92,7 +92,8 @@
     "addComment": "Add a comment...",
     "post": "Post",
     "viewComments": "View comments",
-    "hideComments": "Hide comments"
+    "hideComments": "Hide comments",
+    "viewAllComments": "View all {{count}} comments"
   },
   "notFound": {
     "title": "404",

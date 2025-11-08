@@ -14,11 +14,14 @@ interface Post {
   caption: string | null;
   created_at: string;
   user_id: string;
+  instagram_username: string | null;
 }
 
 interface PostWithStats extends Post {
   likesCount: number;
   isLiked: boolean;
+  latestComment?: string;
+  commentsCount: number;
 }
 
 const Community = () => {
@@ -53,10 +56,10 @@ const Community = () => {
       return;
     }
 
-    // Fetch likes for all posts
+    // Fetch likes and comments for all posts
     const postsWithStats: PostWithStats[] = await Promise.all(
       (postsData || []).map(async (post) => {
-        const { count } = await supabase
+        const { count: likesCount } = await supabase
           .from("community_likes")
           .select("*", { count: "exact", head: true })
           .eq("post_id", post.id);
@@ -68,10 +71,27 @@ const Community = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
+        const { count: commentsCount } = await supabase
+          .from("community_comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id)
+          .eq("is_visible", true);
+
+        const { data: latestCommentData } = await supabase
+          .from("community_comments")
+          .select("comment")
+          .eq("post_id", post.id)
+          .eq("is_visible", true)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         return {
           ...post,
-          likesCount: count || 0,
+          likesCount: likesCount || 0,
           isLiked: !!userLike,
+          latestComment: latestCommentData?.comment,
+          commentsCount: commentsCount || 0,
         };
       })
     );
@@ -192,25 +212,43 @@ const Community = () => {
           <p className="text-muted-foreground">{t("community.noPostsYet")}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {posts.map((post) => (
             <div
               key={post.id}
-              className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg bg-muted"
+              className="flex flex-col gap-2 cursor-pointer"
               onClick={() => openPostDialog(post)}
             >
-              <img
-                src={post.image_url}
-                alt={post.caption || "Community post"}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <div className="flex items-center gap-4 text-white">
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-6 w-6 fill-white" />
-                    <span className="font-semibold">{post.likesCount}</span>
+              <div className="relative group aspect-square overflow-hidden rounded-lg bg-muted">
+                <img
+                  src={post.image_url}
+                  alt={post.caption || "Community post"}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="flex items-center gap-4 text-white">
+                    <div className="flex items-center gap-1">
+                      <Heart className="h-6 w-6 fill-white" />
+                      <span className="font-semibold">{post.likesCount}</span>
+                    </div>
                   </div>
                 </div>
+              </div>
+              <div className="flex flex-col gap-1 px-1">
+                <div className="flex items-center gap-2 text-sm">
+                  <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                  <span className="font-semibold">{post.likesCount} {t("community.likes")}</span>
+                </div>
+                {post.latestComment && (
+                  <p className="text-xs text-muted-foreground line-clamp-1">
+                    {post.latestComment}
+                  </p>
+                )}
+                {post.commentsCount > 0 && (
+                  <button className="text-xs text-muted-foreground text-left hover:text-foreground">
+                    {t("community.viewAllComments", { count: post.commentsCount })}
+                  </button>
+                )}
               </div>
             </div>
           ))}

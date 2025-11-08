@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, MessageCircle, Send } from "lucide-react";
+import { Heart, MessageCircle, Send, Instagram } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,7 @@ interface CommunityPostDialogProps {
     caption: string | null;
     created_at: string;
     user_id: string;
+    instagram_username: string | null;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -154,6 +155,21 @@ export function CommunityPostDialog({
 
           {/* Content Section */}
           <div className="flex flex-col h-full max-h-[90vh]">
+            {/* Instagram Link */}
+            {post.instagram_username && (
+              <div className="p-4 border-b">
+                <a
+                  href={`https://instagram.com/${post.instagram_username.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                >
+                  <Instagram className="h-5 w-5" />
+                  <span>@{post.instagram_username.replace('@', '')}</span>
+                </a>
+              </div>
+            )}
+
             {/* Caption */}
             {post.caption && (
               <div className="p-4 border-b">
