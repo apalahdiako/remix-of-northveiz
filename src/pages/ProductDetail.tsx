@@ -47,6 +47,7 @@ const ProductDetail = () => {
   const [averageRating, setAverageRating] = useState<number>(0);
   const [totalReviews, setTotalReviews] = useState<number>(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [mainCarouselApi, setMainCarouselApi] = useState<CarouselApi>();
   const [currentThumbnail, setCurrentThumbnail] = useState(0);
   const autoplayPlugin = useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
@@ -164,16 +165,32 @@ const ProductDetail = () => {
     });
   };
 
-  // Setup carousel API for tracking current slide
+  // Sync both carousels
   useEffect(() => {
-    if (!carouselApi) return;
+    if (!carouselApi || !mainCarouselApi) return;
 
-    carouselApi.on("select", () => {
-      setCurrentThumbnail(carouselApi.selectedScrollSnap());
+    const onThumbnailSelect = () => {
       const index = carouselApi.selectedScrollSnap();
-      setShowBack(index === 1 && hasBackImage);
-    });
-  }, [carouselApi]);
+      setCurrentThumbnail(index);
+      setShowBack(index === 1);
+      mainCarouselApi.scrollTo(index);
+    };
+
+    const onMainSelect = () => {
+      const index = mainCarouselApi.selectedScrollSnap();
+      setCurrentThumbnail(index);
+      setShowBack(index === 1);
+      carouselApi.scrollTo(index);
+    };
+
+    carouselApi.on("select", onThumbnailSelect);
+    mainCarouselApi.on("select", onMainSelect);
+
+    return () => {
+      carouselApi.off("select", onThumbnailSelect);
+      mainCarouselApi.off("select", onMainSelect);
+    };
+  }, [carouselApi, mainCarouselApi]);
 
   // Setup realtime subscription for image updates
   useEffect(() => {
@@ -240,19 +257,40 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen pb-24 pt-16">
-      {/* Product Image with Toggle */}
+      {/* Product Image Carousel */}
       <div className="relative">
-        <div className="aspect-square w-full bg-muted relative overflow-hidden">
-          <img
-            src={displayUrl + (currentImage ? `?v=${currentImage.id}` : '')}
-            alt={`${product?.name} ${showBack ? 'belakang' : 'depan'}`}
-            className="w-full h-full object-cover transition-opacity duration-300 animate-fade-in"
-            key={`${showBack ? 'back' : 'front'}-${currentImage?.id || (showBack ? 'fallback-back' : 'fallback-front')}`}
-            loading="lazy"
-            decoding="async"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback?.front || '/placeholder.svg'; }}
-          />
-        </div>
+        <Carousel
+          opts={{
+            align: "start",
+            loop: thumbnailImages.length > 1,
+          }}
+          className="w-full"
+          setApi={setMainCarouselApi}
+        >
+          <CarouselContent>
+            {thumbnailImages.map((thumb, index) => (
+              <CarouselItem key={thumb.type}>
+                <div className="aspect-square w-full bg-muted relative overflow-hidden">
+                  <img
+                    src={thumb.url}
+                    alt={`${product?.name} ${thumb.label}`}
+                    className="w-full h-full object-cover transition-opacity duration-300"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (thumb.type === 'front') {
+                        img.src = fallback?.front || '/placeholder.svg';
+                      } else {
+                        img.src = fallback?.back || '/placeholder.svg';
+                      }
+                    }}
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
 
         {/* Thumbnail Slider - Always visible */}
         <div className="px-4 py-4">
@@ -272,8 +310,10 @@ const ProductDetail = () => {
                 <CarouselItem key={thumb.type} className="basis-1/4 pl-2">
                   <button
                     onClick={() => {
-                      setShowBack(thumb.type === 'back');
+                      const isBack = thumb.type === 'back';
+                      setShowBack(isBack);
                       carouselApi?.scrollTo(index);
+                      mainCarouselApi?.scrollTo(index);
                     }}
                     className={`relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all ${
                       (showBack && thumb.type === 'back') || (!showBack && thumb.type === 'front')
@@ -309,7 +349,8 @@ const ProductDetail = () => {
                   key={index}
                   onClick={() => {
                     carouselApi?.scrollTo(index);
-                    setShowBack(index === 1 && hasBackImage);
+                    mainCarouselApi?.scrollTo(index);
+                    setShowBack(index === 1);
                   }}
                   className={`h-1.5 rounded-full transition-all ${
                     currentThumbnail === index 
