@@ -13,6 +13,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { ProductReviews } from "@/components/ProductReviews";
+import { useProductLikes } from "@/hooks/useProductLikes";
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 interface Product {
@@ -33,6 +34,7 @@ interface ProductImage {
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const { likeCount, isLiked, isLoading: isLikeLoading, toggleLike } = useProductLikes(id!);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [showBack, setShowBack] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -315,9 +317,28 @@ const ProductDetail = () => {
         {/* Price and Wishlist */}
         <div className="flex items-center justify-between mb-8">
           <p className="text-2xl font-bold">{product.price}</p>
-          <Button variant="ghost" size="icon">
-            <Heart className="h-6 w-6" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleLike}
+              disabled={isLikeLoading}
+              className="relative group"
+            >
+              <Heart 
+                className={`h-6 w-6 transition-all duration-300 ${
+                  isLiked 
+                    ? 'fill-red-500 text-red-500 scale-110' 
+                    : 'text-muted-foreground group-hover:text-red-500 group-hover:scale-110'
+                }`}
+              />
+            </Button>
+            {likeCount > 0 && (
+              <span className="text-sm font-semibold text-muted-foreground">
+                {likeCount}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Size Selection */}

@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getProductImageFallback } from "@/lib/productImageFallbacks";
+import { useProductLikes } from "@/hooks/useProductLikes";
+import { Heart } from "lucide-react";
 
 interface ProductCardProps {
   id: string;
@@ -14,6 +16,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, name, price, image, comingSoon, outOfStock }: ProductCardProps) => {
   const navigate = useNavigate();
+  const { likeCount, isLiked } = useProductLikes(id);
   const fallback = getProductImageFallback(id);
   const displaySrc = image || fallback?.front || '/placeholder.svg';
 
@@ -48,7 +51,21 @@ const ProductCard = ({ id, name, price, image, comingSoon, outOfStock }: Product
       </Link>
       <Link to={`/product/${id}`}>
         <h3 className="font-bold text-sm mb-1 uppercase tracking-tight">{name}</h3>
-        <p className="font-bold text-sm mb-2">{price}</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="font-bold text-sm">{price}</p>
+          {likeCount > 0 && (
+            <div className="flex items-center gap-1">
+              <Heart 
+                className={`h-3.5 w-3.5 ${
+                  isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'
+                }`}
+              />
+              <span className="text-xs font-semibold text-muted-foreground">
+                {likeCount}
+              </span>
+            </div>
+          )}
+        </div>
       </Link>
       <Button
         onClick={handleBuyNow}

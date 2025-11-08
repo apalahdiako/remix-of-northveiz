@@ -350,6 +350,27 @@ export type Database = {
           },
         ]
       }
+      product_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_reviews: {
         Row: {
           comment: string
