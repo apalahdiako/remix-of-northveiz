@@ -14,7 +14,7 @@ interface SearchSheetProps {
 // Available products from catalog (exclude Coming Soon items)
 const availableProducts = [
   { id: "1", name: "HOODIE PECAH POLA", price: "Rp 180,000", keywords: ["hoodie", "pecah", "pola"] },
-  { id: "2", name: "KEMEJA LONGSLEVE", price: "Rp 549,000", keywords: ["kemeja", "longsleve", "shirt"] },
+  { id: "2", name: "KEMEJA LONGSLEVE", price: "Rp 120,000", keywords: ["kemeja", "longsleve", "shirt"] },
 ];
 
 // Popular search tags from available products
