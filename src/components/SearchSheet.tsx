@@ -14,15 +14,15 @@ interface SearchSheetProps {
 // Available products from catalog (exclude Coming Soon items)
 const availableProducts = [
   { id: "1", name: "HOODIE PECAH POLA", price: "Rp 180,000", keywords: ["hoodie", "pecah", "pola"] },
-  { id: "2", name: "KEMEJA STREETWEAR", price: "Rp 549,000", keywords: ["kemeja", "streetwear", "shirt"] },
+  { id: "2", name: "KEMEJA LONGSLEVE", price: "Rp 549,000", keywords: ["kemeja", "longsleve", "shirt"] },
   { id: "4", name: "ZIP HOODIE - BRAZIL", price: "Rp 649,000", keywords: ["zip", "hoodie", "brazil"] },
 ];
 
 // Popular search tags from available products
 const popularSearches = [
   "HOODIE PECAH POLA",
-  "KEMEJA STREETWEAR", 
-  "STREETWEAR",
+  "KEMEJA LONGSLEVE", 
+  "LONGSLEVE",
 ];
 
 const SearchSheet = ({ open, onOpenChange }: SearchSheetProps) => {
