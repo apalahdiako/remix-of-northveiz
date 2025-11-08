@@ -321,7 +321,7 @@ const Auth = () => {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4 pt-20">
         <div className="w-full max-w-md bg-background rounded-3xl shadow-lg p-8 relative">
           <button
             onClick={() => {
@@ -487,7 +487,7 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4 pt-20">
       <div className="w-full max-w-md bg-background rounded-3xl shadow-lg p-8 relative">
         <button
           onClick={() => navigate("/")}

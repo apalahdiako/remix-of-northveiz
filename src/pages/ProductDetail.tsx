@@ -218,7 +218,7 @@ const ProductDetail = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 pt-16">
       {/* Product Image with Toggle */}
       <div className="relative">
         <div className="aspect-square w-full bg-muted relative overflow-hidden">

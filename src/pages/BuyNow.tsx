@@ -39,7 +39,7 @@ const BuyNow = () => {
 
   if (loading) {
     return (
-      <div className="container px-4 py-6 flex items-center justify-center min-h-screen">
+      <div className="container px-4 py-6 pt-24 flex items-center justify-center min-h-screen">
         <p>Loading...</p>
       </div>
     );
@@ -50,7 +50,7 @@ const BuyNow = () => {
   }
 
   return (
-    <div className="container px-4 py-6">
+    <div className="container px-4 py-6 pt-24">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 mb-6 hover:opacity-70 transition-opacity"

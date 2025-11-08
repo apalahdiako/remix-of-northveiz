@@ -77,7 +77,7 @@ const Payment = () => {
 
   if (loading) {
     return (
-      <div className="container px-4 py-6 flex justify-center items-center min-h-[60vh]">
+      <div className="container px-4 py-6 pt-24 flex justify-center items-center min-h-[60vh]">
         <p>Memuat...</p>
       </div>
     );
@@ -85,14 +85,14 @@ const Payment = () => {
 
   if (!order) {
     return (
-      <div className="container px-4 py-6">
+      <div className="container px-4 py-6 pt-24">
         <p>Pesanan tidak ditemukan</p>
       </div>
     );
   }
 
   return (
-    <div className="container px-4 py-6 max-w-2xl">
+    <div className="container px-4 py-6 pt-24 max-w-2xl">
       <div className="text-center mb-8">
         <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold mb-2">Pesanan Berhasil Dibuat!</h1>

@@ -113,7 +113,7 @@ const Checkout = () => {
 
   if (authLoading) {
     return (
-      <div className="container px-4 py-6 max-w-2xl flex items-center justify-center min-h-screen">
+      <div className="container px-4 py-6 pt-24 max-w-2xl flex items-center justify-center min-h-screen">
         <p>Loading...</p>
       </div>
     );
@@ -124,7 +124,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="container px-4 py-6 max-w-2xl">
+    <div className="container px-4 py-6 pt-24 max-w-2xl">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 mb-6 hover:opacity-70 transition-opacity"

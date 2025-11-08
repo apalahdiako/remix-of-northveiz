@@ -8,7 +8,7 @@ const About = () => {
   const { t } = useTranslation();
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col pt-16">
       <div className="container px-6 py-12 max-w-4xl mx-auto flex-grow">
         {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">

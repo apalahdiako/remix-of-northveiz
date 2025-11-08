@@ -176,7 +176,7 @@ const Community = () => {
 
   if (!user) {
     return (
-      <div className="container px-6 py-16 text-center">
+      <div className="container px-6 py-16 pt-24 text-center">
         <h1 className="text-3xl font-bold mb-4">{t("community.title")}</h1>
         <p className="text-muted-foreground mb-8">
           {t("community.loginRequired")}
@@ -190,7 +190,7 @@ const Community = () => {
 
   if (loading) {
     return (
-      <div className="container px-6 py-8">
+      <div className="container px-6 py-8 pt-24">
         <h1 className="text-3xl font-bold mb-8">{t("community.title")}</h1>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {[...Array(12)].map((_, i) => (
@@ -204,7 +204,7 @@ const Community = () => {
   const selectedPostWithStats = posts.find((p) => p.id === selectedPost?.id);
 
   return (
-    <div className="container px-6 py-8">
+    <div className="container px-6 py-8 pt-24">
       <h1 className="text-3xl font-bold mb-8">{t("community.title")}</h1>
 
       {posts.length === 0 ? (

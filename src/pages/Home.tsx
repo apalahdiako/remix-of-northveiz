@@ -25,7 +25,7 @@ const Home = () => {
   const { t } = useTranslation();
   
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-16">
       {/* Hero Section */}
       <section className="relative h-[600px] md:h-[700px] bg-gradient-hero overflow-hidden">
         <div className="absolute inset-0">

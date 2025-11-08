@@ -257,7 +257,7 @@ Tim NORTHVEIZ`);
 
   if (adminLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen pt-16">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -268,7 +268,7 @@ Tim NORTHVEIZ`);
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
       <Button
         variant="ghost"
         onClick={() => navigate("/")}

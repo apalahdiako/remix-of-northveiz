@@ -135,7 +135,7 @@ const Catalog = () => {
   }, [searchQuery, products]);
 
   return (
-    <div className="container px-4 py-6">
+    <div className="container px-4 py-6 pt-24">
       {/* Search Results Header */}
       {searchQuery && (
         <div className="mb-6">
