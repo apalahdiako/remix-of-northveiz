@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +11,12 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { ProductReviews } from "@/components/ProductReviews";
 import { useProductLikes } from "@/hooks/useProductLikes";
+import Autoplay from "embla-carousel-autoplay";
+
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
 interface Product {
@@ -43,6 +46,11 @@ const ProductDetail = () => {
   const [backImage, setBackImage] = useState<ProductImage | null>(null);
   const [averageRating, setAverageRating] = useState<number>(0);
   const [totalReviews, setTotalReviews] = useState<number>(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentThumbnail, setCurrentThumbnail] = useState(0);
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
+  );
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -156,6 +164,17 @@ const ProductDetail = () => {
     });
   };
 
+  // Setup carousel API for tracking current slide
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    carouselApi.on("select", () => {
+      setCurrentThumbnail(carouselApi.selectedScrollSnap());
+      const index = carouselApi.selectedScrollSnap();
+      setShowBack(index === 1 && hasBackImage);
+    });
+  }, [carouselApi]);
+
   // Setup realtime subscription for image updates
   useEffect(() => {
     if (!id) return;
@@ -235,48 +254,74 @@ const ProductDetail = () => {
           />
         </div>
 
-        {/* Thumbnail Slider */}
-        {hasBackImage && (
-          <div className="px-4 py-4">
-            <Carousel
-              opts={{
-                align: "start",
-                loop: false,
-              }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2">
-                {thumbnailImages.map((thumb, index) => (
-                  <CarouselItem key={thumb.type} className="basis-1/4 pl-2">
-                    <button
-                      onClick={() => setShowBack(thumb.type === 'back')}
-                      className={`relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all ${
-                        (showBack && thumb.type === 'back') || (!showBack && thumb.type === 'front')
-                          ? 'border-foreground scale-95'
-                          : 'border-border hover:border-foreground/50'
-                      }`}
-                    >
-                      <img
-                        src={thumb.url}
-                        alt={`${product?.name} ${thumb.label}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          const img = e.currentTarget;
-                          if (thumb.type === 'front') {
-                            img.src = fallback?.front || '/placeholder.svg';
-                          } else {
-                            img.src = fallback?.back || '/placeholder.svg';
-                          }
-                        }}
-                      />
-                    </button>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-        )}
+        {/* Thumbnail Slider - Always visible */}
+        <div className="px-4 py-4">
+          <Carousel
+            opts={{
+              align: "start",
+              loop: thumbnailImages.length > 1,
+            }}
+            plugins={thumbnailImages.length > 1 ? [autoplayPlugin.current] : []}
+            className="w-full"
+            setApi={setCarouselApi}
+            onMouseEnter={() => autoplayPlugin.current.stop()}
+            onMouseLeave={() => autoplayPlugin.current.play()}
+          >
+            <CarouselContent className="-ml-2">
+              {thumbnailImages.map((thumb, index) => (
+                <CarouselItem key={thumb.type} className="basis-1/4 pl-2">
+                  <button
+                    onClick={() => {
+                      setShowBack(thumb.type === 'back');
+                      carouselApi?.scrollTo(index);
+                    }}
+                    className={`relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all ${
+                      (showBack && thumb.type === 'back') || (!showBack && thumb.type === 'front')
+                        ? 'border-foreground scale-95'
+                        : 'border-border hover:border-foreground/50'
+                    }`}
+                  >
+                    <img
+                      src={thumb.url}
+                      alt={`${product?.name} ${thumb.label}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (thumb.type === 'front') {
+                          img.src = fallback?.front || '/placeholder.svg';
+                        } else {
+                          img.src = fallback?.back || '/placeholder.svg';
+                        }
+                      }}
+                    />
+                  </button>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+          
+          {/* Indicator Dots */}
+          {thumbnailImages.length > 1 && (
+            <div className="flex justify-center gap-2 mt-3">
+              {thumbnailImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    carouselApi?.scrollTo(index);
+                    setShowBack(index === 1 && hasBackImage);
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    currentThumbnail === index 
+                      ? 'w-6 bg-foreground' 
+                      : 'w-1.5 bg-border hover:bg-foreground/50'
+                  }`}
+                  aria-label={`Go to thumbnail ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <div className="container px-6 pb-6">
         {/* Status Badge */}
