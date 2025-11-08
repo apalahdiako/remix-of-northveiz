@@ -145,30 +145,35 @@ export function CommunityPostDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
         <div className="grid md:grid-cols-2 gap-0 h-full max-h-[90vh]">
           {/* Image Section */}
-          <div className="relative bg-black flex items-center justify-center max-h-[90vh] md:max-h-full">
+          <div className="relative bg-background flex items-center justify-center max-h-[90vh] md:max-h-full overflow-hidden">
             <img
               src={post.image_url}
               alt={post.caption || "Community post"}
-              className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]"
+              className="w-full h-full object-cover md:object-contain"
             />
           </div>
 
           {/* Content Section */}
           <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
             {/* Instagram Link */}
-            {post.instagram_username && (
-              <div className="p-4 border-b">
+            <div className="p-4 border-b bg-muted/30">
+              {post.instagram_username ? (
                 <a
                   href={`https://instagram.com/${post.instagram_username.replace('@', '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                  className="flex items-center gap-2 text-sm font-semibold hover:text-primary transition-colors"
                 >
                   <Instagram className="h-5 w-5" />
                   <span>@{post.instagram_username.replace('@', '')}</span>
                 </a>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                  <Instagram className="h-5 w-5" />
+                  <span>Community Post</span>
+                </div>
+              )}
+            </div>
 
             {/* Caption */}
             {post.caption && (

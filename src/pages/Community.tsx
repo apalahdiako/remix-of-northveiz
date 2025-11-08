@@ -194,7 +194,7 @@ const Community = () => {
         <h1 className="text-3xl font-bold mb-8">{t("community.title")}</h1>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {[...Array(12)].map((_, i) => (
-            <Skeleton key={i} className="aspect-square rounded-lg" />
+            <Skeleton key={i} className="rounded-lg" style={{ aspectRatio: '4/3' }} />
           ))}
         </div>
       </div>
@@ -219,7 +219,7 @@ const Community = () => {
               className="flex flex-col gap-2 cursor-pointer"
               onClick={() => openPostDialog(post)}
             >
-              <div className="relative group aspect-square overflow-hidden rounded-lg bg-muted">
+              <div className="relative group overflow-hidden rounded-lg bg-muted" style={{ aspectRatio: '4/3' }}>
                 <img
                   src={post.image_url}
                   alt={post.caption || "Community post"}
