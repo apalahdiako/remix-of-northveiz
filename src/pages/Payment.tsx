@@ -50,30 +50,7 @@ const Payment = () => {
     });
   };
 
-  const handleConfirmPayment = async () => {
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ payment_status: "paid", paid_at: new Date().toISOString() })
-        .eq("id", orderId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Pembayaran Berhasil!",
-        description: "Terima kasih atas pembelian Anda",
-      });
-
-      navigate("/");
-    } catch (error: any) {
-      console.error("Error updating order:", error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
+  // Payment confirmation removed - now handled by admin after verifying payment
 
   if (loading) {
     return (
@@ -204,23 +181,27 @@ const Payment = () => {
 
       <div className="space-y-3">
         <Button
-          onClick={handleConfirmPayment}
-          className="w-full h-14 rounded-full text-base font-bold"
-        >
-          Konfirmasi Pembayaran
-        </Button>
-        <Button
           onClick={() => navigate("/")}
-          variant="outline"
           className="w-full h-14 rounded-full text-base font-bold"
         >
           Kembali ke Beranda
         </Button>
+        <Button
+          onClick={() => navigate("/account")}
+          variant="outline"
+          className="w-full h-14 rounded-full text-base font-bold"
+        >
+          Lihat Pesanan Saya
+        </Button>
       </div>
 
-      <div className="mt-6 p-4 bg-muted rounded-lg">
-        <p className="text-sm text-muted-foreground text-center">
-          Estimasi pengiriman: 3-5 hari kerja setelah pembayaran dikonfirmasi
+      <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+        <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center font-semibold mb-2">
+          ⚠️ Penting: Selesaikan Pembayaran
+        </p>
+        <p className="text-sm text-yellow-700 dark:text-yellow-300 text-center">
+          Silakan transfer sesuai instruksi di atas. Tim kami akan mengkonfirmasi pembayaran Anda dalam 1-2 jam kerja. 
+          Setelah dikonfirmasi, pesanan akan diproses dan dikirim dalam 3-5 hari kerja.
         </p>
       </div>
     </div>

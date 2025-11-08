@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
+import { z } from "zod";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -37,6 +38,16 @@ const Checkout = () => {
     return `Rp ${price.toLocaleString("id-ID")}`;
   };
 
+  // Validation schema
+  const checkoutSchema = z.object({
+    customerName: z.string().trim().min(2, "Nama minimal 2 karakter").max(100, "Nama maksimal 100 karakter"),
+    customerEmail: z.string().trim().email("Email tidak valid").max(255, "Email terlalu panjang"),
+    customerPhone: z.string().trim().regex(/^[0-9+\-\s()]{8,20}$/, "Nomor telepon tidak valid (8-20 digit)").max(20),
+    shippingAddress: z.string().trim().min(10, "Alamat minimal 10 karakter").max(500, "Alamat maksimal 500 karakter"),
+    city: z.string().trim().min(2, "Kota minimal 2 karakter").max(100, "Kota maksimal 100 karakter"),
+    postalCode: z.string().trim().regex(/^[0-9]{5,10}$/, "Kode pos harus 5-10 digit angka")
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -44,6 +55,18 @@ const Checkout = () => {
       toast({
         title: "Cart kosong",
         description: "Silakan tambahkan produk ke cart terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate form data
+    const validationResult = checkoutSchema.safeParse(formData);
+    if (!validationResult.success) {
+      const firstError = validationResult.error.issues[0];
+      toast({
+        title: "Validasi Gagal",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
