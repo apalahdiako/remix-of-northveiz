@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 
 interface Comment {
@@ -17,6 +17,7 @@ interface Comment {
   user_id: string;
   profiles?: {
     full_name: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -78,7 +79,7 @@ export function CommunityPostDialog({
       const userIds = [...new Set(commentsData.map(c => c.user_id))];
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, avatar_url")
         .in("id", userIds);
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
@@ -220,8 +221,9 @@ export function CommunityPostDialog({
                     comments.map((comment) => (
                       <div key={comment.id} className="flex gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {comment.profiles?.full_name?.[0] || "U"}
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {comment.profiles?.full_name?.[0]?.toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">

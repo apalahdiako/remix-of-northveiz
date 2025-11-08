@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ interface Review {
   created_at: string;
   profiles: {
     full_name: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -64,13 +66,13 @@ export const ProductReviews = ({ productId, productName }: ProductReviewsProps) 
         const userIds = reviewsData.map(r => r.user_id);
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select('id, full_name, avatar_url')
           .in('id', userIds);
 
         // Merge reviews with profiles
         const reviewsWithProfiles = reviewsData.map(review => ({
           ...review,
-          profiles: profilesData?.find(p => p.id === review.user_id) || { full_name: null }
+          profiles: profilesData?.find(p => p.id === review.user_id) || { full_name: null, avatar_url: null }
         }));
         
         setReviews(reviewsWithProfiles as any);
@@ -331,8 +333,14 @@ export const ProductReviews = ({ productId, productName }: ProductReviewsProps) 
             {reviews.map((review) => (
               <Card key={review.id}>
                 <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
+                  <div className="flex items-start gap-4 mb-3">
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={review.profiles?.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {review.profiles?.full_name?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-bold text-lg">
                           {review.profiles?.full_name || 'Pengguna'}

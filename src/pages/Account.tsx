@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Package, MapPin, LogOut, Edit, Trash2, Plus, Save } from "lucide-react";
+import { User as UserIcon, Package, MapPin, LogOut, Edit, Trash2, Plus, Save, Camera } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { OrdersList } from "@/components/orders/OrdersList";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ interface Profile {
   full_name: string | null;
   phone: string | null;
   birthday: string | null;
+  avatar_url: string | null;
 }
 
 const Account = () => {
@@ -46,6 +48,7 @@ const Account = () => {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   // Profile states
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -188,6 +191,83 @@ const Account = () => {
     await signOut();
     toast({ title: "Logged out successfully" });
     navigate("/");
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !event.target.files || event.target.files.length === 0) return;
+
+    const file = event.target.files[0];
+    
+    // Validate file size (5MB)
+    if (file.size > 5242880) {
+      toast({ 
+        title: "Error", 
+        description: "Ukuran file terlalu besar. Maksimal 5MB.",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast({ 
+        title: "Error", 
+        description: "Format file tidak didukung. Gunakan JPEG, PNG, atau WebP.",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+
+      // Delete old avatar if exists
+      if (profile?.avatar_url) {
+        const oldPath = profile.avatar_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage
+            .from('avatars')
+            .remove([`${user.id}/${oldPath}`]);
+        }
+      }
+
+      // Upload new avatar
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
+      toast({ title: "Foto profil berhasil diperbarui!" });
+      await fetchProfile();
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast({ 
+        title: "Error", 
+        description: "Gagal mengupload foto profil. Silakan coba lagi.",
+        variant: "destructive" 
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const handleDeleteAddress = async (id: string) => {
@@ -340,12 +420,32 @@ const Account = () => {
         {/* User Info Card */}
         <div className="bg-background rounded-2xl p-6 mb-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center">
-              <span className="text-2xl font-bold">D</span>
+            <div className="relative group">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                <AvatarFallback className="bg-foreground text-background text-2xl">
+                  {profile?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <label 
+                htmlFor="avatar-upload" 
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                <Camera className="w-5 h-5 text-white" />
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+              </label>
             </div>
             <div>
-              <h2 className="text-lg font-bold">{user.email?.split('@')[0] || 'User'}</h2>
+              <h2 className="text-lg font-bold">{profile?.full_name || user.email?.split('@')[0] || 'User'}</h2>
               <p className="text-muted-foreground text-sm">{user.email}</p>
+              <p className="text-xs text-muted-foreground mt-1">Klik foto untuk mengubah</p>
             </div>
           </div>
         </div>
