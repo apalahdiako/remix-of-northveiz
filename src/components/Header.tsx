@@ -32,10 +32,10 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
 
   return (
     <header 
-      className={`fixed top-0 z-40 w-full transition-all duration-300 ${
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
         isHomePage && !isScrolled
           ? "bg-transparent border-b border-transparent" 
-          : "bg-background border-b border-border shadow-sm"
+          : "bg-background/95 backdrop-blur-md border-b border-border shadow-sm"
       }`}
     >
       <div className="container flex h-16 items-center justify-between px-4">
