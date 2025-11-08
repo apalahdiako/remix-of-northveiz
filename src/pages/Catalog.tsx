@@ -200,20 +200,12 @@ const Catalog = () => {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
-                    <Checkbox id="under-500" />
-                    <label htmlFor="under-500" className="text-base">Under Rp 500,000</label>
+                    <Checkbox id="100-500" />
+                    <label htmlFor="100-500" className="text-base">Rp 100,000 - Rp 500,000</label>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Checkbox id="500-1000" />
                     <label htmlFor="500-1000" className="text-base">Rp 500,000 - Rp 1,000,000</label>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Checkbox id="1000-1500" />
-                    <label htmlFor="1000-1500" className="text-base">Rp 1,000,000 - Rp 1,500,000</label>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Checkbox id="over-1500" />
-                    <label htmlFor="over-1500" className="text-base">Rp 1,500,000 +</label>
                   </div>
                 </div>
               </div>
