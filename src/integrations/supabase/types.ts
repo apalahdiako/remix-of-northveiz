@@ -14,12 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_comments: {
         Row: {
           comment: string
           created_at: string
           id: string
           is_visible: boolean
+          parent_comment_id: string | null
           post_id: string
           updated_at: string
           user_id: string
@@ -29,6 +59,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_visible?: boolean
+          parent_comment_id?: string | null
           post_id: string
           updated_at?: string
           user_id: string
@@ -38,11 +69,19 @@ export type Database = {
           created_at?: string
           id?: string
           is_visible?: boolean
+          parent_comment_id?: string | null
           post_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "community_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "community_comments_post_id_fkey"
             columns: ["post_id"]

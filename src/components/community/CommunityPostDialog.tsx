@@ -15,10 +15,14 @@ interface Comment {
   comment: string;
   created_at: string;
   user_id: string;
+  parent_comment_id: string | null;
   profiles?: {
     full_name: string | null;
     avatar_url: string | null;
   };
+  likes_count?: number;
+  is_liked?: boolean;
+  replies?: Comment[];
 }
 
 interface CommunityPostDialogProps {
@@ -51,20 +55,25 @@ export function CommunityPostDialog({
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [showComments, setShowComments] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
     if (post && open) {
       fetchComments();
-      subscribeToComments();
+      const unsubscribe = subscribeToComments();
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
     }
   }, [post, open]);
 
   const fetchComments = async () => {
-    if (!post) return;
+    if (!post || !user) return;
 
     const { data: commentsData, error } = await supabase
       .from("community_comments")
-      .select("id, comment, created_at, user_id")
+      .select("id, comment, created_at, user_id, parent_comment_id")
       .eq("post_id", post.id)
       .eq("is_visible", true)
       .order("created_at", { ascending: false });
@@ -74,22 +83,72 @@ export function CommunityPostDialog({
       return;
     }
 
-    // Fetch profiles separately
     if (commentsData && commentsData.length > 0) {
+      const commentIds = commentsData.map(c => c.id);
       const userIds = [...new Set(commentsData.map(c => c.user_id))];
+
+      // Fetch profiles
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url")
         .in("id", userIds);
 
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-      
-      const enrichedComments = commentsData.map(comment => ({
-        ...comment,
-        profiles: profilesMap.get(comment.user_id) || null
-      }));
+      // Fetch like counts and user likes
+      const { data: likesData } = await supabase
+        .from("community_comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", commentIds);
 
-      setComments(enrichedComments);
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      const likesMap = new Map<string, { count: number; isLiked: boolean }>();
+
+      // Build likes map
+      likesData?.forEach(like => {
+        const current = likesMap.get(like.comment_id) || { count: 0, isLiked: false };
+        likesMap.set(like.comment_id, {
+          count: current.count + 1,
+          isLiked: current.isLiked || like.user_id === user.id
+        });
+      });
+
+      // Build comment tree
+      const commentsMap = new Map<string, Comment>();
+      const rootComments: Comment[] = [];
+
+      commentsData.forEach(comment => {
+        const enrichedComment: Comment = {
+          ...comment,
+          profiles: profilesMap.get(comment.user_id) || null,
+          likes_count: likesMap.get(comment.id)?.count || 0,
+          is_liked: likesMap.get(comment.id)?.isLiked || false,
+          replies: []
+        };
+        commentsMap.set(comment.id, enrichedComment);
+      });
+
+      // Organize into tree structure
+      commentsMap.forEach(comment => {
+        if (comment.parent_comment_id) {
+          const parent = commentsMap.get(comment.parent_comment_id);
+          if (parent) {
+            parent.replies = parent.replies || [];
+            parent.replies.push(comment);
+          }
+        } else {
+          rootComments.push(comment);
+        }
+      });
+
+      // Sort replies by creation time (oldest first)
+      rootComments.forEach(comment => {
+        if (comment.replies) {
+          comment.replies.sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        }
+      });
+
+      setComments(rootComments);
     } else {
       setComments([]);
     }
@@ -98,7 +157,7 @@ export function CommunityPostDialog({
   const subscribeToComments = () => {
     if (!post) return;
 
-    const channel = supabase
+    const commentsChannel = supabase
       .channel(`comments:${post.id}`)
       .on(
         "postgres_changes",
@@ -114,8 +173,24 @@ export function CommunityPostDialog({
       )
       .subscribe();
 
+    const likesChannel = supabase
+      .channel(`comment_likes:${post.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "community_comment_likes",
+        },
+        () => {
+          fetchComments();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(commentsChannel);
+      supabase.removeChannel(likesChannel);
     };
   };
 
@@ -127,6 +202,7 @@ export function CommunityPostDialog({
       post_id: post.id,
       user_id: user.id,
       comment: newComment.trim(),
+      parent_comment_id: null,
     });
 
     if (error) {
@@ -138,6 +214,151 @@ export function CommunityPostDialog({
     }
     setLoading(false);
   };
+
+  const handleAddReply = async (parentId: string) => {
+    if (!post || !user || !replyText.trim()) return;
+
+    setLoading(true);
+    const { error } = await supabase.from("community_comments").insert({
+      post_id: post.id,
+      user_id: user.id,
+      comment: replyText.trim(),
+      parent_comment_id: parentId,
+    });
+
+    if (error) {
+      console.error("Error adding reply:", error);
+      toast.error("Failed to add reply");
+    } else {
+      setReplyText("");
+      setReplyingTo(null);
+      toast.success("Reply added");
+    }
+    setLoading(false);
+  };
+
+  const handleLikeComment = async (commentId: string, isLiked: boolean) => {
+    if (!user) return;
+
+    if (isLiked) {
+      const { error } = await supabase
+        .from("community_comment_likes")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error unliking comment:", error);
+        toast.error("Failed to unlike comment");
+      }
+    } else {
+      const { error } = await supabase
+        .from("community_comment_likes")
+        .insert({
+          comment_id: commentId,
+          user_id: user.id,
+        });
+
+      if (error) {
+        console.error("Error liking comment:", error);
+        toast.error("Failed to like comment");
+      }
+    }
+  };
+
+  const renderComment = (comment: Comment, isReply = false) => (
+    <div key={comment.id} className={`space-y-2 ${isReply ? "ml-10" : ""}`}>
+      <div className="flex gap-3">
+        <Avatar className="h-8 w-8 flex-shrink-0">
+          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+          <AvatarFallback className="bg-primary/10 text-primary">
+            {comment.profiles?.full_name?.[0]?.toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="font-semibold text-sm">
+              {comment.profiles?.full_name || "User"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(comment.created_at), {
+                addSuffix: true,
+              })}
+            </span>
+          </div>
+          <p className="text-sm mt-1 break-words">{comment.comment}</p>
+          <div className="flex items-center gap-4 mt-2">
+            <button
+              onClick={() => handleLikeComment(comment.id, comment.is_liked || false)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Heart
+                className={`h-4 w-4 ${
+                  comment.is_liked ? "fill-red-500 text-red-500" : ""
+                }`}
+              />
+              {comment.likes_count ? (
+                <span className="font-medium">{comment.likes_count}</span>
+              ) : null}
+            </button>
+            {!isReply && (
+              <button
+                onClick={() => setReplyingTo(comment.id)}
+                className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+              >
+                Balas
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Reply Input */}
+      {replyingTo === comment.id && (
+        <div className="ml-10 flex gap-2">
+          <Input
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Tulis balasan..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleAddReply(comment.id);
+              }
+            }}
+            disabled={loading}
+            className="text-sm"
+          />
+          <Button
+            onClick={() => handleAddReply(comment.id)}
+            disabled={loading || !replyText.trim()}
+            size="icon"
+            className="flex-shrink-0"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => {
+              setReplyingTo(null);
+              setReplyText("");
+            }}
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0"
+          >
+            ✕
+          </Button>
+        </div>
+      )}
+
+      {/* Render Replies */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="space-y-2">
+          {comment.replies.map(reply => renderComment(reply, true))}
+        </div>
+      )}
+    </div>
+  );
 
   if (!post) return null;
 
@@ -218,29 +439,7 @@ export function CommunityPostDialog({
                       {t("community.noPostsYet")}
                     </p>
                   ) : (
-                    comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {comment.profiles?.full_name?.[0]?.toUpperCase() || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-medium text-sm">
-                              {comment.profiles?.full_name || "User"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(comment.created_at), {
-                                addSuffix: true,
-                              })}
-                            </span>
-                          </div>
-                          <p className="text-sm mt-1">{comment.comment}</p>
-                        </div>
-                      </div>
-                    ))
+                    comments.map((comment) => renderComment(comment))
                   )}
                 </div>
 
