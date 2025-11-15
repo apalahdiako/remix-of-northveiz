@@ -128,6 +128,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Email sent: ${successful} successful, ${failed} failed`);
 
+    // Update last_welcome_sent for successfully sent emails
+    const successfulUserIds = results
+      .map((result, index) => result.status === 'fulfilled' ? selectedUsers[index].id : null)
+      .filter(Boolean);
+
+    if (successfulUserIds.length > 0) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ last_welcome_sent: new Date().toISOString() })
+        .in('id', successfulUserIds);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

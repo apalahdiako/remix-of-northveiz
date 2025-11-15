@@ -147,6 +147,38 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", emailResponse);
 
+    // Log to contact_logs if from authenticated admin
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      try {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_ANON_KEY')!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        if (user) {
+          // Try to find target user_id by email
+          const { data: targetUser } = await supabase.auth.admin.listUsers();
+          const foundUser = targetUser?.users.find(u => u.email === safeEmail);
+
+          if (foundUser) {
+            await supabase.from('contact_logs').insert({
+              user_id: foundUser.id,
+              admin_id: user.id,
+              subject: `[CONTACT] ${categoryLabel}`,
+              message: safeMessage,
+              status_delivery: 'sent'
+            });
+          }
+        }
+      } catch (logError) {
+        console.error("Error logging to contact_logs:", logError);
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Pesan berhasil dikirim dan email notifikasi terkirim",
