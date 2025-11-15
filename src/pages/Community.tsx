@@ -176,6 +176,17 @@ const Community = () => {
     setDialogOpen(true);
   };
 
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    if (!selectedPost) return;
+    
+    const currentIndex = posts.findIndex(p => p.id === selectedPost.id);
+    const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (newIndex >= 0 && newIndex < posts.length) {
+      setSelectedPost(posts[newIndex]);
+    }
+  };
+
   if (!user) {
     return (
       <div className="w-full px-4 sm:px-6 lg:px-8 py-16 pt-24 text-center max-w-7xl mx-auto">
@@ -270,6 +281,8 @@ const Community = () => {
           likesCount={selectedPostWithStats.likesCount}
           isLiked={selectedPostWithStats.isLiked}
           onLikeToggle={() => handleLikeToggle(selectedPostWithStats)}
+          allPosts={posts}
+          onNavigate={handleNavigate}
         />
       )}
     </div>
