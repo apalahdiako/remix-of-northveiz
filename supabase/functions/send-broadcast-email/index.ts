@@ -63,13 +63,28 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Subject and content are required");
     }
 
-    console.log("Fetching registered users...");
-
-    // Get all registered users' profiles
+    // Create broadcast record
     const supabaseServiceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    const { data: broadcast, error: broadcastError } = await supabaseServiceClient
+      .from('email_broadcasts')
+      .insert({
+        admin_id: user.id,
+        subject,
+        content,
+        status: 'processing'
+      })
+      .select()
+      .single();
+
+    if (broadcastError) {
+      throw new Error(`Failed to create broadcast record: ${broadcastError.message}`);
+    }
+
+    console.log("Fetching registered users...");
 
     const { data: profiles, error: profilesError } = await supabaseServiceClient
       .from("profiles")
@@ -196,12 +211,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Broadcast complete: ${successCount} sent, ${failedCount} failed`);
 
+    // Update broadcast record with results
+    await supabaseServiceClient
+      .from('email_broadcasts')
+      .update({
+        total_sent: successCount + failedCount,
+        total_delivered: successCount,
+        total_failed: failedCount,
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', broadcast.id);
+
     return new Response(
       JSON.stringify({
         message: "Broadcast email telah dikirim",
         successCount,
         failedCount,
         totalUsers: usersToEmail.length,
+        broadcastId: broadcast.id
       }),
       {
         status: 200,

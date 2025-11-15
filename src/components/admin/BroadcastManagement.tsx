@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Send, Radio } from "lucide-react";
+import { Loader2, Send, Radio, History } from "lucide-react";
+import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,11 +20,29 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+interface BroadcastHistory {
+  id: string;
+  subject: string;
+  total_sent: number;
+  total_delivered: number;
+  total_failed: number;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+}
+
 export function BroadcastManagement() {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
   const [userCount, setUserCount] = useState<number | null>(null);
+  const [history, setHistory] = useState<BroadcastHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    fetchHistory();
+    fetchUserCount();
+  }, []);
 
   const fetchUserCount = async () => {
     try {
@@ -36,6 +55,21 @@ export function BroadcastManagement() {
     } catch (error: any) {
       console.error("Error fetching user count:", error);
       toast.error("Gagal mengambil jumlah pengguna");
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("email_broadcasts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (error: any) {
+      console.error("Error fetching broadcast history:", error);
     }
   };
 
@@ -60,9 +94,10 @@ export function BroadcastManagement() {
         `Broadcast berhasil dikirim ke ${data.successCount || 0} pengguna!`
       );
       
-      // Reset form
+      // Reset form and refresh history
       setSubject("");
       setContent("");
+      fetchHistory();
     } catch (error: any) {
       console.error("Error sending broadcast:", error);
       toast.error(error.message || "Gagal mengirim broadcast email");
@@ -177,6 +212,72 @@ export function BroadcastManagement() {
             untuk memastikan pengiriman yang andal. Pengguna akan menerima email dalam 
             beberapa menit setelah broadcast dijalankan.
           </p>
+        </div>
+
+        {/* History Section */}
+        <div className="space-y-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowHistory(!showHistory)}
+            className="w-full"
+          >
+            <History className="mr-2 h-4 w-4" />
+            {showHistory ? "Sembunyikan Riwayat" : "Lihat Riwayat Broadcast"}
+          </Button>
+
+          {showHistory && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Riwayat Broadcast Terakhir</h3>
+              {history.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Belum ada riwayat broadcast
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {history.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-border bg-card p-4 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{item.subject}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(item.created_at), "dd MMM yyyy, HH:mm")}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            item.status === "completed"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              : item.status === "processing"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="text-center p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Terkirim</p>
+                          <p className="font-semibold">{item.total_delivered}</p>
+                        </div>
+                        <div className="text-center p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Gagal</p>
+                          <p className="font-semibold">{item.total_failed}</p>
+                        </div>
+                        <div className="text-center p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Total</p>
+                          <p className="font-semibold">{item.total_sent}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

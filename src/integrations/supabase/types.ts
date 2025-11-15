@@ -162,6 +162,39 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_logs: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          message: string
+          status_delivery: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          message: string
+          status_delivery?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          status_delivery?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           category: string
@@ -195,6 +228,45 @@ export type Database = {
           name?: string
           send_status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      email_broadcasts: {
+        Row: {
+          admin_id: string
+          completed_at: string | null
+          content: string
+          created_at: string
+          id: string
+          status: string
+          subject: string
+          total_delivered: number
+          total_failed: number
+          total_sent: number
+        }
+        Insert: {
+          admin_id: string
+          completed_at?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          status?: string
+          subject: string
+          total_delivered?: number
+          total_failed?: number
+          total_sent?: number
+        }
+        Update: {
+          admin_id?: string
+          completed_at?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          status?: string
+          subject?: string
+          total_delivered?: number
+          total_failed?: number
+          total_sent?: number
         }
         Relationships: []
       }
@@ -492,6 +564,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          last_welcome_sent: string | null
           phone: string | null
           updated_at: string | null
         }
@@ -501,6 +574,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          last_welcome_sent?: string | null
           phone?: string | null
           updated_at?: string | null
         }
@@ -510,6 +584,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          last_welcome_sent?: string | null
           phone?: string | null
           updated_at?: string | null
         }
