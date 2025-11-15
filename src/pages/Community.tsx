@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Heart, Pin } from "lucide-react";
 import { CommunityPostDialog } from "@/components/community/CommunityPostDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
@@ -15,6 +15,7 @@ interface Post {
   created_at: string;
   user_id: string;
   instagram_username: string | null;
+  is_pinned: boolean;
 }
 
 interface PostWithStats extends Post {
@@ -48,6 +49,7 @@ const Community = () => {
       .from("community_posts")
       .select("*")
       .eq("is_visible", true)
+      .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (postsError) {
@@ -225,6 +227,11 @@ const Community = () => {
                   alt={post.caption || "Community post"}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
+                {post.is_pinned && (
+                  <div className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm rounded-full p-2">
+                    <Pin className="h-4 w-4 text-primary-foreground fill-primary-foreground" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                   <div className="flex items-center gap-4 text-white">
                     <div className="flex items-center gap-1">
