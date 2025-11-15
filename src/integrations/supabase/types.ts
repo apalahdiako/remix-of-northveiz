@@ -129,6 +129,8 @@ export type Database = {
           instagram_username: string | null
           is_pinned: boolean
           is_visible: boolean
+          music_artist: string | null
+          music_title: string | null
           updated_at: string
           user_id: string
         }
@@ -140,6 +142,8 @@ export type Database = {
           instagram_username?: string | null
           is_pinned?: boolean
           is_visible?: boolean
+          music_artist?: string | null
+          music_title?: string | null
           updated_at?: string
           user_id: string
         }
@@ -151,6 +155,8 @@ export type Database = {
           instagram_username?: string | null
           is_pinned?: boolean
           is_visible?: boolean
+          music_artist?: string | null
+          music_title?: string | null
           updated_at?: string
           user_id?: string
         }
