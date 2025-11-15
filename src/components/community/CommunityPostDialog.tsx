@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, MessageCircle, Send, Instagram } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, Share2, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Comment {
   id: string;
@@ -54,12 +56,14 @@ export function CommunityPostDialog({
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showComments, setShowComments] = useState(true);
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [showComments, setShowComments] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [postProfile, setPostProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     if (post && open) {
+      fetchPostProfile();
       fetchComments();
       const unsubscribe = subscribeToComments();
       return () => {
@@ -67,6 +71,20 @@ export function CommunityPostDialog({
       };
     }
   }, [post, open]);
+
+  const fetchPostProfile = async () => {
+    if (!post) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", post.user_id)
+      .single();
+    
+    if (data) {
+      setPostProfile(data);
+    }
+  };
 
   const fetchComments = async () => {
     if (!post || !user) return;
@@ -215,15 +233,15 @@ export function CommunityPostDialog({
     setLoading(false);
   };
 
-  const handleAddReply = async (parentId: string) => {
-    if (!post || !user || !replyText.trim()) return;
+  const handleAddReply = async () => {
+    if (!post || !user || !replyText.trim() || !replyingTo) return;
 
     setLoading(true);
     const { error } = await supabase.from("community_comments").insert({
       post_id: post.id,
       user_id: user.id,
       comment: replyText.trim(),
-      parent_comment_id: parentId,
+      parent_comment_id: replyingTo.id,
     });
 
     if (error) {
@@ -267,93 +285,61 @@ export function CommunityPostDialog({
   };
 
   const renderComment = (comment: Comment, isReply = false) => (
-    <div key={comment.id} className={`space-y-2 ${isReply ? "ml-10" : ""}`}>
+    <div key={comment.id} className={`${isReply ? "ml-12 mt-3" : "mb-4"}`}>
       <div className="flex gap-3">
-        <Avatar className="h-8 w-8 flex-shrink-0">
+        <Avatar className="h-9 w-9 flex-shrink-0">
           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary">
             {comment.profiles?.full_name?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="font-semibold text-sm">
-              {comment.profiles?.full_name || "User"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(comment.created_at), {
-                addSuffix: true,
-              })}
-            </span>
-          </div>
-          <p className="text-sm mt-1 break-words">{comment.comment}</p>
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-semibold text-sm">
+                  {comment.profiles?.full_name || "User"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(comment.created_at), {
+                    addSuffix: true,
+                  })}
+                </span>
+              </div>
+              <p className="text-sm break-words leading-relaxed">{comment.comment}</p>
+            </div>
             <button
               onClick={() => handleLikeComment(comment.id, comment.is_liked || false)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex-shrink-0"
             >
               <Heart
                 className={`h-4 w-4 ${
-                  comment.is_liked ? "fill-red-500 text-red-500" : ""
+                  comment.is_liked ? "fill-red-500 text-red-500" : "text-muted-foreground hover:text-foreground"
                 }`}
               />
-              {comment.likes_count ? (
-                <span className="font-medium">{comment.likes_count}</span>
-              ) : null}
             </button>
+          </div>
+          <div className="flex items-center gap-4 mt-2">
+            {comment.likes_count > 0 && (
+              <span className="text-xs text-muted-foreground font-medium">
+                {comment.likes_count} {comment.likes_count === 1 ? "like" : "likes"}
+              </span>
+            )}
             {!isReply && (
               <button
-                onClick={() => setReplyingTo(comment.id)}
+                onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles?.full_name || "User" })}
                 className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
-                Balas
+                Reply
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Reply Input */}
-      {replyingTo === comment.id && (
-        <div className="ml-10 flex gap-2">
-          <Input
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            placeholder="Tulis balasan..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleAddReply(comment.id);
-              }
-            }}
-            disabled={loading}
-            className="text-sm"
-          />
-          <Button
-            onClick={() => handleAddReply(comment.id)}
-            disabled={loading || !replyText.trim()}
-            size="icon"
-            className="flex-shrink-0"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => {
-              setReplyingTo(null);
-              setReplyText("");
-            }}
-            variant="ghost"
-            size="icon"
-            className="flex-shrink-0"
-          >
-            ✕
-          </Button>
-        </div>
-      )}
-
       {/* Render Replies */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="space-y-2">
+        <div className="mt-3">
           {comment.replies.map(reply => renderComment(reply, true))}
         </div>
       )}
@@ -362,116 +348,213 @@ export function CommunityPostDialog({
 
   if (!post) return null;
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
-        <div className="grid md:grid-cols-2 gap-0 h-full max-h-[90vh]">
-          {/* Image Section */}
-          <div className="relative bg-background flex items-center justify-center max-h-[90vh] md:max-h-full overflow-hidden">
-            <img
-              src={post.image_url}
-              alt={post.caption || "Community post"}
-              className="w-full h-full object-cover md:object-contain"
-            />
-          </div>
+  const totalComments = comments.reduce((acc, comment) => acc + 1 + (comment.replies?.length || 0), 0);
 
-          {/* Content Section */}
-          <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
-            {/* Instagram Link */}
-            <div className="p-4 border-b bg-muted/30">
-              {post.instagram_username ? (
-                <a
-                  href={`https://instagram.com/${post.instagram_username.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm font-semibold hover:text-primary transition-colors"
-                >
-                  <Instagram className="h-5 w-5" />
-                  <span>@{post.instagram_username.replace('@', '')}</span>
-                </a>
-              ) : (
-                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                  <Instagram className="h-5 w-5" />
-                  <span>Community Post</span>
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-5xl h-[95vh] p-0 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={postProfile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {postProfile?.full_name?.[0]?.toUpperCase() || post.instagram_username?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-sm">
+                    {post.instagram_username || postProfile?.full_name || "User"}
+                  </span>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Image Section */}
+            <div className="relative bg-black flex items-center justify-center flex-1 overflow-hidden">
+              <img
+                src={post.image_url}
+                alt={post.caption || "Community post"}
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Action Bar */}
+            <div className="px-4 py-3 border-t">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-4">
+                  <button onClick={onLikeToggle} className="transition-transform hover:scale-110">
+                    <Heart
+                      className={`h-7 w-7 ${
+                        isLiked ? "fill-red-500 text-red-500" : ""
+                      }`}
+                    />
+                  </button>
+                  <button 
+                    onClick={() => setShowComments(true)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <MessageCircle className="h-7 w-7" />
+                  </button>
+                  <button className="transition-transform hover:scale-110">
+                    <Share2 className="h-6 w-6" />
+                  </button>
+                </div>
+                <button className="transition-transform hover:scale-110">
+                  <Bookmark className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Likes Count */}
+              <div className="mb-2">
+                <span className="font-semibold text-sm">
+                  {likesCount.toLocaleString()} {likesCount === 1 ? "like" : "likes"}
+                </span>
+              </div>
+
+              {/* Caption */}
+              {post.caption && (
+                <div className="mb-2">
+                  <span className="font-semibold text-sm mr-2">
+                    {post.instagram_username || postProfile?.full_name || "User"}
+                  </span>
+                  <span className="text-sm">{post.caption}</span>
                 </div>
               )}
+
+              {/* View Comments */}
+              {totalComments > 0 && (
+                <button
+                  onClick={() => setShowComments(true)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  View all {totalComments} {totalComments === 1 ? "comment" : "comments"}
+                </button>
+              )}
+
+              {/* Timestamp */}
+              <div className="text-xs text-muted-foreground mt-1">
+                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+              </div>
             </div>
 
-            {/* Caption */}
-            {post.caption && (
-              <div className="p-4 border-b">
-                <p className="text-sm">{post.caption}</p>
+            {/* Add Comment */}
+            <div className="px-4 py-3 border-t flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {user?.user_metadata?.full_name?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <Input
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddComment();
+                  }
+                }}
+                disabled={loading}
+                className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              {newComment.trim() && (
+                <Button
+                  onClick={handleAddComment}
+                  disabled={loading}
+                  variant="ghost"
+                  className="text-primary hover:text-primary/80 font-semibold"
+                >
+                  Post
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comments Sheet/Overlay */}
+      <Sheet open={showComments} onOpenChange={setShowComments}>
+        <SheetContent side="bottom" className="h-[85vh] p-0">
+          <SheetHeader className="px-4 py-3 border-b">
+            <SheetTitle className="text-center">Comments</SheetTitle>
+          </SheetHeader>
+          
+          <ScrollArea className="h-[calc(85vh-140px)] px-4 py-4">
+            {comments.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">No comments yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Be the first to comment</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {comments.map((comment) => renderComment(comment))}
               </div>
             )}
+          </ScrollArea>
 
-            {/* Actions */}
-            <div className="flex items-center gap-4 p-4 border-b">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onLikeToggle}
-                className="gap-2"
-              >
-                <Heart
-                  className={`h-5 w-5 ${
-                    isLiked ? "fill-red-500 text-red-500" : ""
-                  }`}
-                />
-                <span>{likesCount}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowComments(!showComments)}
-                className="gap-2"
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span>{comments.length}</span>
-              </Button>
-            </div>
-
-            {/* Comments Section */}
-            {showComments && (
-              <>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-                  {comments.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      {t("community.noPostsYet")}
-                    </p>
-                  ) : (
-                    comments.map((comment) => renderComment(comment))
-                  )}
-                </div>
-
-                {/* Add Comment */}
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <Input
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder={t("community.addComment")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleAddComment();
-                        }
-                      }}
-                      disabled={loading}
-                    />
-                    <Button
-                      onClick={handleAddComment}
-                      disabled={loading || !newComment.trim()}
-                      size="icon"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </>
+          {/* Comment Input in Sheet */}
+          <div className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t bg-background">
+            {replyingTo && (
+              <div className="mb-2 flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Replying to</span>
+                <span className="font-semibold">@{replyingTo.username}</span>
+                <button
+                  onClick={() => {
+                    setReplyingTo(null);
+                    setReplyText("");
+                  }}
+                  className="ml-auto text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              </div>
             )}
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {user?.user_metadata?.full_name?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <Input
+                value={replyingTo ? replyText : newComment}
+                onChange={(e) => replyingTo ? setReplyText(e.target.value) : setNewComment(e.target.value)}
+                placeholder={replyingTo ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (replyingTo) {
+                      handleAddReply();
+                    } else {
+                      handleAddComment();
+                    }
+                  }
+                }}
+                disabled={loading}
+                className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              {((replyingTo && replyText.trim()) || (!replyingTo && newComment.trim())) && (
+                <Button
+                  onClick={replyingTo ? handleAddReply : handleAddComment}
+                  disabled={loading}
+                  variant="ghost"
+                  className="text-primary hover:text-primary/80 font-semibold"
+                >
+                  Post
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
