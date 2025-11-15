@@ -381,128 +381,126 @@ const Catalog = () => {
       </div>
 
       {/* Mobile Layout: Stacked Vertical */}
-      <div className="lg:hidden">
-        <div className="relative">
-          {/* Main Image */}
-          <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-            <img
-              src={currentLook.mainImage}
-              alt={currentLook.title}
-              className={`w-full h-full object-cover transition-all duration-600 ${
-                isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-              }`}
-              loading="lazy"
-            />
-            
-            {/* Navigation Overlay */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={handlePrevLook}
-                disabled={currentLookIndex === 0 || isTransitioning}
-                className="rounded-full backdrop-blur-sm bg-background/80"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={handleNextLook}
-                disabled={currentLookIndex === looks.length - 1 || isTransitioning}
-                className="rounded-full backdrop-blur-sm bg-background/80"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Look Counter */}
-            <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full">
-              <p className="text-xs font-bold">
-                {currentLookIndex + 1} / {looks.length}
-              </p>
-            </div>
-          </div>
-
-          {/* Description Section */}
-          <div className="p-6 space-y-4 border-b border-border">
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {currentLook.season}
-              </p>
-              <h1 className="text-3xl font-bold tracking-tight">
-                {currentLook.title}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {currentLook.description}
-              </p>
-            </div>
-
-            <Button 
-              onClick={handleAddAllToCart}
-              className="w-full rounded-full font-bold"
-              size="lg"
+      <div className="lg:hidden min-h-screen flex flex-col">
+        {/* Main Image Section */}
+        <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted flex-shrink-0">
+          <img
+            src={currentLook.mainImage}
+            alt={currentLook.title}
+            className={`w-full h-full object-cover transition-all duration-600 ${
+              isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+            }`}
+            loading="lazy"
+          />
+          
+          {/* Navigation Overlay */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handlePrevLook}
+              disabled={currentLookIndex === 0 || isTransitioning}
+              className="rounded-full backdrop-blur-sm bg-background/80"
             >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Shop This Look
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleNextLook}
+              disabled={currentLookIndex === looks.length - 1 || isTransitioning}
+              className="rounded-full backdrop-blur-sm bg-background/80"
+            >
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Products List */}
-          <div className="p-6 space-y-4">
-            <h2 className="text-lg font-bold uppercase tracking-tight">
-              Products ({currentLook.products.length})
-            </h2>
+          {/* Look Counter */}
+          <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full z-10">
+            <p className="text-xs font-bold">
+              {currentLookIndex + 1} / {looks.length}
+            </p>
+          </div>
+        </div>
 
-            <div className="space-y-4">
-              {currentLook.products.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleProductClick(product.id)}
-                >
-                  <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+        {/* Description Section */}
+        <div className="p-6 space-y-4 border-b border-border bg-background">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {currentLook.season}
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {currentLook.title}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {currentLook.description}
+            </p>
+          </div>
+
+          <Button 
+            onClick={handleAddAllToCart}
+            className="w-full rounded-full font-bold"
+            size="lg"
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Shop This Look
+          </Button>
+        </div>
+
+        {/* Products List */}
+        <div className="p-6 space-y-4 pb-20 bg-background">
+          <h2 className="text-lg font-bold uppercase tracking-tight sticky top-0 bg-background pb-2 z-10">
+            Products ({currentLook.products.length})
+          </h2>
+
+          <div className="space-y-4">
+            {currentLook.products.map((product) => (
+              <div
+                key={product.id}
+                className="flex gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer border border-border"
+                onClick={() => handleProductClick(product.id)}
+              >
+                <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-between min-w-0">
+                  <div>
+                    <h3 className="font-bold text-sm uppercase tracking-tight mb-1 truncate">
+                      {product.name}
+                    </h3>
+                    <p className="font-bold text-sm">{product.price}</p>
                   </div>
                   
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-bold text-sm uppercase tracking-tight mb-1">
-                        {product.name}
-                      </h3>
-                      <p className="font-bold text-sm">{product.price}</p>
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full mt-2 rounded-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
-                      disabled={product.stock_status !== 'available'}
-                    >
-                      {product.stock_status === 'available' ? (
-                        <>
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add
-                        </>
-                      ) : product.stock_status === 'coming_soon' ? (
-                        'Coming Soon'
-                      ) : (
-                        'Out of Stock'
-                      )}
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-2 rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToCart(product);
+                    }}
+                    disabled={product.stock_status !== 'available'}
+                  >
+                    {product.stock_status === 'available' ? (
+                      <>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add
+                      </>
+                    ) : product.stock_status === 'coming_soon' ? (
+                      'Coming Soon'
+                    ) : (
+                      'Out of Stock'
+                    )}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
