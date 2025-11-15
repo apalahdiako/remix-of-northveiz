@@ -344,7 +344,7 @@ export function CommunityPostDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 max-w-[95vw] lg:max-w-6xl h-[90vh] bg-background overflow-hidden">
+      <DialogContent className="p-0 max-w-[95vw] lg:max-w-7xl h-[90vh] lg:h-[95vh] bg-background overflow-hidden">
         {/* Close Button */}
         <Button
           variant="ghost"
@@ -377,10 +377,10 @@ export function CommunityPostDialog({
           </Button>
         )}
 
-        {/* Two Column Layout */}
+        {/* Two Column Layout - Instagram Style */}
         <div className="flex flex-col lg:flex-row h-full">
           {/* Left Column - Image */}
-          <div className="lg:w-[60%] bg-black flex items-center justify-center relative">
+          <div className="h-[50vh] lg:h-full lg:w-[65%] bg-black flex items-center justify-center relative shrink-0">
             <img
               src={post.image_url}
               alt={post.caption || "Community post"}
@@ -389,7 +389,7 @@ export function CommunityPostDialog({
           </div>
 
           {/* Right Column - Info & Comments */}
-          <div className="lg:w-[40%] flex flex-col bg-background">
+          <div className="flex-1 lg:w-[35%] flex flex-col bg-background border-l border-border">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-3">
