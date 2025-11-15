@@ -18,6 +18,8 @@ interface Post {
   user_id: string;
   instagram_username: string | null;
   is_pinned: boolean;
+  music_artist: string | null;
+  music_title: string | null;
 }
 
 interface PostWithStats extends Post {
@@ -249,19 +251,24 @@ const Community = () => {
               <div key={post.id} className="bg-background border-b border-border pb-3">
                 {/* Post Header */}
                 <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
                       <AvatarImage src={post.userProfile?.avatar_url || undefined} />
                       <AvatarFallback>{post.userProfile?.full_name?.[0] || "U"}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-sm">{post.userProfile?.full_name || "User"}</span>
-                      {post.instagram_username && (
-                        <span className="text-xs text-muted-foreground">@{post.instagram_username}</span>
-                      )}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="font-semibold text-sm truncate">{post.userProfile?.full_name || "User"}</span>
+                      {post.music_artist && post.music_title ? (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span>🎶</span>
+                          <span className="truncate">{post.music_artist} • {post.music_title}</span>
+                        </div>
+                      ) : post.instagram_username ? (
+                        <span className="text-xs text-muted-foreground truncate">@{post.instagram_username}</span>
+                      ) : null}
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                     <MoreHorizontal className="h-5 w-5" />
                   </Button>
                 </div>

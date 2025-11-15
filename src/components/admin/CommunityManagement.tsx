@@ -18,6 +18,8 @@ interface Post {
   is_visible: boolean;
   instagram_username: string | null;
   is_pinned: boolean;
+  music_artist: string | null;
+  music_title: string | null;
 }
 
 interface Comment {
@@ -40,6 +42,8 @@ export function CommunityManagement() {
   const [imageUrl, setImageUrl] = useState("");
   const [caption, setCaption] = useState("");
   const [instagramUsername, setInstagramUsername] = useState("");
+  const [musicArtist, setMusicArtist] = useState("");
+  const [musicTitle, setMusicTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editInstagramUsername, setEditInstagramUsername] = useState("");
@@ -119,6 +123,8 @@ export function CommunityManagement() {
       image_url: imageUrl.trim(),
       caption: caption.trim() || null,
       instagram_username: instagramUsername.trim() || null,
+      music_artist: musicArtist.trim() || null,
+      music_title: musicTitle.trim() || null,
       user_id: userData.user.id,
     });
 
@@ -130,6 +136,8 @@ export function CommunityManagement() {
       setImageUrl("");
       setCaption("");
       setInstagramUsername("");
+      setMusicArtist("");
+      setMusicTitle("");
       fetchPosts();
     }
     setLoading(false);
@@ -268,6 +276,27 @@ export function CommunityManagement() {
             <p className="text-xs text-muted-foreground mt-1">
               Enter Instagram username (with or without @). Will be displayed as a clickable link.
             </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Music Artist (Optional)</label>
+              <Input
+                value={musicArtist}
+                onChange={(e) => setMusicArtist(e.target.value)}
+                placeholder="Artist name"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                🎶 Will be displayed as: Artist • Song Title
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Music Title (Optional)</label>
+              <Input
+                value={musicTitle}
+                onChange={(e) => setMusicTitle(e.target.value)}
+                placeholder="Song title"
+              />
+            </div>
           </div>
           <Button onClick={handleAddPost} disabled={loading}>
             <Upload className="h-4 w-4 mr-2" />
