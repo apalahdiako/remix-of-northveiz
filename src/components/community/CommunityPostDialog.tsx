@@ -50,6 +50,8 @@ export function CommunityPostDialog({
   likesCount,
   isLiked,
   onLikeToggle,
+  allPosts = [],
+  onNavigate,
 }: CommunityPostDialogProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
