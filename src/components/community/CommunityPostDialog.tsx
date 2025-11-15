@@ -21,8 +21,8 @@ interface Comment {
     full_name: string | null;
     avatar_url: string | null;
   };
-  likes_count?: number;
-  is_liked?: boolean;
+  likes_count: number;
+  is_liked: boolean;
   replies?: Comment[];
 }
 
@@ -113,17 +113,36 @@ export function CommunityPostDialog({
 
     if (commentsData && commentsData.length > 0) {
       const userIds = [...new Set(commentsData.map(c => c.user_id))];
+      const commentIds = commentsData.map(c => c.id);
 
+      // Fetch profiles
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url")
         .in("id", userIds);
 
+      // Fetch likes count for all comments
+      const { data: likesData } = await supabase
+        .from("community_comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", commentIds);
+
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      
+      // Count likes per comment and check if current user liked
+      const likesMap = new Map<string, { count: number; isLiked: boolean }>();
+      likesData?.forEach(like => {
+        const current = likesMap.get(like.comment_id) || { count: 0, isLiked: false };
+        current.count++;
+        if (like.user_id === user.id) current.isLiked = true;
+        likesMap.set(like.comment_id, current);
+      });
 
       const commentsWithProfiles = commentsData.map(comment => ({
         ...comment,
         profiles: profilesMap.get(comment.user_id),
+        likes_count: likesMap.get(comment.id)?.count || 0,
+        is_liked: likesMap.get(comment.id)?.isLiked || false,
         replies: [] as Comment[],
       }));
 
@@ -223,6 +242,39 @@ export function CommunityPostDialog({
     fetchComments();
   };
 
+  const handleCommentLikeToggle = async (commentId: string, currentlyLiked: boolean) => {
+    if (!user) return;
+
+    if (currentlyLiked) {
+      // Unlike
+      const { error } = await supabase
+        .from("community_comment_likes")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        toast.error("Failed to unlike comment");
+        return;
+      }
+    } else {
+      // Like
+      const { error } = await supabase
+        .from("community_comment_likes")
+        .insert({
+          comment_id: commentId,
+          user_id: user.id,
+        });
+
+      if (error) {
+        toast.error("Failed to like comment");
+        return;
+      }
+    }
+
+    fetchComments();
+  };
+
   const renderComment = (comment: Comment, isReply = false) => {
     const isOwnComment = user?.id === comment.user_id;
 
@@ -244,6 +296,19 @@ export function CommunityPostDialog({
                 </div>
                 <p className="text-sm mt-1 break-words">{comment.comment}</p>
                 <div className="flex items-center gap-4 mt-2">
+                  <button
+                    onClick={() => handleCommentLikeToggle(comment.id, comment.is_liked)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Heart
+                      className={`h-3 w-3 ${
+                        comment.is_liked ? "fill-red-500 text-red-500" : ""
+                      }`}
+                    />
+                    {comment.likes_count > 0 && (
+                      <span className="font-semibold">{comment.likes_count}</span>
+                    )}
+                  </button>
                   <button
                     onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles?.full_name || "User" })}
                     className="text-xs text-muted-foreground hover:text-foreground font-semibold"
