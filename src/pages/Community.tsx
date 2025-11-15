@@ -178,7 +178,7 @@ const Community = () => {
 
   if (!user) {
     return (
-      <div className="container px-6 py-16 pt-24 text-center">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-16 pt-24 text-center max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-4">{t("community.title")}</h1>
         <p className="text-muted-foreground mb-8">
           {t("community.loginRequired")}
@@ -192,11 +192,11 @@ const Community = () => {
 
   if (loading) {
     return (
-      <div className="container px-6 py-8 pt-24">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 pt-24 max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">{t("community.title")}</h1>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
           {[...Array(12)].map((_, i) => (
-            <Skeleton key={i} className="rounded-lg" style={{ aspectRatio: '3/4' }} />
+            <Skeleton key={i} className="rounded-lg w-full" style={{ aspectRatio: '3/4' }} />
           ))}
         </div>
       </div>
@@ -206,7 +206,7 @@ const Community = () => {
   const selectedPostWithStats = posts.find((p) => p.id === selectedPost?.id);
 
   return (
-    <div className="container px-6 py-8 pt-24">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-8 pt-24 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">{t("community.title")}</h1>
 
       {posts.length === 0 ? (
@@ -214,45 +214,45 @@ const Community = () => {
           <p className="text-muted-foreground">{t("community.noPostsYet")}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
           {posts.map((post) => (
             <div
               key={post.id}
-              className="flex flex-col gap-2 cursor-pointer"
+              className="flex flex-col gap-1 sm:gap-2 cursor-pointer"
               onClick={() => openPostDialog(post)}
             >
-              <div className="relative group overflow-hidden rounded-lg bg-muted" style={{ aspectRatio: '3/4' }}>
+              <div className="relative group overflow-hidden rounded-lg bg-muted w-full" style={{ aspectRatio: '3/4' }}>
                 <img
                   src={post.image_url}
                   alt={post.caption || "Community post"}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
                 {post.is_pinned && (
-                  <div className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm rounded-full p-2">
-                    <Pin className="h-4 w-4 text-primary-foreground fill-primary-foreground" />
+                  <div className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm rounded-full p-1.5 sm:p-2">
+                    <Pin className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground fill-primary-foreground" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                   <div className="flex items-center gap-4 text-white">
                     <div className="flex items-center gap-1">
-                      <Heart className="h-6 w-6 fill-white" />
-                      <span className="font-semibold">{post.likesCount}</span>
+                      <Heart className="h-5 w-5 sm:h-6 sm:w-6 fill-white" />
+                      <span className="font-semibold text-sm sm:text-base">{post.likesCount}</span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col gap-1 px-1">
-                <div className="flex items-center gap-2 text-sm">
-                  <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                  <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${post.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                   <span className="font-semibold">{post.likesCount} {t("community.likes")}</span>
                 </div>
                 {post.latestComment && (
-                  <p className="text-xs text-muted-foreground line-clamp-1">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
                     {post.latestComment}
                   </p>
                 )}
                 {post.commentsCount > 0 && (
-                  <button className="text-xs text-muted-foreground text-left hover:text-foreground">
+                  <button className="text-[10px] sm:text-xs text-muted-foreground text-left hover:text-foreground transition-colors">
                     {t("community.viewAllComments", { count: post.commentsCount })}
                   </button>
                 )}
