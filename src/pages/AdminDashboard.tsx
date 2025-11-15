@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
@@ -19,6 +19,7 @@ import ProductImageManagement from "@/components/admin/ProductImageManagement";
 import { OrderManagement } from "@/components/admin/OrderManagement";
 import { InboxManagement } from "@/components/admin/InboxManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
+import { BroadcastManagement } from "@/components/admin/BroadcastManagement";
 
 interface UserProfile {
   id: string;
@@ -306,6 +307,10 @@ Tim NORTHVEIZ`);
           <TabsTrigger value="community">
             Komunitas
           </TabsTrigger>
+          <TabsTrigger value="broadcast">
+            <Radio className="mr-2 h-4 w-4" />
+            Broadcast
+          </TabsTrigger>
           <TabsTrigger value="email">
             <MailIcon className="mr-2 h-4 w-4" />
             Kirim Email
@@ -348,11 +353,15 @@ Tim NORTHVEIZ`);
           <OrderManagement />
         </TabsContent>
 
-        <TabsContent value="community">
-          <CommunityManagement />
-        </TabsContent>
+            <TabsContent value="community">
+              <CommunityManagement />
+            </TabsContent>
 
-        <TabsContent value="email">
+            <TabsContent value="broadcast">
+              <BroadcastManagement />
+            </TabsContent>
+
+            <TabsContent value="email">
           <div className="grid gap-6 md:grid-cols-2">
         {/* User Selection */}
         <Card>
