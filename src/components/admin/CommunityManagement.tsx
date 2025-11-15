@@ -41,6 +41,8 @@ export function CommunityManagement() {
   const [caption, setCaption] = useState("");
   const [instagramUsername, setInstagramUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editInstagramUsername, setEditInstagramUsername] = useState("");
 
   useEffect(() => {
     fetchPosts();
@@ -180,6 +182,25 @@ export function CommunityManagement() {
     }
   };
 
+  const handleUpdatePostInstagram = async () => {
+    if (!editingPost) return;
+
+    const { error } = await supabase
+      .from("community_posts")
+      .update({ instagram_username: editInstagramUsername.trim() || null })
+      .eq("id", editingPost.id);
+
+    if (error) {
+      console.error("Error updating Instagram username:", error);
+      toast.error("Failed to update Instagram username");
+    } else {
+      toast.success("Instagram username updated");
+      setEditingPost(null);
+      setEditInstagramUsername("");
+      fetchPosts();
+    }
+  };
+
   const handleToggleCommentVisibility = async (commentId: string, isVisible: boolean) => {
     const { error } = await supabase
       .from("community_comments")
@@ -255,6 +276,39 @@ export function CommunityManagement() {
         </CardContent>
       </Card>
 
+      {/* Edit Instagram Username */}
+      {editingPost && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle>Edit Instagram Username</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Instagram Username</label>
+              <Input
+                value={editInstagramUsername}
+                onChange={(e) => setEditInstagramUsername(e.target.value)}
+                placeholder="@username"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleUpdatePostInstagram}>
+                Save Changes
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setEditingPost(null);
+                  setEditInstagramUsername("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Manage Posts */}
       <Card>
         <CardHeader>
@@ -277,6 +331,18 @@ export function CommunityManagement() {
                     title={post.is_pinned ? "Unpin post" : "Pin post"}
                   >
                     <Pin className={`h-4 w-4 ${post.is_pinned ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={() => {
+                      setEditingPost(post);
+                      setEditInstagramUsername(post.instagram_username || "");
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    title="Edit Instagram username"
+                  >
+                    <span className="text-sm font-bold">@</span>
                   </Button>
                   <Button
                     size="icon"

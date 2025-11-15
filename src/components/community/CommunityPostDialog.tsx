@@ -284,6 +284,23 @@ export function CommunityPostDialog({
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("community_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Failed to delete comment");
+    } else {
+      toast.success("Comment deleted");
+    }
+  };
+
   const renderComment = (comment: Comment, isReply = false) => (
     <div key={comment.id} className={`${isReply ? "ml-12 mt-3" : "mb-4"}`}>
       <div className="flex gap-3">
@@ -333,6 +350,14 @@ export function CommunityPostDialog({
                 Reply
               </button>
             )}
+            {user?.id === comment.user_id && (
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+              >
+                Delete
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -361,13 +386,18 @@ export function CommunityPostDialog({
                 <Avatar className="h-9 w-9">
                   <AvatarImage src={postProfile?.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {postProfile?.full_name?.[0]?.toUpperCase() || post.instagram_username?.[0]?.toUpperCase() || "U"}
+                    {post.instagram_username?.[0]?.toUpperCase() || postProfile?.full_name?.[0]?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
                   <span className="font-semibold text-sm">
                     {post.instagram_username || postProfile?.full_name || "User"}
                   </span>
+                  {post.instagram_username && (
+                    <span className="text-xs text-muted-foreground">
+                      @{post.instagram_username}
+                    </span>
+                  )}
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -375,12 +405,12 @@ export function CommunityPostDialog({
               </Button>
             </div>
 
-            {/* Image Section */}
-            <div className="relative bg-black flex items-center justify-center flex-1 overflow-hidden">
+            {/* Image Section - Full Width, No Margins */}
+            <div className="relative bg-black flex items-center justify-center flex-1">
               <img
                 src={post.image_url}
                 alt={post.caption || "Community post"}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
               />
             </div>
 
@@ -421,7 +451,7 @@ export function CommunityPostDialog({
               {post.caption && (
                 <div className="mb-2">
                   <span className="font-semibold text-sm mr-2">
-                    {post.instagram_username || postProfile?.full_name || "User"}
+                    {post.instagram_username ? `@${post.instagram_username}` : postProfile?.full_name || "User"}
                   </span>
                   <span className="text-sm">{post.caption}</span>
                 </div>
