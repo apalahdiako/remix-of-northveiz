@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Eye, EyeOff, Upload, X } from "lucide-react";
+import { Trash2, Eye, EyeOff, Upload, X, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -17,6 +17,7 @@ interface Post {
   created_at: string;
   is_visible: boolean;
   instagram_username: string | null;
+  is_pinned: boolean;
 }
 
 interface Comment {
@@ -50,6 +51,7 @@ export function CommunityManagement() {
     const { data, error } = await supabase
       .from("community_posts")
       .select("*")
+      .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -163,6 +165,21 @@ export function CommunityManagement() {
     }
   };
 
+  const handleTogglePinPost = async (postId: string, isPinned: boolean) => {
+    const { error } = await supabase
+      .from("community_posts")
+      .update({ is_pinned: !isPinned })
+      .eq("id", postId);
+
+    if (error) {
+      console.error("Error toggling pin:", error);
+      toast.error("Failed to toggle pin");
+    } else {
+      toast.success(isPinned ? "Post unpinned" : "Post pinned");
+      fetchPosts();
+    }
+  };
+
   const handleToggleCommentVisibility = async (commentId: string, isVisible: boolean) => {
     const { error } = await supabase
       .from("community_comments")
@@ -255,6 +272,14 @@ export function CommunityManagement() {
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                   <Button
                     size="icon"
+                    variant={post.is_pinned ? "default" : "secondary"}
+                    onClick={() => handleTogglePinPost(post.id, post.is_pinned)}
+                    title={post.is_pinned ? "Unpin post" : "Pin post"}
+                  >
+                    <Pin className={`h-4 w-4 ${post.is_pinned ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                    size="icon"
                     variant="secondary"
                     onClick={() => handleTogglePostVisibility(post.id, post.is_visible)}
                   >
@@ -268,6 +293,11 @@ export function CommunityManagement() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+                {post.is_pinned && (
+                  <Badge className="absolute top-2 left-2" variant="default">
+                    Pinned
+                  </Badge>
+                )}
                 {!post.is_visible && (
                   <Badge className="absolute top-2 right-2" variant="secondary">
                     Hidden
