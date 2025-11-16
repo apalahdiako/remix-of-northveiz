@@ -4,12 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Smile, ChevronLeft, ChevronRight, X, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Smile, ChevronLeft, ChevronRight, X, Trash2, Languages } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+
+interface EmojiReaction {
+  emoji: string;
+  user_id: string;
+  created_at: string;
+}
 
 interface Comment {
   id: string;
@@ -17,6 +23,7 @@ interface Comment {
   created_at: string;
   user_id: string;
   parent_comment_id: string | null;
+  emoji_reactions?: EmojiReaction[];
   profiles?: {
     full_name: string | null;
     avatar_url: string | null;
@@ -104,7 +111,7 @@ export function CommunityPostDialog({
     setLoadingComments(true);
     const { data: commentsData, error } = await supabase
       .from("community_comments")
-      .select("id, comment, created_at, user_id, parent_comment_id")
+      .select("id, comment, created_at, user_id, parent_comment_id, emoji_reactions")
       .eq("post_id", post.id)
       .eq("is_visible", true)
       .order("created_at", { ascending: true });
@@ -144,6 +151,7 @@ export function CommunityPostDialog({
 
       const commentsWithProfiles = commentsData.map(comment => ({
         ...comment,
+        emoji_reactions: (comment.emoji_reactions as unknown as EmojiReaction[]) || [],
         profiles: profilesMap.get(comment.user_id),
         likes_count: likesMap.get(comment.id)?.count || 0,
         is_liked: likesMap.get(comment.id)?.isLiked || false,
