@@ -47,6 +47,7 @@ export type Database = {
         Row: {
           comment: string
           created_at: string
+          emoji_reactions: Json | null
           id: string
           is_visible: boolean
           parent_comment_id: string | null
@@ -57,6 +58,7 @@ export type Database = {
         Insert: {
           comment: string
           created_at?: string
+          emoji_reactions?: Json | null
           id?: string
           is_visible?: boolean
           parent_comment_id?: string | null
@@ -67,6 +69,7 @@ export type Database = {
         Update: {
           comment?: string
           created_at?: string
+          emoji_reactions?: Json | null
           id?: string
           is_visible?: boolean
           parent_comment_id?: string | null

@@ -60,6 +60,10 @@ export function CommunityPostDialog({
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
+  const [translatedComments, setTranslatedComments] = useState<Set<string>>(new Set());
+  
+  const commonEmojis = ["❤️", "😂", "😮", "😢", "🔥", "👏"];
   const [loadingComments, setLoadingComments] = useState(false);
   const [postProfile, setPostProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
   const { user } = useAuth();
@@ -275,8 +279,81 @@ export function CommunityPostDialog({
     fetchComments();
   };
 
+  const handleEmojiReaction = async (commentId: string, emoji: string) => {
+    if (!user) return;
+
+    const comment = comments.find(c => c.id === commentId);
+    if (!comment) return;
+
+    const reactions = comment.emoji_reactions || [];
+    const userReaction = reactions.find(r => r.user_id === user.id);
+    
+    let updatedReactions;
+    if (userReaction && userReaction.emoji === emoji) {
+      // Remove reaction
+      updatedReactions = reactions.filter(r => r.user_id !== user.id);
+    } else if (userReaction) {
+      // Update existing reaction
+      updatedReactions = reactions.map(r => 
+        r.user_id === user.id 
+          ? { ...r, emoji, created_at: new Date().toISOString() }
+          : r
+      );
+    } else {
+      // Add new reaction
+      updatedReactions = [...reactions, {
+        emoji,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      }];
+    }
+
+    const { error } = await supabase
+      .from("community_comments")
+      .update({ emoji_reactions: updatedReactions })
+      .eq("id", commentId);
+
+    if (error) {
+      toast.error("Failed to add reaction");
+      return;
+    }
+
+    setShowEmojiPicker(null);
+    fetchComments();
+  };
+
+  const getEmojiCounts = (reactions?: EmojiReaction[]) => {
+    if (!reactions) return {};
+    const counts: Record<string, { count: number; userReacted: boolean }> = {};
+    reactions.forEach(r => {
+      if (!counts[r.emoji]) {
+        counts[r.emoji] = { count: 0, userReacted: false };
+      }
+      counts[r.emoji].count++;
+      if (r.user_id === user?.id) {
+        counts[r.emoji].userReacted = true;
+      }
+    });
+    return counts;
+  };
+
+  const handleTranslateComment = (commentId: string) => {
+    // Toggle translation display
+    setTranslatedComments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+      } else {
+        newSet.add(commentId);
+      }
+      return newSet;
+    });
+  };
+
   const renderComment = (comment: Comment, isReply = false) => {
     const isOwnComment = user?.id === comment.user_id;
+    const emojiCounts = getEmojiCounts(comment.emoji_reactions);
+    const isTranslated = translatedComments.has(comment.id);
 
     return (
       <div key={comment.id} className={`${isReply ? "ml-12" : ""}`}>
@@ -295,7 +372,28 @@ export function CommunityPostDialog({
                   </span>
                 </div>
                 <p className="text-sm mt-1 break-words">{comment.comment}</p>
-                <div className="flex items-center gap-4 mt-2">
+                
+                {/* Emoji Reactions Display */}
+                {Object.keys(emojiCounts).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {Object.entries(emojiCounts).map(([emoji, data]) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleEmojiReaction(comment.id, emoji)}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors ${
+                          data.userReacted 
+                            ? "bg-primary/20 border border-primary" 
+                            : "bg-muted hover:bg-muted/80 border border-transparent"
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        <span className="font-semibold">{data.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 mt-2 flex-wrap">
                   <button
                     onClick={() => handleCommentLikeToggle(comment.id, comment.is_liked)}
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -309,13 +407,52 @@ export function CommunityPostDialog({
                       <span className="font-semibold">{comment.likes_count}</span>
                     )}
                   </button>
+                  
                   <button
                     onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles?.full_name || "User" })}
                     className="text-xs text-muted-foreground hover:text-foreground font-semibold"
                   >
                     {t("community.reply")}
                   </button>
+
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowEmojiPicker(showEmojiPicker === comment.id ? null : comment.id)}
+                      className="text-xs text-muted-foreground hover:text-foreground font-semibold"
+                    >
+                      <Smile className="h-3 w-3" />
+                    </button>
+                    
+                    {/* Emoji Picker Popup */}
+                    {showEmojiPicker === comment.id && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 flex gap-1 z-50">
+                        {commonEmojis.map(emoji => (
+                          <button
+                            key={emoji}
+                            onClick={() => handleEmojiReaction(comment.id, emoji)}
+                            className="hover:scale-125 transition-transform text-lg p-1"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => handleTranslateComment(comment.id)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-semibold"
+                  >
+                    <Languages className="h-3 w-3" />
+                    {isTranslated ? "Show Original" : "Translate"}
+                  </button>
                 </div>
+
+                {isTranslated && (
+                  <p className="text-sm mt-2 italic text-muted-foreground">
+                    [Translation: {comment.comment}]
+                  </p>
+                )}
               </div>
               {isOwnComment && (
                 <Button
