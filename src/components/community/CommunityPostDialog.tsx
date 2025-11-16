@@ -489,7 +489,7 @@ export function CommunityPostDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 max-w-[95vw] lg:max-w-7xl h-[90vh] lg:h-[95vh] bg-background overflow-hidden">
+      <DialogContent className="p-0 max-w-[95vw] lg:max-w-2xl h-[95vh] bg-background overflow-hidden">
         {/* Close Button */}
         <Button
           variant="ghost"
@@ -522,19 +522,10 @@ export function CommunityPostDialog({
           </Button>
         )}
 
-        {/* Two Column Layout - Instagram Style */}
-        <div className="flex flex-col lg:flex-row h-full">
-          {/* Left Column - Image (60%) */}
-          <div className="h-[50vh] lg:h-full lg:w-[60%] bg-black flex items-center justify-center relative shrink-0">
-            <img
-              src={post.image_url}
-              alt={post.caption || "Community post"}
-              className="w-full h-full object-contain"
-            />
-          </div>
-
-          {/* Right Column - Info & Comments (40%) */}
-          <div className="flex-1 lg:w-[40%] flex flex-col bg-background border-l border-border">
+        {/* Full Width Comments Layout */}
+        <div className="flex flex-col h-full">
+          {/* Content - Info & Comments */}
+          <div className="flex-1 flex flex-col bg-background overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
@@ -589,8 +580,8 @@ export function CommunityPostDialog({
               )}
             </ScrollArea>
 
-            {/* Action Bar */}
-            <div className="border-t border-border p-4">
+            {/* Action Bar - Sticky Footer */}
+            <div className="border-t border-border p-4 shrink-0 bg-background">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-4">
                   <Button
