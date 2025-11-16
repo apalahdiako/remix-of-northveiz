@@ -44,7 +44,7 @@ const Home = () => {
           <Link to="/catalog">
             <Button
               size="lg"
-              className="h-14 px-12 text-lg font-bold rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all hover:scale-105"
+              className="h-14 px-12 text-lg font-bold rounded-full bg-transparent border-2 border-white text-white hover:bg-white/10 backdrop-blur-sm transition-all hover:scale-105"
             >
               {t("home.shopButton")}
             </Button>
