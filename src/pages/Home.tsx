@@ -5,7 +5,6 @@ import heroVideo from "@/assets/hero-video.mp4";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalTimer } from "@/components/GlobalTimer";
-import PremiumMarquee from "@/components/PremiumMarquee";
 
 // Payment method logos
 import qrisLogo from "@/assets/payment/qris-new.jpg";
@@ -27,9 +26,6 @@ const Home = () => {
   
   return (
     <div className="min-h-screen">
-      {/* Premium Marquee Ticker */}
-      <PremiumMarquee />
-      
       {/* Hero Section */}
       <section className="relative h-[600px] md:h-[700px] bg-gradient-hero overflow-hidden">
         <div className="absolute inset-0">
