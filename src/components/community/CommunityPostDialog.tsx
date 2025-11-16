@@ -379,8 +379,8 @@ export function CommunityPostDialog({
 
         {/* Two Column Layout - Instagram Style */}
         <div className="flex flex-col lg:flex-row h-full">
-          {/* Left Column - Image */}
-          <div className="h-[50vh] lg:h-full lg:w-[65%] bg-black flex items-center justify-center relative shrink-0">
+          {/* Left Column - Image (60%) */}
+          <div className="h-[50vh] lg:h-full lg:w-[60%] bg-black flex items-center justify-center relative shrink-0">
             <img
               src={post.image_url}
               alt={post.caption || "Community post"}
@@ -388,10 +388,10 @@ export function CommunityPostDialog({
             />
           </div>
 
-          {/* Right Column - Info & Comments */}
-          <div className="flex-1 lg:w-[35%] flex flex-col bg-background border-l border-border">
+          {/* Right Column - Info & Comments (40%) */}
+          <div className="flex-1 lg:w-[40%] flex flex-col bg-background border-l border-border">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={postProfile?.avatar_url || undefined} />
@@ -409,27 +409,27 @@ export function CommunityPostDialog({
               </Button>
             </div>
 
-            {/* Comments Section - Scrollable */}
-            <ScrollArea className="flex-1 p-4">
-              {/* Caption as first "comment" */}
-              {post.caption && (
-                <div className="flex gap-3 mb-4 pb-4 border-b border-border">
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarImage src={postProfile?.avatar_url || undefined} />
-                    <AvatarFallback>{postProfile?.full_name?.[0] || "U"}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{postProfile?.full_name || "User"}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <p className="text-sm mt-1 whitespace-pre-wrap">{post.caption}</p>
+            {/* Caption - Fixed below header */}
+            {post.caption && (
+              <div className="flex gap-3 p-4 border-b border-border shrink-0">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={postProfile?.avatar_url || undefined} />
+                  <AvatarFallback>{postProfile?.full_name?.[0] || "U"}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{postProfile?.full_name || "User"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                    </span>
                   </div>
+                  <p className="text-sm mt-1 whitespace-pre-wrap">{post.caption}</p>
                 </div>
-              )}
+              </div>
+            )}
 
+            {/* Comments Section - Scrollable (ONLY comments) */}
+            <ScrollArea className="flex-1 p-4">
               {/* Comments List */}
               {loadingComments ? (
                 <div className="text-center py-8 text-muted-foreground">{t("common.loading")}</div>
