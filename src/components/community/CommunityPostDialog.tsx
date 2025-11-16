@@ -565,7 +565,7 @@ export function CommunityPostDialog({
             )}
 
             {/* Comments Section - Scrollable (ONLY comments) */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 overflow-y-auto p-4">
               {/* Comments List */}
               {loadingComments ? (
                 <div className="text-center py-8 text-muted-foreground">{t("common.loading")}</div>
@@ -574,90 +574,97 @@ export function CommunityPostDialog({
                   {t("community.noComments")}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 pb-4">
                   {comments.map((comment) => renderComment(comment))}
                 </div>
               )}
             </ScrollArea>
 
             {/* Action Bar - Sticky Footer */}
-            <div className="border-t border-border p-4 shrink-0 bg-background">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onLikeToggle}
-                    className="hover:bg-transparent"
-                  >
-                    <Heart
-                      className={`h-6 w-6 transition-colors ${
-                        isLiked ? "fill-red-500 text-red-500" : ""
-                      }`}
-                    />
-                  </Button>
+            <div className="border-t border-border bg-background shrink-0">
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onLikeToggle}
+                      className="hover:bg-transparent"
+                    >
+                      <Heart
+                        className={`h-6 w-6 transition-colors ${
+                          isLiked ? "fill-red-500 text-red-500" : ""
+                        }`}
+                      />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="hover:bg-transparent">
+                      <MessageCircle className="h-6 w-6" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="hover:bg-transparent">
+                      <Share2 className="h-6 w-6" />
+                    </Button>
+                  </div>
                   <Button variant="ghost" size="icon" className="hover:bg-transparent">
-                    <MessageCircle className="h-6 w-6" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="hover:bg-transparent">
-                    <Share2 className="h-6 w-6" />
+                    <Bookmark className="h-6 w-6" />
                   </Button>
                 </div>
-                <Button variant="ghost" size="icon" className="hover:bg-transparent">
-                  <Bookmark className="h-6 w-6" />
-                </Button>
+
+                <div className="font-semibold text-sm">
+                  {likesCount} {t("community.likes")}
+                </div>
+
+                <div className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                </div>
               </div>
 
-              <div className="font-semibold text-sm mb-3">
-                {likesCount} {t("community.likes")}
-              </div>
-
-              <div className="text-xs text-muted-foreground mb-3">
-                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-              </div>
-
-              {/* Comment Input */}
-              <div className="flex items-center gap-2 border-t border-border pt-3">
-                <Button variant="ghost" size="icon" className="shrink-0">
-                  <Smile className="h-5 w-5" />
-                </Button>
-                <Input
-                  placeholder={
-                    replyingTo
-                      ? `${t("community.replyingTo")} @${replyingTo.username}...`
-                      : t("community.addComment")
-                  }
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      replyingTo ? handleAddReply(replyingTo.id) : handleAddComment();
-                    }
-                  }}
-                  className="border-0 focus-visible:ring-0 px-0"
-                />
-                {newComment.trim() && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={replyingTo ? () => handleAddReply(replyingTo.id) : handleAddComment}
-                    className="text-primary font-semibold shrink-0"
-                  >
-                    {t("community.post")}
-                  </Button>
+              {/* Comment Input - Always Visible */}
+              <div className="border-t border-border p-4 bg-background">
+                {replyingTo && (
+                  <div className="mb-2 text-xs text-muted-foreground">
+                    {t("community.replyingTo")} @{replyingTo.username}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplyingTo(null)}
+                      className="ml-2 h-auto p-0 text-xs hover:bg-transparent"
+                    >
+                      {t("common.cancel")}
+                    </Button>
+                  </div>
                 )}
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="shrink-0">
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                  <Input
+                    placeholder={
+                      replyingTo
+                        ? `${t("community.replyingTo")} @${replyingTo.username}...`
+                        : t("community.addComment")
+                    }
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        replyingTo ? handleAddReply(replyingTo.id) : handleAddComment();
+                      }
+                    }}
+                    className="border-0 focus-visible:ring-0 px-0"
+                  />
+                  {newComment.trim() && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={replyingTo ? () => handleAddReply(replyingTo.id) : handleAddComment}
+                      className="text-primary font-semibold shrink-0"
+                    >
+                      {t("community.post")}
+                    </Button>
+                  )}
+                </div>
               </div>
-              {replyingTo && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setReplyingTo(null)}
-                  className="mt-2 text-xs"
-                >
-                  {t("common.cancel")}
-                </Button>
-              )}
             </div>
           </div>
         </div>
