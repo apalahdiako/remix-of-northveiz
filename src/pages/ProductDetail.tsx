@@ -272,6 +272,13 @@ const ProductDetail = () => {
                       e.currentTarget.src = (thumb.type === 'front' ? fallback?.front : fallback?.back) || '/placeholder.svg';
                     }}
                   />
+                  {/* Swipe hint overlay - only on first image when back exists */}
+                  {thumb.type === 'front' && hasBackImage && currentThumbnail === 0 && (
+                    <div className="absolute bottom-12 right-4 flex items-center gap-1.5 bg-foreground/60 text-background text-xs font-medium px-3 py-1.5 rounded-full animate-fade-in pointer-events-none">
+                      <span>Geser</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </div>
+                  )}
                 </div>
               </CarouselItem>
             ))}
