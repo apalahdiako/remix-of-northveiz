@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +7,8 @@ import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getProductImageFallback } from "@/lib/productImageFallbacks";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from "@/components/ui/carousel";
 import { ProductReviews } from "@/components/ProductReviews";
 import { useProductLikes } from "@/hooks/useProductLikes";
-import Autoplay from "embla-carousel-autoplay";
 
 const sizes = ["S", "M", "L", "XL", "XXL"];
 
@@ -46,12 +39,6 @@ const ProductDetail = () => {
   const [backImage, setBackImage] = useState<ProductImage | null>(null);
   const [averageRating, setAverageRating] = useState<number>(0);
   const [totalReviews, setTotalReviews] = useState<number>(0);
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [mainCarouselApi, setMainCarouselApi] = useState<CarouselApi>();
-  const [currentThumbnail, setCurrentThumbnail] = useState(0);
-  const autoplayPlugin = useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
-  );
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -165,33 +152,6 @@ const ProductDetail = () => {
     });
   };
 
-  // Sync both carousels
-  useEffect(() => {
-    if (!carouselApi || !mainCarouselApi) return;
-
-    const onThumbnailSelect = () => {
-      const index = carouselApi.selectedScrollSnap();
-      setCurrentThumbnail(index);
-      setShowBack(index === 1);
-      mainCarouselApi.scrollTo(index);
-    };
-
-    const onMainSelect = () => {
-      const index = mainCarouselApi.selectedScrollSnap();
-      setCurrentThumbnail(index);
-      setShowBack(index === 1);
-      carouselApi.scrollTo(index);
-    };
-
-    carouselApi.on("select", onThumbnailSelect);
-    mainCarouselApi.on("select", onMainSelect);
-
-    return () => {
-      carouselApi.off("select", onThumbnailSelect);
-      mainCarouselApi.off("select", onMainSelect);
-    };
-  }, [carouselApi, mainCarouselApi]);
-
   // Setup realtime subscription for image updates
   useEffect(() => {
     if (!id) return;
@@ -233,7 +193,6 @@ const ProductDetail = () => {
     );
   }
 
-  const currentImage = showBack && backImage ? backImage : frontImage;
   const fallback = getProductImageFallback(id || undefined);
   const hasBackImage = !!backImage || !!fallback?.back;
   const displayUrl = (showBack
@@ -241,128 +200,29 @@ const ProductDetail = () => {
     : (frontImage?.image_url || fallback?.front)
   ) || (product as any)?.image || '/placeholder.svg';
 
-  // Prepare thumbnail images array
-  const thumbnailImages = [
-    {
-      url: frontImage?.image_url || fallback?.front || (product as any)?.image || '/placeholder.svg',
-      type: 'front',
-      label: 'Depan'
-    },
-    ...(hasBackImage ? [{
-      url: backImage?.image_url || fallback?.back || '/placeholder.svg',
-      type: 'back',
-      label: 'Belakang'
-    }] : [])
-  ];
-
   return (
     <div className="min-h-screen pb-24 pt-16">
-      {/* Product Image Carousel */}
-      <div className="relative">
-        <Carousel
-          opts={{
-            align: "start",
-            loop: thumbnailImages.length > 1,
+      {/* Product Image - Tap to flip */}
+      <div
+        className="relative aspect-square w-full bg-muted overflow-hidden cursor-pointer"
+        onClick={() => hasBackImage && setShowBack(!showBack)}
+      >
+        <img
+          src={displayUrl}
+          alt={`${product?.name} ${showBack ? 'Back' : 'Front'}`}
+          className="w-full h-full object-cover transition-all duration-500"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            e.currentTarget.src = fallback?.front || '/placeholder.svg';
           }}
-          className="w-full"
-          setApi={setMainCarouselApi}
-        >
-          <CarouselContent>
-            {thumbnailImages.map((thumb, index) => (
-              <CarouselItem key={thumb.type}>
-                <div className="aspect-square w-full bg-muted relative overflow-hidden">
-                  <img
-                    src={thumb.url}
-                    alt={`${product?.name} ${thumb.label}`}
-                    className="w-full h-full object-cover transition-opacity duration-300"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      const img = e.currentTarget;
-                      if (thumb.type === 'front') {
-                        img.src = fallback?.front || '/placeholder.svg';
-                      } else {
-                        img.src = fallback?.back || '/placeholder.svg';
-                      }
-                    }}
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
-
-        {/* Thumbnail Slider - Always visible */}
-        <div className="px-4 py-4">
-          <Carousel
-            opts={{
-              align: "start",
-              loop: thumbnailImages.length > 1,
-            }}
-            plugins={thumbnailImages.length > 1 ? [autoplayPlugin.current] : []}
-            className="w-full"
-            setApi={setCarouselApi}
-            onMouseEnter={() => autoplayPlugin.current.stop()}
-            onMouseLeave={() => autoplayPlugin.current.play()}
-          >
-            <CarouselContent className="-ml-2">
-              {thumbnailImages.map((thumb, index) => (
-                <CarouselItem key={thumb.type} className="basis-1/4 pl-2">
-                  <button
-                    onClick={() => {
-                      const isBack = thumb.type === 'back';
-                      setShowBack(isBack);
-                      carouselApi?.scrollTo(index);
-                      mainCarouselApi?.scrollTo(index);
-                    }}
-                    className={`relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all ${
-                      (showBack && thumb.type === 'back') || (!showBack && thumb.type === 'front')
-                        ? 'border-foreground scale-95'
-                        : 'border-border hover:border-foreground/50'
-                    }`}
-                  >
-                    <img
-                      src={thumb.url}
-                      alt={`${product?.name} ${thumb.label}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (thumb.type === 'front') {
-                          img.src = fallback?.front || '/placeholder.svg';
-                        } else {
-                          img.src = fallback?.back || '/placeholder.svg';
-                        }
-                      }}
-                    />
-                  </button>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
-          
-          {/* Indicator Dots */}
-          {thumbnailImages.length > 1 && (
-            <div className="flex justify-center gap-2 mt-3">
-              {thumbnailImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    carouselApi?.scrollTo(index);
-                    mainCarouselApi?.scrollTo(index);
-                    setShowBack(index === 1);
-                  }}
-                  className={`h-1.5 rounded-full transition-all ${
-                    currentThumbnail === index 
-                      ? 'w-6 bg-foreground' 
-                      : 'w-1.5 bg-border hover:bg-foreground/50'
-                  }`}
-                  aria-label={`Go to thumbnail ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        />
+        {hasBackImage && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            <span className={`h-2 w-2 rounded-full transition-all ${!showBack ? 'bg-foreground' : 'bg-foreground/30'}`} />
+            <span className={`h-2 w-2 rounded-full transition-all ${showBack ? 'bg-foreground' : 'bg-foreground/30'}`} />
+          </div>
+        )}
       </div>
       <div className="container px-6 pb-6">
         {/* Status Badge */}
