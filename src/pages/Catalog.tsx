@@ -93,7 +93,7 @@ const Catalog = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 pt-20 pb-6">
         {/* Filter & Sort Buttons */}
         <div className="flex gap-3 mb-6">
           <Button
