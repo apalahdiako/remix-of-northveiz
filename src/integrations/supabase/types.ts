@@ -306,6 +306,41 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          price_at_purchase: number
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          price_at_purchase: number
+          product_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          price_at_purchase?: number
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           cancelled_at: string | null
@@ -537,6 +572,7 @@ export type Database = {
           image: string
           name: string
           price: string
+          stock: number
           stock_status: string
           updated_at: string | null
         }
@@ -546,6 +582,7 @@ export type Database = {
           image: string
           name: string
           price: string
+          stock?: number
           stock_status?: string
           updated_at?: string | null
         }
@@ -555,6 +592,7 @@ export type Database = {
           image?: string
           name?: string
           price?: string
+          stock?: number
           stock_status?: string
           updated_at?: string | null
         }
@@ -715,6 +753,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      checkout_order: {
+        Args: {
+          p_city: string
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_items: Json
+          p_order_number: string
+          p_payment_method: string
+          p_postal_code: string
+          p_shipping_address: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -726,9 +779,12 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       order_status:
-        | "pending_payment"
+        | "pending"
+        | "paid"
         | "processing"
-        | "in_transit"
+        | "packed"
+        | "shipped"
+        | "delivered"
         | "completed"
         | "return_requested"
         | "cancelled"
@@ -861,9 +917,12 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       order_status: [
-        "pending_payment",
+        "pending",
+        "paid",
         "processing",
-        "in_transit",
+        "packed",
+        "shipped",
+        "delivered",
         "completed",
         "return_requested",
         "cancelled",

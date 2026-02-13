@@ -113,7 +113,7 @@ export const ProductReviews = ({ productId, productName }: ProductReviewsProps) 
         .select('id')
         .eq('product_id', productId)
         .eq('user_id', user.id)
-        .eq('payment_status', 'paid')
+        .eq('order_status', 'completed')
         .limit(1);
 
       if (error) throw error;
