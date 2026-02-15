@@ -202,7 +202,13 @@ export const OrdersList = () => {
                       <h4 className="font-semibold mb-2 text-sm">Status Pengiriman</h4>
                       <OrderTrackingStepper currentStatus={order.order_status} trackingNumber={order.tracking_number} />
 
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-2 mt-4 flex-wrap">
+                        {order.order_status === 'pending' && (
+                          <Button size="sm" className="bg-primary" onClick={(e) => { e.stopPropagation(); window.location.href = `/payment?orderId=${order.id}&orderNumber=${order.order_number}`; }}>
+                            <CreditCard className="w-4 h-4 mr-1" /> Bayar Sekarang
+                          </Button>
+                        )}
+
                         {(order.order_status === 'pending' || order.order_status === 'processing') && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
