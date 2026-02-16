@@ -42,6 +42,22 @@ async function generateSignature(
   return `HMACSHA256=${base64Encode(new Uint8Array(signature))}`;
 }
 
+// Map channel IDs to DOKU API endpoints
+function getPaymentConfig(channel: string) {
+  const channelMap: Record<string, { target: string; type: string }> = {
+    BCA: { target: "/bca-virtual-account/v2/payment-code", type: "va" },
+    BNI: { target: "/bni-virtual-account/v2/payment-code", type: "va" },
+    BRI: { target: "/bri-virtual-account/v2/payment-code", type: "va" },
+    MANDIRI: { target: "/mandiri-virtual-account/v2/payment-code", type: "va" },
+    CIMB: { target: "/cimb-virtual-account/v2/payment-code", type: "va" },
+    PERMATA: { target: "/permata-virtual-account/v2/payment-code", type: "va" },
+    QRIS: { target: "/qris/v1/payment-code", type: "qris" },
+    OVO: { target: "/ovo-emoney/v1/payment", type: "ewallet" },
+    SHOPEEPAY: { target: "/shopee-pay/v1/payment", type: "ewallet" },
+  };
+  return channelMap[channel] || { target: "/checkout/v1/payment", type: "checkout" };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -57,16 +73,14 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { orderId } = await req.json();
+    const { orderId, paymentChannel } = await req.json();
     if (!orderId) throw new Error("orderId is required");
 
-    // Fetch order
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select("*")
@@ -75,51 +89,91 @@ serve(async (req) => {
 
     if (orderError || !order) throw new Error("Order not found");
 
-    // Build DOKU Checkout request
+    const channel = paymentChannel || "CHECKOUT";
+    const paymentConfig = getPaymentConfig(channel);
+
     const requestId = crypto.randomUUID();
     const requestTimestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-    const requestTarget = "/checkout/v1/payment";
+    const requestTarget = paymentConfig.target;
     const dokuBaseUrl = "https://api-sandbox.doku.com";
 
-    const bodyPayload = {
-      order: {
-        amount: order.total_amount,
-        invoice_number: order.order_number,
-        currency: "IDR",
-        callback_url: `${req.headers.get("origin") || "https://northveiz-web-fashion.lovable.app"}/payment?orderId=${orderId}&orderNumber=${order.order_number}`,
-        line_items: [
-          {
+    let bodyPayload: any;
+
+    if (paymentConfig.type === "checkout") {
+      // Fallback: DOKU Checkout (redirect)
+      bodyPayload = {
+        order: {
+          amount: order.total_amount,
+          invoice_number: order.order_number,
+          currency: "IDR",
+          callback_url: `${req.headers.get("origin") || "https://northveiz-web-fashion.lovable.app"}/payment?orderId=${orderId}&orderNumber=${order.order_number}`,
+          line_items: [{
             name: order.product_name,
             price: order.total_amount,
             quantity: order.quantity,
-          },
-        ],
-      },
-      payment: {
-        payment_due_date: 60, // 60 minutes
-      },
-      customer: {
-        id: order.user_id || orderId,
-        name: order.customer_name,
-        email: order.customer_email,
-        phone: order.customer_phone,
-        address: order.shipping_address,
-        country: "ID",
-      },
-    };
+          }],
+        },
+        payment: { payment_due_date: 60 },
+        customer: {
+          id: order.user_id || orderId,
+          name: order.customer_name,
+          email: order.customer_email,
+          phone: order.customer_phone,
+          address: order.shipping_address,
+          country: "ID",
+        },
+      };
+    } else if (paymentConfig.type === "va") {
+      bodyPayload = {
+        order: {
+          amount: order.total_amount,
+          invoice_number: order.order_number,
+        },
+        virtual_account_info: {
+          expired_time: 60,
+          reusable_status: false,
+        },
+        customer: {
+          name: order.customer_name,
+          email: order.customer_email,
+        },
+      };
+    } else if (paymentConfig.type === "qris") {
+      bodyPayload = {
+        order: {
+          amount: order.total_amount,
+          invoice_number: order.order_number,
+        },
+        payment: {
+          payment_due_date: 60,
+        },
+      };
+    } else if (paymentConfig.type === "ewallet") {
+      bodyPayload = {
+        order: {
+          amount: order.total_amount,
+          invoice_number: order.order_number,
+          callback_url: `${req.headers.get("origin") || "https://northveiz-web-fashion.lovable.app"}/payment?orderId=${orderId}&orderNumber=${order.order_number}`,
+        },
+        payment: {
+          payment_due_date: 60,
+        },
+        customer: {
+          id: order.user_id || orderId,
+          name: order.customer_name,
+          email: order.customer_email,
+          phone: order.customer_phone,
+        },
+      };
+    }
 
     const bodyString = JSON.stringify(bodyPayload);
     const digest = await generateDigest(bodyString);
     const signature = await generateSignature(
-      DOKU_CLIENT_ID,
-      requestId,
-      requestTimestamp,
-      requestTarget,
-      digest,
-      DOKU_SECRET_KEY
+      DOKU_CLIENT_ID, requestId, requestTimestamp, requestTarget, digest, DOKU_SECRET_KEY
     );
 
-    console.log("Calling DOKU Checkout API...", { requestId, orderNumber: order.order_number });
+    console.log("Calling DOKU API...", { requestId, channel, requestTarget, orderNumber: order.order_number });
 
     const dokuResponse = await fetch(`${dokuBaseUrl}${requestTarget}`, {
       method: "POST",
@@ -140,19 +194,28 @@ serve(async (req) => {
       throw new Error(`DOKU API error [${dokuResponse.status}]: ${JSON.stringify(dokuData)}`);
     }
 
-    console.log("DOKU payment created successfully:", dokuData);
+    console.log("DOKU payment created successfully:", JSON.stringify(dokuData));
 
-    // Store payment URL in order (optional metadata)
-    const paymentUrl = dokuData?.response?.payment?.url || dokuData?.payment?.url;
+    // Extract relevant info based on payment type
+    const response: any = { success: true, doku_response: dokuData };
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        payment_url: paymentUrl,
-        doku_response: dokuData,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    if (paymentConfig.type === "va") {
+      const vaInfo = dokuData?.virtual_account_info || {};
+      response.va_number = vaInfo.virtual_account_number;
+      response.expiry_time = vaInfo.expired_date;
+    } else if (paymentConfig.type === "qris") {
+      response.qr_code_url = dokuData?.qr_string || dokuData?.qr?.url;
+    } else if (paymentConfig.type === "ewallet") {
+      const payment = dokuData?.response?.payment || dokuData?.payment || {};
+      response.payment_url = payment?.url || dokuData?.payment_url;
+    } else {
+      response.payment_url = dokuData?.response?.payment?.url || dokuData?.payment?.url;
+    }
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     console.error("Error creating DOKU payment:", error);
     const message = error instanceof Error ? error.message : "Unknown error";

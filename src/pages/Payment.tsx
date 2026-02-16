@@ -3,9 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, Copy, Loader2, ExternalLink } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderTrackingStepper } from "@/components/orders/OrderTrackingStepper";
+import PaymentMethodSelector, { type PaymentResult } from "@/components/payment/PaymentMethodSelector";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -15,8 +16,8 @@ const Payment = () => {
   
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [creatingPayment, setCreatingPayment] = useState(false);
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
 
   useEffect(() => {
     if (orderId) {
@@ -55,34 +56,53 @@ const Payment = () => {
     }
   };
 
-  const createDokuPayment = async () => {
+  const createPayment = async (channelId: string) => {
     setCreatingPayment(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke("create-doku-payment", {
-        body: { orderId },
+        body: { orderId, paymentChannel: channelId },
       });
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error || "Gagal membuat pembayaran");
 
-      if (data.payment_url) {
-        setPaymentUrl(data.payment_url);
-        window.open(data.payment_url, "_blank");
-      } else {
-        toast({ title: "Info", description: "Payment URL tidak tersedia. Coba lagi nanti." });
-      }
+      // Map response to PaymentResult
+      const result: PaymentResult = mapDokuResponse(data, channelId);
+      setPaymentResult(result);
     } catch (error: any) {
-      console.error("Error creating DOKU payment:", error);
-      toast({ title: "Error", description: error.message || "Gagal membuat pembayaran DOKU", variant: "destructive" });
+      console.error("Error creating payment:", error);
+      toast({ title: "Error", description: error.message || "Gagal membuat pembayaran", variant: "destructive" });
     } finally {
       setCreatingPayment(false);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: "Berhasil disalin!", description: "Teks telah disalin ke clipboard" });
+  const mapDokuResponse = (data: any, channelId: string): PaymentResult => {
+    const dokuRes = data.doku_response?.response || data.doku_response || {};
+    const payment = dokuRes.payment || {};
+    const vaInfo = dokuRes.virtual_account_info || payment.virtual_account_info || {};
+    const qrInfo = dokuRes.qr || payment.qr || {};
+
+    if (["BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"].includes(channelId)) {
+      return {
+        type: "va",
+        va_number: vaInfo.virtual_account_number || data.va_number || "Menunggu...",
+        bank_name: channelId,
+        expiry_time: vaInfo.expired_date || payment.expired_date,
+      };
+    } else if (channelId === "QRIS") {
+      return {
+        type: "qris",
+        qr_code_url: qrInfo.qr_code_url || qrInfo.url || data.qr_code_url,
+        expiry_time: payment.expired_date,
+      };
+    } else {
+      return {
+        type: "ewallet",
+        payment_url: data.payment_url || payment.url,
+        expiry_time: payment.expired_date,
+      };
+    }
   };
 
   if (loading) {
@@ -134,38 +154,16 @@ const Payment = () => {
         </div>
       </div>
 
-      {/* DOKU Payment - only show if pending */}
+      {/* Inline Payment Method - only show if pending */}
       {order.order_status === 'pending' && (
-        <div className="bg-card border rounded-lg p-6 mb-6">
-          <h2 className="font-bold text-lg mb-4">Pembayaran</h2>
-          
-          {paymentUrl ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Halaman pembayaran sudah dibuka di tab baru. Jika tidak terbuka, klik tombol di bawah:
-              </p>
-              <Button onClick={() => window.open(paymentUrl, "_blank")} className="w-full h-12 rounded-full font-bold">
-                <ExternalLink className="w-4 h-4 mr-2" /> Buka Halaman Pembayaran
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Klik tombol di bawah untuk melanjutkan pembayaran melalui DOKU. Anda dapat memilih metode pembayaran (Transfer Bank, e-Wallet, QRIS, dll) di halaman pembayaran DOKU.
-              </p>
-              <Button 
-                onClick={createDokuPayment} 
-                className="w-full h-14 rounded-full text-base font-bold"
-                disabled={creatingPayment}
-              >
-                {creatingPayment ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyiapkan Pembayaran...</>
-                ) : (
-                  "Bayar Sekarang via DOKU"
-                )}
-              </Button>
-            </div>
-          )}
+        <div className="bg-card border rounded-xl p-6 mb-6">
+          <h2 className="font-bold text-lg mb-4">Pilih Metode Pembayaran</h2>
+          <PaymentMethodSelector
+            onPaymentCreated={setPaymentResult}
+            onCreatePayment={createPayment}
+            loading={creatingPayment}
+            paymentResult={paymentResult}
+          />
         </div>
       )}
 
@@ -184,11 +182,11 @@ const Payment = () => {
         <Button onClick={() => navigate("/account")} variant="outline" className="w-full h-14 rounded-full text-base font-bold">Lihat Pesanan Saya</Button>
       </div>
 
-      {order.order_status === 'pending' && (
+      {order.order_status === 'pending' && !paymentResult && (
         <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center font-semibold mb-2">⚠️ Penting: Selesaikan Pembayaran</p>
           <p className="text-sm text-yellow-700 dark:text-yellow-300 text-center">
-            Selesaikan pembayaran dalam 60 menit. Halaman ini akan otomatis berubah saat pembayaran dikonfirmasi oleh DOKU.
+            Selesaikan pembayaran dalam 60 menit. Halaman ini akan otomatis berubah saat pembayaran dikonfirmasi.
           </p>
         </div>
       )}
