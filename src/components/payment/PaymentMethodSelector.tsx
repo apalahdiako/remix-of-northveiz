@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Copy, Loader2, QrCode, Wallet, Building2, CreditCard, Check } from "lucide-react";
+import { Copy, Loader2, QrCode, Wallet, Building2, CreditCard, Check, Store } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -16,12 +16,14 @@ import permataLogo from "@/assets/payment/permata.png";
 import qrisLogo from "@/assets/payment/qris-new.jpg";
 import ovoLogo from "@/assets/payment/ovo-new.jpg";
 import shopeepayLogo from "@/assets/payment/shopeepay-new.jpg";
+import alfamartLogo from "@/assets/payment/alfamart-new.jpg";
+import indomaretLogo from "@/assets/payment/indomaret.jpg";
 
 interface PaymentChannel {
   id: string;
   name: string;
   logo: string;
-  category: "bank_transfer" | "ewallet" | "qris";
+  category: "bank_transfer" | "ewallet" | "qris" | "retail";
 }
 
 const paymentChannels: PaymentChannel[] = [
@@ -34,14 +36,18 @@ const paymentChannels: PaymentChannel[] = [
   { id: "QRIS", name: "QRIS", logo: qrisLogo, category: "qris" },
   { id: "OVO", name: "OVO", logo: ovoLogo, category: "ewallet" },
   { id: "SHOPEEPAY", name: "ShopeePay", logo: shopeepayLogo, category: "ewallet" },
+  { id: "ALFAMART", name: "Alfamart", logo: alfamartLogo, category: "retail" },
+  { id: "INDOMARET", name: "Indomaret", logo: indomaretLogo, category: "retail" },
 ];
 
 interface PaymentResult {
-  type: "va" | "qris" | "ewallet";
+  type: "va" | "qris" | "ewallet" | "retail";
   va_number?: string;
   bank_name?: string;
   qr_code_url?: string;
   payment_url?: string;
+  payment_code?: string;
+  store_name?: string;
   expiry_time?: string;
 }
 
@@ -172,6 +178,34 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
             )}
           </div>
         )}
+
+        {paymentResult.type === "retail" && (
+          <div className="bg-card border rounded-xl p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Store className="w-5 h-5 text-primary" />
+              <h3 className="font-bold text-lg">Bayar di {paymentResult.store_name}</h3>
+            </div>
+            <div className="bg-muted rounded-lg p-4">
+              <p className="text-sm text-muted-foreground mb-1">Kode Pembayaran</p>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-mono font-bold tracking-wider">{paymentResult.payment_code}</span>
+                <Button variant="outline" size="sm" onClick={() => copyToClipboard(paymentResult.payment_code || "")}>
+                  <Copy className="w-4 h-4 mr-1" /> Salin
+                </Button>
+              </div>
+            </div>
+            {paymentResult.expiry_time && (
+              <p className="text-sm text-muted-foreground text-center">
+                Berlaku hingga: <span className="font-semibold">{new Date(paymentResult.expiry_time).toLocaleString("id-ID")}</span>
+              </p>
+            )}
+            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center">
+                Tunjukkan kode pembayaran ini ke kasir {paymentResult.store_name}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -179,7 +213,7 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
   return (
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 h-12">
+        <TabsList className="grid w-full grid-cols-4 h-12">
           <TabsTrigger value="bank_transfer" className="text-xs sm:text-sm gap-1">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Transfer</span> Bank
@@ -192,6 +226,10 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
             <QrCode className="w-4 h-4" />
             QRIS
           </TabsTrigger>
+          <TabsTrigger value="retail" className="text-xs sm:text-sm gap-1">
+            <Store className="w-4 h-4" />
+            Retail
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="bank_transfer" className="mt-4">
@@ -202,6 +240,9 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
         </TabsContent>
         <TabsContent value="qris" className="mt-4">
           {renderChannelList("qris")}
+        </TabsContent>
+        <TabsContent value="retail" className="mt-4">
+          {renderChannelList("retail")}
         </TabsContent>
       </Tabs>
 
