@@ -54,6 +54,8 @@ function getPaymentConfig(channel: string) {
     QRIS: { target: "/qris/v1/payment-code", type: "qris" },
     OVO: { target: "/ovo-emoney/v1/payment", type: "ewallet" },
     SHOPEEPAY: { target: "/shopee-pay/v1/payment", type: "ewallet" },
+    ALFAMART: { target: "/alfamart/v1/payment-code", type: "retail" },
+    INDOMARET: { target: "/indomaret/v1/payment-code", type: "retail" },
   };
   return channelMap[channel] || { target: "/checkout/v1/payment", type: "checkout" };
 }
@@ -165,6 +167,20 @@ serve(async (req) => {
           phone: order.customer_phone,
         },
       };
+    } else if (paymentConfig.type === "retail") {
+      bodyPayload = {
+        order: {
+          amount: order.total_amount,
+          invoice_number: order.order_number,
+        },
+        payment: {
+          payment_due_date: 60,
+        },
+        customer: {
+          name: order.customer_name,
+          email: order.customer_email,
+        },
+      };
     }
 
     const bodyString = JSON.stringify(bodyPayload);
@@ -208,6 +224,10 @@ serve(async (req) => {
     } else if (paymentConfig.type === "ewallet") {
       const payment = dokuData?.response?.payment || dokuData?.payment || {};
       response.payment_url = payment?.url || dokuData?.payment_url;
+    } else if (paymentConfig.type === "retail") {
+      const retailInfo = dokuData?.payment_code_info || dokuData?.payment || {};
+      response.payment_code = retailInfo.payment_code || dokuData?.payment_code;
+      response.expiry_time = retailInfo.expired_date;
     } else {
       response.payment_url = dokuData?.response?.payment?.url || dokuData?.payment?.url;
     }

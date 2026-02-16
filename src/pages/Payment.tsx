@@ -83,18 +83,26 @@ const Payment = () => {
     const vaInfo = dokuRes.virtual_account_info || payment.virtual_account_info || {};
     const qrInfo = dokuRes.qr || payment.qr || {};
 
-    if (["BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"].includes(channelId)) {
+    if (channelId === "QRIS") {
+      return {
+        type: "qris",
+        qr_code_url: qrInfo.qr_code_url || qrInfo.url || data.qr_code_url,
+        expiry_time: payment.expired_date,
+      };
+    } else if (["ALFAMART", "INDOMARET"].includes(channelId)) {
+      const retailInfo = dokuRes.payment_code_info || payment.payment_code_info || {};
+      return {
+        type: "retail",
+        payment_code: retailInfo.payment_code || data.payment_code || "Menunggu...",
+        store_name: channelId === "ALFAMART" ? "Alfamart" : "Indomaret",
+        expiry_time: retailInfo.expired_date || payment.expired_date,
+      };
+    } else if (["BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"].includes(channelId)) {
       return {
         type: "va",
         va_number: vaInfo.virtual_account_number || data.va_number || "Menunggu...",
         bank_name: channelId,
         expiry_time: vaInfo.expired_date || payment.expired_date,
-      };
-    } else if (channelId === "QRIS") {
-      return {
-        type: "qris",
-        qr_code_url: qrInfo.qr_code_url || qrInfo.url || data.qr_code_url,
-        expiry_time: payment.expired_date,
       };
     } else {
       return {
