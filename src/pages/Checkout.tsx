@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -11,12 +10,17 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
+import PaymentMethodSelector, { type PaymentResult } from "@/components/payment/PaymentMethodSelector";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<string>("");
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -31,7 +35,6 @@ const Checkout = () => {
     shippingAddress: "",
     city: "",
     postalCode: "",
-    paymentMethod: "bank_transfer",
   });
 
   const formatPrice = (price: number) => `Rp ${price.toLocaleString("id-ID")}`;
@@ -45,10 +48,14 @@ const Checkout = () => {
     postalCode: z.string().trim().regex(/^[0-9]{5,10}$/, "Kode pos harus 5-10 digit angka"),
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (channelId: string) => {
     if (items.length === 0) {
       toast({ title: "Cart kosong", description: "Silakan tambahkan produk ke cart terlebih dahulu", variant: "destructive" });
+      return;
+    }
+
+    if (!channelId) {
+      toast({ title: "Pilih metode", description: "Silakan pilih metode pembayaran terlebih dahulu", variant: "destructive" });
       return;
     }
 
@@ -60,10 +67,10 @@ const Checkout = () => {
 
     setLoading(true);
     try {
-      const orderNumber = `ORD-${Date.now()}`;
-      const { data: { user } } = await supabase.auth.getUser();
+      // Step 1: Create order
+      const newOrderNumber = `ORD-${Date.now()}`;
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-      // Use the checkout_order function for atomic stock check + order creation
       const p_items = items.map(item => ({
         product_id: item.id,
         quantity: item.quantity,
@@ -73,24 +80,37 @@ const Checkout = () => {
         product_image: item.image,
       }));
 
-      const { data: orderId, error } = await supabase.rpc('checkout_order', {
-        p_user_id: user?.id || null,
-        p_order_number: orderNumber,
+      const { data: newOrderId, error } = await supabase.rpc('checkout_order', {
+        p_user_id: currentUser?.id || null,
+        p_order_number: newOrderNumber,
         p_customer_name: formData.customerName,
         p_customer_email: formData.customerEmail,
         p_customer_phone: formData.customerPhone,
         p_shipping_address: formData.shippingAddress,
         p_city: formData.city,
         p_postal_code: formData.postalCode,
-        p_payment_method: formData.paymentMethod,
+        p_payment_method: channelId,
         p_items: p_items,
       });
 
       if (error) throw error;
 
-      toast({ title: "Pesanan berhasil dibuat!", description: `Nomor pesanan: ${orderNumber}` });
+      setOrderId(newOrderId);
+      setOrderNumber(newOrderNumber);
+
+      // Step 2: Create payment via edge function
+      const { data: payData, error: payError } = await supabase.functions.invoke("create-doku-payment", {
+        body: { orderId: newOrderId, paymentChannel: channelId },
+      });
+
+      if (payError) throw payError;
+      if (!payData.success) throw new Error(payData.error || "Gagal membuat pembayaran");
+
+      const result = mapDokuResponse(payData, channelId);
+      setPaymentResult(result);
+
+      toast({ title: "Pesanan berhasil dibuat!", description: `Nomor pesanan: ${newOrderNumber}` });
       clearCart();
-      navigate(`/payment?orderId=${orderId}&orderNumber=${orderNumber}`);
     } catch (error: any) {
       console.error("Error creating order:", error);
       const message = error.message?.includes('Stok tidak cukup')
@@ -99,6 +119,24 @@ const Checkout = () => {
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const mapDokuResponse = (data: any, channelId: string): PaymentResult => {
+    const dokuRes = data.doku_response?.response || data.doku_response || {};
+    const payment = dokuRes.payment || {};
+    const vaInfo = dokuRes.virtual_account_info || payment.virtual_account_info || {};
+    const qrInfo = dokuRes.qr || payment.qr || {};
+
+    if (channelId === "QRIS") {
+      return { type: "qris", qr_code_url: qrInfo.qr_code_url || qrInfo.url || data.qr_code_url, expiry_time: payment.expired_date };
+    } else if (["ALFAMART", "INDOMARET"].includes(channelId)) {
+      const retailInfo = dokuRes.payment_code_info || payment.payment_code_info || {};
+      return { type: "retail", payment_code: retailInfo.payment_code || data.payment_code || "Menunggu...", store_name: channelId === "ALFAMART" ? "Alfamart" : "Indomaret", expiry_time: retailInfo.expired_date || payment.expired_date };
+    } else if (["BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"].includes(channelId)) {
+      return { type: "va", va_number: vaInfo.virtual_account_number || data.va_number || "Menunggu...", bank_name: channelId, expiry_time: vaInfo.expired_date || payment.expired_date };
+    } else {
+      return { type: "ewallet", payment_url: data.payment_url || payment?.url || dokuRes?.payment_url, expiry_time: payment.expired_date };
     }
   };
 
@@ -111,6 +149,32 @@ const Checkout = () => {
   }
 
   if (!user) return null;
+
+  // After payment created, show result + link to payment page
+  if (paymentResult && orderId) {
+    return (
+      <div className="container px-4 py-6 pt-24 max-w-2xl">
+        <h1 className="text-2xl font-bold mb-6 text-center">Pesanan Berhasil Dibuat!</h1>
+        <p className="text-center text-muted-foreground mb-6">Nomor Pesanan: {orderNumber}</p>
+
+        <PaymentMethodSelector
+          onPaymentCreated={() => {}}
+          onCreatePayment={async () => {}}
+          loading={false}
+          paymentResult={paymentResult}
+        />
+
+        <div className="mt-6 space-y-3">
+          <Button onClick={() => navigate(`/payment?orderId=${orderId}&orderNumber=${orderNumber}`)} className="w-full h-14 rounded-full text-base font-bold">
+            Lihat Detail Pesanan
+          </Button>
+          <Button onClick={() => navigate("/")} variant="outline" className="w-full h-14 rounded-full text-base font-bold">
+            Kembali ke Beranda
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container px-4 py-6 pt-24 max-w-2xl">
@@ -143,79 +207,75 @@ const Checkout = () => {
       </div>
 
       {/* Shipping Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <h2 className="font-bold text-lg mb-4">Informasi Pengiriman</h2>
-          <div className="space-y-4">
+      <div className="mb-6">
+        <h2 className="font-bold text-lg mb-4">Informasi Pengiriman</h2>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="customerName">Nama Lengkap *</Label>
+            <Input id="customerName" required value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} />
+          </div>
+          <div>
+            <Label htmlFor="customerEmail">Email *</Label>
+            <Input id="customerEmail" type="email" required value={formData.customerEmail} onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })} />
+          </div>
+          <div>
+            <Label htmlFor="customerPhone">Nomor Telepon *</Label>
+            <Input id="customerPhone" type="tel" required value={formData.customerPhone} onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })} />
+          </div>
+          <div>
+            <Label htmlFor="shippingAddress">Alamat Lengkap *</Label>
+            <Input id="shippingAddress" required value={formData.shippingAddress} onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="customerName">Nama Lengkap *</Label>
-              <Input id="customerName" required value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} />
+              <Label htmlFor="city">Kota *</Label>
+              <Input id="city" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} />
             </div>
             <div>
-              <Label htmlFor="customerEmail">Email *</Label>
-              <Input id="customerEmail" type="email" required value={formData.customerEmail} onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })} />
-            </div>
-            <div>
-              <Label htmlFor="customerPhone">Nomor Telepon *</Label>
-              <Input id="customerPhone" type="tel" required value={formData.customerPhone} onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })} />
-            </div>
-            <div>
-              <Label htmlFor="shippingAddress">Alamat Lengkap *</Label>
-              <Input id="shippingAddress" required value={formData.shippingAddress} onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="city">Kota *</Label>
-                <Input id="city" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="postalCode">Kode Pos *</Label>
-                <Input id="postalCode" required value={formData.postalCode} onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })} />
-              </div>
+              <Label htmlFor="postalCode">Kode Pos *</Label>
+              <Input id="postalCode" required value={formData.postalCode} onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })} />
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Payment Method */}
-        <div>
-          <h2 className="font-bold text-lg mb-4">Metode Pembayaran</h2>
-          <RadioGroup value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
-            <div className="flex items-center space-x-2 border rounded-lg p-4">
-              <RadioGroupItem value="bank_transfer" id="bank_transfer" />
-              <Label htmlFor="bank_transfer" className="flex-1 cursor-pointer">Transfer Bank</Label>
-            </div>
-            <div className="flex items-center space-x-2 border rounded-lg p-4">
-              <RadioGroupItem value="credit_card" id="credit_card" />
-              <Label htmlFor="credit_card" className="flex-1 cursor-pointer">Kartu Kredit/Debit</Label>
-            </div>
-            <div className="flex items-center space-x-2 border rounded-lg p-4">
-              <RadioGroupItem value="ewallet" id="ewallet" />
-              <Label htmlFor="ewallet" className="flex-1 cursor-pointer">e-Wallet</Label>
-            </div>
-          </RadioGroup>
+      {/* Payment Method Selection - Inline with logos */}
+      <div className="mb-6">
+        <h2 className="font-bold text-lg mb-4">Metode Pembayaran</h2>
+        <PaymentMethodSelector
+          onPaymentCreated={() => {}}
+          onCreatePayment={handleSubmit}
+          loading={loading}
+          paymentResult={null}
+          hideButton
+          onChannelChange={setSelectedChannel}
+        />
+      </div>
+
+      {/* Subtotal */}
+      <div className="border-t pt-6 space-y-3 mb-6">
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Subtotal</span>
+          <span className="font-semibold">{formatPrice(getTotalPrice())}</span>
         </div>
-
-        {/* Subtotal */}
-        <div className="border-t pt-6 space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-semibold">{formatPrice(getTotalPrice())}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Pengiriman</span>
-            <span className="font-semibold">Gratis</span>
-          </div>
-          <Separator className="my-2" />
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-bold">Total</span>
-            <span className="text-lg font-bold">{formatPrice(getTotalPrice())}</span>
-          </div>
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Pengiriman</span>
+          <span className="font-semibold">Gratis</span>
         </div>
+        <Separator className="my-2" />
+        <div className="flex justify-between items-center">
+          <span className="text-lg font-bold">Total</span>
+          <span className="text-lg font-bold">{formatPrice(getTotalPrice())}</span>
+        </div>
+      </div>
 
-        <Button type="submit" className="w-full h-14 rounded-full text-base font-bold" disabled={loading}>
-          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses...</> : "PROCEED TO CHECKOUT"}
-        </Button>
-      </form>
+      <Button
+        onClick={() => handleSubmit(selectedChannel)}
+        className="w-full h-14 rounded-full text-base font-bold"
+        disabled={loading || !selectedChannel}
+      >
+        {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses...</> : "BAYAR SEKARANG"}
+      </Button>
     </div>
   );
 };

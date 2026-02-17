@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Copy, Loader2, QrCode, Wallet, Building2, CreditCard, Check, Store } from "lucide-react";
+import { Copy, Loader2, QrCode, Wallet, Building2, Check, Store } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -56,11 +56,17 @@ interface PaymentMethodSelectorProps {
   onCreatePayment: (channelId: string) => Promise<void>;
   loading: boolean;
   paymentResult: PaymentResult | null;
+  hideButton?: boolean;
+  onChannelChange?: (channelId: string) => void;
 }
 
-const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, paymentResult }: PaymentMethodSelectorProps) => {
+const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, paymentResult, hideButton, onChannelChange }: PaymentMethodSelectorProps) => {
   const [selectedChannel, setSelectedChannel] = useState<string>("");
   const [activeTab, setActiveTab] = useState("bank_transfer");
+
+  useEffect(() => {
+    onChannelChange?.(selectedChannel);
+  }, [selectedChannel, onChannelChange]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -84,8 +90,8 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
             key={channel.id}
             htmlFor={channel.id}
             className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all ${
-              selectedChannel === channel.id 
-                ? "border-primary bg-primary/5 ring-1 ring-primary" 
+              selectedChannel === channel.id
+                ? "border-primary bg-primary/5 ring-1 ring-primary"
                 : "border-border hover:border-primary/50"
             }`}
           >
@@ -246,17 +252,19 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
         </TabsContent>
       </Tabs>
 
-      <Button
-        onClick={handlePay}
-        className="w-full h-14 rounded-full text-base font-bold"
-        disabled={loading || !selectedChannel}
-      >
-        {loading ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyiapkan Pembayaran...</>
-        ) : (
-          "Bayar Sekarang"
-        )}
-      </Button>
+      {!hideButton && (
+        <Button
+          onClick={handlePay}
+          className="w-full h-14 rounded-full text-base font-bold"
+          disabled={loading || !selectedChannel}
+        >
+          {loading ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyiapkan Pembayaran...</>
+          ) : (
+            "Bayar Sekarang"
+          )}
+        </Button>
+      )}
     </div>
   );
 };
