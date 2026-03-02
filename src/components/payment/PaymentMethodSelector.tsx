@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Copy, Loader2, QrCode, Wallet, Building2, Check, Store } from "lucide-react";
+import { Loader2, Building2, Wallet, QrCode, Store, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PaymentResultDisplay, { type PaymentResultData } from "./PaymentResult";
 
 // Payment logos
 import bcaLogo from "@/assets/payment/bca.jpg";
@@ -30,32 +30,21 @@ const paymentChannels: PaymentChannel[] = [
   { id: "BCA", name: "BCA Virtual Account", logo: bcaLogo, category: "bank_transfer" },
   { id: "BNI", name: "BNI Virtual Account", logo: bniLogo, category: "bank_transfer" },
   { id: "BRI", name: "BRI Virtual Account", logo: briLogo, category: "bank_transfer" },
-  { id: "MANDIRI", name: "Mandiri Virtual Account", logo: mandiriLogo, category: "bank_transfer" },
+  { id: "MANDIRI", name: "Mandiri Bill Payment", logo: mandiriLogo, category: "bank_transfer" },
   { id: "CIMB", name: "CIMB Virtual Account", logo: cimbLogo, category: "bank_transfer" },
   { id: "PERMATA", name: "Permata Virtual Account", logo: permataLogo, category: "bank_transfer" },
   { id: "QRIS", name: "QRIS", logo: qrisLogo, category: "qris" },
-  { id: "OVO", name: "OVO", logo: ovoLogo, category: "ewallet" },
+  { id: "GOPAY", name: "GoPay", logo: ovoLogo, category: "ewallet" },
   { id: "SHOPEEPAY", name: "ShopeePay", logo: shopeepayLogo, category: "ewallet" },
   { id: "ALFAMART", name: "Alfamart", logo: alfamartLogo, category: "retail" },
   { id: "INDOMARET", name: "Indomaret", logo: indomaretLogo, category: "retail" },
 ];
 
-interface PaymentResult {
-  type: "va" | "qris" | "ewallet" | "retail";
-  va_number?: string;
-  bank_name?: string;
-  qr_code_url?: string;
-  payment_url?: string;
-  payment_code?: string;
-  store_name?: string;
-  expiry_time?: string;
-}
-
 interface PaymentMethodSelectorProps {
-  onPaymentCreated: (result: PaymentResult) => void;
+  onPaymentCreated: (result: PaymentResultData) => void;
   onCreatePayment: (channelId: string) => Promise<void>;
   loading: boolean;
-  paymentResult: PaymentResult | null;
+  paymentResult: PaymentResultData | null;
   hideButton?: boolean;
   onChannelChange?: (channelId: string) => void;
 }
@@ -67,11 +56,6 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
   useEffect(() => {
     onChannelChange?.(selectedChannel);
   }, [selectedChannel, onChannelChange]);
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: "Berhasil disalin!", description: "Nomor telah disalin ke clipboard" });
-  };
 
   const handlePay = () => {
     if (!selectedChannel) {
@@ -105,115 +89,8 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
     );
   };
 
-  // If payment has been created, show result inline
   if (paymentResult) {
-    return (
-      <div className="space-y-4">
-        {paymentResult.type === "va" && (
-          <div className="bg-card border rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Building2 className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">Transfer Bank - {paymentResult.bank_name}</h3>
-            </div>
-            <div className="bg-muted rounded-lg p-4">
-              <p className="text-sm text-muted-foreground mb-1">Nomor Virtual Account</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-mono font-bold tracking-wider">{paymentResult.va_number}</span>
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(paymentResult.va_number || "")}>
-                  <Copy className="w-4 h-4 mr-1" /> Salin
-                </Button>
-              </div>
-            </div>
-            {paymentResult.expiry_time && (
-              <p className="text-sm text-muted-foreground text-center">
-                Berlaku hingga: <span className="font-semibold">{new Date(paymentResult.expiry_time).toLocaleString("id-ID")}</span>
-              </p>
-            )}
-            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center">
-                Transfer tepat sesuai jumlah total ke nomor VA di atas
-              </p>
-            </div>
-          </div>
-        )}
-
-        {paymentResult.type === "qris" && (
-          <div className="bg-card border rounded-xl p-6 space-y-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <QrCode className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">Scan QRIS</h3>
-            </div>
-            {paymentResult.qr_code_url ? (
-              <div className="flex justify-center">
-                <img src={paymentResult.qr_code_url} alt="QRIS QR Code" className="w-64 h-64 rounded-lg border" />
-              </div>
-            ) : (
-              <div className="w-64 h-64 mx-auto bg-muted rounded-lg flex items-center justify-center">
-                <QrCode className="w-16 h-16 text-muted-foreground" />
-              </div>
-            )}
-            <p className="text-sm text-muted-foreground">
-              Scan QR Code di atas menggunakan aplikasi e-Wallet atau mobile banking Anda
-            </p>
-            {paymentResult.expiry_time && (
-              <p className="text-sm text-muted-foreground">
-                Berlaku hingga: <span className="font-semibold">{new Date(paymentResult.expiry_time).toLocaleString("id-ID")}</span>
-              </p>
-            )}
-          </div>
-        )}
-
-        {paymentResult.type === "ewallet" && (
-          <div className="bg-card border rounded-xl p-6 space-y-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Wallet className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">Pembayaran e-Wallet</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Silakan selesaikan pembayaran melalui aplikasi e-Wallet Anda
-            </p>
-            {paymentResult.payment_url && (
-              <Button onClick={() => window.open(paymentResult.payment_url!, "_blank")} className="w-full h-12 rounded-full font-bold">
-                Buka Aplikasi e-Wallet
-              </Button>
-            )}
-            {paymentResult.expiry_time && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Berlaku hingga: <span className="font-semibold">{new Date(paymentResult.expiry_time).toLocaleString("id-ID")}</span>
-              </p>
-            )}
-          </div>
-        )}
-
-        {paymentResult.type === "retail" && (
-          <div className="bg-card border rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Store className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">Bayar di {paymentResult.store_name}</h3>
-            </div>
-            <div className="bg-muted rounded-lg p-4">
-              <p className="text-sm text-muted-foreground mb-1">Kode Pembayaran</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-mono font-bold tracking-wider">{paymentResult.payment_code}</span>
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(paymentResult.payment_code || "")}>
-                  <Copy className="w-4 h-4 mr-1" /> Salin
-                </Button>
-              </div>
-            </div>
-            {paymentResult.expiry_time && (
-              <p className="text-sm text-muted-foreground text-center">
-                Berlaku hingga: <span className="font-semibold">{new Date(paymentResult.expiry_time).toLocaleString("id-ID")}</span>
-              </p>
-            )}
-            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center">
-                Tunjukkan kode pembayaran ini ke kasir {paymentResult.store_name}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
+    return <PaymentResultDisplay result={paymentResult} />;
   }
 
   return (
@@ -238,31 +115,15 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="bank_transfer" className="mt-4">
-          {renderChannelList("bank_transfer")}
-        </TabsContent>
-        <TabsContent value="ewallet" className="mt-4">
-          {renderChannelList("ewallet")}
-        </TabsContent>
-        <TabsContent value="qris" className="mt-4">
-          {renderChannelList("qris")}
-        </TabsContent>
-        <TabsContent value="retail" className="mt-4">
-          {renderChannelList("retail")}
-        </TabsContent>
+        <TabsContent value="bank_transfer" className="mt-4">{renderChannelList("bank_transfer")}</TabsContent>
+        <TabsContent value="ewallet" className="mt-4">{renderChannelList("ewallet")}</TabsContent>
+        <TabsContent value="qris" className="mt-4">{renderChannelList("qris")}</TabsContent>
+        <TabsContent value="retail" className="mt-4">{renderChannelList("retail")}</TabsContent>
       </Tabs>
 
       {!hideButton && (
-        <Button
-          onClick={handlePay}
-          className="w-full h-14 rounded-full text-base font-bold"
-          disabled={loading || !selectedChannel}
-        >
-          {loading ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyiapkan Pembayaran...</>
-          ) : (
-            "Bayar Sekarang"
-          )}
+        <Button onClick={handlePay} className="w-full h-14 rounded-full text-base font-bold" disabled={loading || !selectedChannel}>
+          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyiapkan Pembayaran...</> : "Bayar Sekarang"}
         </Button>
       )}
     </div>
@@ -270,4 +131,4 @@ const PaymentMethodSelector = ({ onPaymentCreated, onCreatePayment, loading, pay
 };
 
 export default PaymentMethodSelector;
-export type { PaymentResult };
+export type { PaymentResultData as PaymentResult };
