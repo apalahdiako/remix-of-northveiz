@@ -6,18 +6,21 @@ import { toast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderTrackingStepper } from "@/components/orders/OrderTrackingStepper";
-import PaymentMethodSelector, { type PaymentResult } from "@/components/payment/PaymentMethodSelector";
+import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
+import PaymentResultDisplay, { type PaymentResultData } from "@/components/payment/PaymentResult";
+import PaymentSuccess from "@/components/payment/PaymentSuccess";
 
 const Payment = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
   const orderNumber = searchParams.get("orderNumber");
-  
+
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [creatingPayment, setCreatingPayment] = useState(false);
-  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
+  const [paymentResult, setPaymentResult] = useState<PaymentResultData | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -34,6 +37,7 @@ const Payment = () => {
           const newOrder = payload.new as any;
           setOrder(newOrder);
           if (newOrder.order_status === 'paid' || newOrder.payment_status === 'paid') {
+            setIsPaid(true);
             toast({ title: "Pembayaran Dikonfirmasi! 🎉", description: "Pesanan Anda sedang diproses." });
           }
         })
@@ -48,6 +52,9 @@ const Payment = () => {
       const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).single();
       if (error) throw error;
       setOrder(data);
+      if (data.order_status !== 'pending' && data.order_status !== 'cancelled') {
+        setIsPaid(true);
+      }
     } catch (error: any) {
       console.error("Error fetching order:", error);
       toast({ title: "Error", description: "Gagal memuat data pesanan", variant: "destructive" });
@@ -59,57 +66,31 @@ const Payment = () => {
   const createPayment = async (channelId: string) => {
     setCreatingPayment(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-doku-payment", {
+      const { data, error } = await supabase.functions.invoke("initiate-payment", {
         body: { orderId, paymentChannel: channelId },
       });
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error || "Gagal membuat pembayaran");
 
-      // Map response to PaymentResult
-      const result: PaymentResult = mapDokuResponse(data, channelId);
+      const result: PaymentResultData = {
+        type: data.type || "qris",
+        va_number: data.va_number,
+        bank_name: data.bank_name,
+        biller_code: data.biller_code,
+        qr_string: data.qr_string,
+        qr_code_url: data.qr_code_url,
+        payment_url: data.payment_url,
+        payment_code: data.payment_code,
+        store_name: data.store_name,
+        expiry_time: data.expiry_time,
+      };
       setPaymentResult(result);
     } catch (error: any) {
       console.error("Error creating payment:", error);
       toast({ title: "Error", description: error.message || "Gagal membuat pembayaran", variant: "destructive" });
     } finally {
       setCreatingPayment(false);
-    }
-  };
-
-  const mapDokuResponse = (data: any, channelId: string): PaymentResult => {
-    const dokuRes = data.doku_response?.response || data.doku_response || {};
-    const payment = dokuRes.payment || {};
-    const vaInfo = dokuRes.virtual_account_info || payment.virtual_account_info || {};
-    const qrInfo = dokuRes.qr || payment.qr || {};
-
-    if (channelId === "QRIS") {
-      return {
-        type: "qris",
-        qr_code_url: qrInfo.qr_code_url || qrInfo.url || data.qr_code_url,
-        expiry_time: payment.expired_date,
-      };
-    } else if (["ALFAMART", "INDOMARET"].includes(channelId)) {
-      const retailInfo = dokuRes.payment_code_info || payment.payment_code_info || {};
-      return {
-        type: "retail",
-        payment_code: retailInfo.payment_code || data.payment_code || "Menunggu...",
-        store_name: channelId === "ALFAMART" ? "Alfamart" : "Indomaret",
-        expiry_time: retailInfo.expired_date || payment.expired_date,
-      };
-    } else if (["BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"].includes(channelId)) {
-      return {
-        type: "va",
-        va_number: vaInfo.virtual_account_number || data.va_number || "Menunggu...",
-        bank_name: channelId,
-        expiry_time: vaInfo.expired_date || payment.expired_date,
-      };
-    } else {
-      return {
-        type: "ewallet",
-        payment_url: data.payment_url || payment.url,
-        expiry_time: payment.expired_date,
-      };
     }
   };
 
@@ -128,30 +109,45 @@ const Payment = () => {
   }
 
   if (!order) {
-    return (
-      <div className="container px-4 py-6 pt-24"><p>Pesanan tidak ditemukan</p></div>
-    );
+    return <div className="container px-4 py-6 pt-24"><p>Pesanan tidak ditemukan</p></div>;
   }
 
-  const isPaid = order.order_status !== 'pending' && order.order_status !== 'cancelled';
+  // Show success screen
+  if (isPaid) {
+    return (
+      <div className="container px-4 py-6 pt-24 max-w-2xl">
+        <PaymentSuccess orderNumber={orderNumber || order.order_number} orderId={orderId!} />
+
+        <div className="mt-8 bg-card border rounded-lg p-6">
+          <h2 className="font-bold text-lg mb-2">Status Pesanan</h2>
+          <OrderTrackingStepper currentStatus={order.order_status} trackingNumber={order.tracking_number} />
+        </div>
+
+        <div className="bg-muted p-6 rounded-lg mt-6">
+          <h2 className="font-bold text-lg mb-4">Detail Pesanan</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Produk:</span><span className="font-semibold">{order.product_name}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Ukuran:</span><span className="font-semibold">{order.size}</span></div>
+            <div className="flex justify-between pt-2 border-t"><span className="font-bold">Total:</span><span className="font-bold">Rp {Number(order.total_amount).toLocaleString("id-ID")}</span></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container px-4 py-6 pt-24 max-w-2xl">
       <div className="text-center mb-8">
-        <CheckCircle2 className={`h-16 w-16 mx-auto mb-4 ${isPaid ? 'text-green-500' : 'text-yellow-500'}`} />
-        <h1 className="text-2xl font-bold mb-2">
-          {isPaid ? 'Pembayaran Dikonfirmasi!' : 'Pesanan Berhasil Dibuat!'}
-        </h1>
+        <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
+        <h1 className="text-2xl font-bold mb-2">Pesanan Berhasil Dibuat!</h1>
         <p className="text-muted-foreground">Nomor Pesanan: {orderNumber || order.order_number}</p>
       </div>
 
-      {/* Order Tracking Stepper */}
       <div className="bg-card border rounded-lg p-6 mb-6">
         <h2 className="font-bold text-lg mb-2">Status Pesanan</h2>
         <OrderTrackingStepper currentStatus={order.order_status} trackingNumber={order.tracking_number} />
       </div>
 
-      {/* Order Details */}
       <div className="bg-muted p-6 rounded-lg mb-6">
         <h2 className="font-bold text-lg mb-4">Detail Pesanan</h2>
         <div className="space-y-2 text-sm">
@@ -162,16 +158,22 @@ const Payment = () => {
         </div>
       </div>
 
-      {/* Inline Payment Method - only show if pending */}
+      {/* Payment Section */}
       {order.order_status === 'pending' && (
         <div className="bg-card border rounded-xl p-6 mb-6">
-          <h2 className="font-bold text-lg mb-4">Pilih Metode Pembayaran</h2>
-          <PaymentMethodSelector
-            onPaymentCreated={setPaymentResult}
-            onCreatePayment={createPayment}
-            loading={creatingPayment}
-            paymentResult={paymentResult}
-          />
+          <h2 className="font-bold text-lg mb-4">
+            {paymentResult ? "Detail Pembayaran" : "Pilih Metode Pembayaran"}
+          </h2>
+          {paymentResult ? (
+            <PaymentResultDisplay result={paymentResult} />
+          ) : (
+            <PaymentMethodSelector
+              onPaymentCreated={setPaymentResult}
+              onCreatePayment={createPayment}
+              loading={creatingPayment}
+              paymentResult={null}
+            />
+          )}
         </div>
       )}
 
