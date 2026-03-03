@@ -17,6 +17,15 @@ serve(async (req) => {
     const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY");
     if (!MIDTRANS_SERVER_KEY) throw new Error("MIDTRANS_SERVER_KEY not configured");
 
+    // Detect sandbox vs production based on key prefix
+    const isSandbox = MIDTRANS_SERVER_KEY.startsWith("SB-");
+    const midtransUrl = isSandbox
+      ? "https://api.sandbox.midtrans.com/v2/charge"
+      : "https://api.midtrans.com/v2/charge";
+
+    console.log("Midtrans environment:", isSandbox ? "SANDBOX" : "PRODUCTION");
+    console.log("Server key prefix:", MIDTRANS_SERVER_KEY.substring(0, 10) + "...");
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -37,13 +46,22 @@ serve(async (req) => {
     if (orderError || !order) throw new Error("Order not found");
 
     const channel = paymentChannel || "QRIS";
-    const midtransUrl = "https://api.sandbox.midtrans.com/v2/charge";
+    
+    // Ensure unique order_id by appending timestamp suffix
+    const uniqueOrderId = `${order.order_number}-${Date.now()}`;
+    
+    // Ensure gross_amount is integer (Midtrans requirement)
+    const grossAmount = Math.floor(Number(order.total_amount));
+    if (isNaN(grossAmount) || grossAmount <= 0) {
+      throw new Error(`Invalid gross_amount: ${order.total_amount}`);
+    }
+
     const authToken = base64Encode(new TextEncoder().encode(MIDTRANS_SERVER_KEY + ":"));
 
     let chargePayload: any = {
       transaction_details: {
-        order_id: order.order_number,
-        gross_amount: Math.round(Number(order.total_amount)),
+        order_id: uniqueOrderId,
+        gross_amount: grossAmount,
       },
       customer_details: {
         first_name: order.customer_name,
@@ -53,7 +71,7 @@ serve(async (req) => {
       item_details: [{
         id: order.product_id,
         name: order.product_name.substring(0, 50),
-        price: Math.round(Number(order.total_amount) / order.quantity),
+        price: Math.floor(grossAmount / order.quantity),
         quantity: order.quantity,
       }],
     };
@@ -91,7 +109,13 @@ serve(async (req) => {
       chargePayload.qris = { acquirer: "gopay" };
     }
 
-    console.log("Calling Midtrans Charge API...", { channel, orderNumber: order.order_number });
+    console.log("Calling Midtrans Charge API...", { 
+      channel, 
+      uniqueOrderId, 
+      grossAmount,
+      url: midtransUrl,
+      payload: JSON.stringify(chargePayload),
+    });
 
     const midtransResponse = await fetch(midtransUrl, {
       method: "POST",
@@ -106,8 +130,9 @@ serve(async (req) => {
     const midtransData = await midtransResponse.json();
 
     if (midtransData.status_code && !["200", "201"].includes(midtransData.status_code)) {
-      console.error("Midtrans API error:", JSON.stringify(midtransData));
-      throw new Error(`Midtrans error: ${midtransData.status_message || JSON.stringify(midtransData)}`);
+      console.error("Midtrans API error response:", JSON.stringify(midtransData, null, 2));
+      console.error("HTTP status:", midtransResponse.status);
+      throw new Error(`Midtrans error (${midtransData.status_code}): ${midtransData.status_message || JSON.stringify(midtransData)}`);
     }
 
     console.log("Midtrans charge success:", JSON.stringify(midtransData));
