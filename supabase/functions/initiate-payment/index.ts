@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,8 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY");
-    if (!MIDTRANS_SERVER_KEY) throw new Error("MIDTRANS_SERVER_KEY not configured");
+    const rawKey = Deno.env.get("MIDTRANS_SERVER_KEY");
+    if (!rawKey) throw new Error("MIDTRANS_SERVER_KEY not configured");
+    
+    // Trim whitespace/newlines that may have been pasted with the key
+    const MIDTRANS_SERVER_KEY = rawKey.trim();
 
     // Detect sandbox vs production based on key prefix
     const isSandbox = MIDTRANS_SERVER_KEY.startsWith("SB-");
@@ -23,8 +25,17 @@ serve(async (req) => {
       ? "https://api.sandbox.midtrans.com/v2/charge"
       : "https://api.midtrans.com/v2/charge";
 
-    console.log("Midtrans environment:", isSandbox ? "SANDBOX" : "PRODUCTION");
-    console.log("Server key prefix:", MIDTRANS_SERVER_KEY.substring(0, 10) + "...");
+    // Diagnostic logging (safe: only shows prefix/length, not full key)
+    console.log("=== MIDTRANS DIAGNOSTIC ===");
+    console.log("Key length:", MIDTRANS_SERVER_KEY.length);
+    console.log("Key prefix:", MIDTRANS_SERVER_KEY.substring(0, 15));
+    console.log("Key suffix:", MIDTRANS_SERVER_KEY.substring(MIDTRANS_SERVER_KEY.length - 5));
+    console.log("Environment:", isSandbox ? "SANDBOX" : "PRODUCTION");
+    console.log("API URL:", midtransUrl);
+
+    // Use standard btoa for Base64 encoding (most reliable)
+    const authToken = btoa(MIDTRANS_SERVER_KEY + ":");
+    console.log("Auth header (first 20 chars):", `Basic ${authToken.substring(0, 20)}...`);
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -55,8 +66,6 @@ serve(async (req) => {
     if (isNaN(grossAmount) || grossAmount <= 0) {
       throw new Error(`Invalid gross_amount: ${order.total_amount}`);
     }
-
-    const authToken = base64Encode(new TextEncoder().encode(MIDTRANS_SERVER_KEY + ":"));
 
     let chargePayload: any = {
       transaction_details: {
