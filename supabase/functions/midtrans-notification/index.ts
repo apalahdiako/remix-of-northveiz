@@ -70,7 +70,11 @@ serve(async (req) => {
       paymentStatus = "pending";
     }
 
-    // Update order by order_number (Midtrans uses order_id = our order_number)
+    // Extract original order_number from unique order_id (format: ORD-xxx-timestamp)
+    // Strip the last -timestamp suffix to get back ORD-xxx
+    const orderNumber = order_id.replace(/-\d+$/, '');
+
+    // Update order by order_number
     const updateData: any = {
       order_status: orderStatus,
       payment_status: paymentStatus,
@@ -82,7 +86,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from("orders")
       .update(updateData)
-      .eq("order_number", order_id);
+      .eq("order_number", orderNumber);
 
     if (updateError) {
       console.error("Error updating order:", updateError);
