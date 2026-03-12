@@ -35,6 +35,11 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
 
+  // Load Snap.js on mount
+  useEffect(() => {
+    loadSnapJs().catch(console.error);
+  }, []);
+
   useEffect(() => {
     if (orderId) {
       fetchOrder();
