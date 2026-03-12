@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
+import { loadSnapJs } from "@/lib/midtransSnap";
 
 declare global {
   interface Window {
