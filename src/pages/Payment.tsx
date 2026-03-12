@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { loadSnapJs } from "@/lib/midtransSnap";
 import { OrderTrackingStepper } from "@/components/orders/OrderTrackingStepper";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
 
