@@ -53,6 +53,11 @@ const Checkout = () => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
+  // Load Snap.js on mount
+  useEffect(() => {
+    loadSnapJs().catch(console.error);
+  }, []);
+
   // Realtime listener for payment status
   useEffect(() => {
     if (!orderId) return;
