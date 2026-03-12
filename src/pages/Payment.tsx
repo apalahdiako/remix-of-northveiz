@@ -3,12 +3,27 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { loadSnapJs } from "@/lib/midtransSnap";
 import { OrderTrackingStepper } from "@/components/orders/OrderTrackingStepper";
-import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
-import PaymentResultDisplay, { type PaymentResultData } from "@/components/payment/PaymentResult";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
+
+declare global {
+  interface Window {
+    snap: {
+      pay: (
+        token: string,
+        options: {
+          onSuccess?: (result: any) => void;
+          onPending?: (result: any) => void;
+          onError?: (result: any) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -18,9 +33,12 @@ const Payment = () => {
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [creatingPayment, setCreatingPayment] = useState(false);
-  const [paymentResult, setPaymentResult] = useState<PaymentResultData | null>(null);
   const [isPaid, setIsPaid] = useState(false);
+
+  // Load Snap.js on mount
+  useEffect(() => {
+    loadSnapJs().catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (orderId) {
@@ -63,34 +81,25 @@ const Payment = () => {
     }
   };
 
-  const createPayment = async (channelId: string) => {
-    setCreatingPayment(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("initiate-payment", {
-        body: { orderId, paymentChannel: channelId },
+  const reopenSnap = () => {
+    if (!order?.snap_token) {
+      toast({ title: "Error", description: "Token pembayaran tidak tersedia", variant: "destructive" });
+      return;
+    }
+    if (window.snap) {
+      window.snap.pay(order.snap_token, {
+        onSuccess: () => {
+          setIsPaid(true);
+          toast({ title: "Pembayaran Berhasil! 🎉" });
+        },
+        onPending: () => {
+          toast({ title: "Menunggu Pembayaran", description: "Selesaikan pembayaran sesuai instruksi." });
+        },
+        onError: () => {
+          toast({ title: "Pembayaran Gagal", variant: "destructive" });
+        },
+        onClose: () => {},
       });
-
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || "Gagal membuat pembayaran");
-
-      const result: PaymentResultData = {
-        type: data.type || "qris",
-        va_number: data.va_number,
-        bank_name: data.bank_name,
-        biller_code: data.biller_code,
-        qr_string: data.qr_string,
-        qr_code_url: data.qr_code_url,
-        payment_url: data.payment_url,
-        payment_code: data.payment_code,
-        store_name: data.store_name,
-        expiry_time: data.expiry_time,
-      };
-      setPaymentResult(result);
-    } catch (error: any) {
-      console.error("Error creating payment:", error);
-      toast({ title: "Error", description: error.message || "Gagal membuat pembayaran", variant: "destructive" });
-    } finally {
-      setCreatingPayment(false);
     }
   };
 
@@ -103,7 +112,6 @@ const Payment = () => {
           <Skeleton className="h-4 w-48 mx-auto" />
         </div>
         <Skeleton className="h-48 w-full rounded-lg" />
-        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     );
   }
@@ -128,6 +136,9 @@ const Payment = () => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Produk:</span><span className="font-semibold">{order.product_name}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Ukuran:</span><span className="font-semibold">{order.size}</span></div>
+            {order.payment_type && (
+              <div className="flex justify-between"><span className="text-muted-foreground">Metode:</span><span className="font-semibold uppercase">{order.payment_type}</span></div>
+            )}
             <div className="flex justify-between pt-2 border-t"><span className="font-bold">Total:</span><span className="font-bold">Rp {Number(order.total_amount).toLocaleString("id-ID")}</span></div>
           </div>
         </div>
@@ -138,8 +149,8 @@ const Payment = () => {
   return (
     <div className="container px-4 py-6 pt-24 max-w-2xl">
       <div className="text-center mb-8">
-        <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
-        <h1 className="text-2xl font-bold mb-2">Pesanan Berhasil Dibuat!</h1>
+        <Clock className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
+        <h1 className="text-2xl font-bold mb-2">Menunggu Pembayaran</h1>
         <p className="text-muted-foreground">Nomor Pesanan: {orderNumber || order.order_number}</p>
       </div>
 
@@ -154,49 +165,33 @@ const Payment = () => {
           <div className="flex justify-between"><span className="text-muted-foreground">Produk:</span><span className="font-semibold">{order.product_name}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Ukuran:</span><span className="font-semibold">{order.size}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Harga:</span><span className="font-semibold">{order.product_price}</span></div>
+          {order.payment_type && (
+            <div className="flex justify-between"><span className="text-muted-foreground">Metode:</span><span className="font-semibold uppercase">{order.payment_type}</span></div>
+          )}
+          {order.va_number && (
+            <div className="flex justify-between"><span className="text-muted-foreground">VA/Kode:</span><span className="font-semibold font-mono">{order.va_number}</span></div>
+          )}
           <div className="flex justify-between pt-2 border-t"><span className="font-bold">Total:</span><span className="font-bold">Rp {Number(order.total_amount).toLocaleString("id-ID")}</span></div>
         </div>
       </div>
 
-      {/* Payment Section */}
-      {order.order_status === 'pending' && (
-        <div className="bg-card border rounded-xl p-6 mb-6">
-          <h2 className="font-bold text-lg mb-4">
-            {paymentResult ? "Detail Pembayaran" : "Pilih Metode Pembayaran"}
-          </h2>
-          {paymentResult ? (
-            <PaymentResultDisplay result={paymentResult} />
-          ) : (
-            <PaymentMethodSelector
-              onPaymentCreated={setPaymentResult}
-              onCreatePayment={createPayment}
-              loading={creatingPayment}
-              paymentResult={null}
-            />
-          )}
-        </div>
+      {/* Reopen Snap Payment */}
+      {order.order_status === 'pending' && order.snap_token && (
+        <Button onClick={reopenSnap} className="w-full h-14 rounded-full text-base font-bold mb-3">
+          Lanjutkan Pembayaran
+        </Button>
       )}
 
-      {/* Shipping Info */}
-      <div className="bg-muted p-6 rounded-lg mb-6">
-        <h2 className="font-bold text-lg mb-4">Informasi Pengiriman</h2>
-        <div className="space-y-2 text-sm">
-          <div><p className="text-muted-foreground">Nama</p><p className="font-semibold">{order.customer_name}</p></div>
-          <div><p className="text-muted-foreground">Alamat</p><p className="font-semibold">{order.shipping_address}</p><p className="font-semibold">{order.city}, {order.postal_code}</p></div>
-          <div><p className="text-muted-foreground">Kontak</p><p className="font-semibold">{order.customer_phone}</p><p className="font-semibold">{order.customer_email}</p></div>
-        </div>
-      </div>
-
       <div className="space-y-3">
-        <Button onClick={() => navigate("/")} className="w-full h-14 rounded-full text-base font-bold">Kembali ke Beranda</Button>
+        <Button onClick={() => navigate("/")} variant="outline" className="w-full h-14 rounded-full text-base font-bold">Kembali ke Beranda</Button>
         <Button onClick={() => navigate("/account")} variant="outline" className="w-full h-14 rounded-full text-base font-bold">Lihat Pesanan Saya</Button>
       </div>
 
-      {order.order_status === 'pending' && !paymentResult && (
+      {order.order_status === 'pending' && (
         <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <p className="text-sm text-yellow-800 dark:text-yellow-200 text-center font-semibold mb-2">⚠️ Penting: Selesaikan Pembayaran</p>
           <p className="text-sm text-yellow-700 dark:text-yellow-300 text-center">
-            Selesaikan pembayaran dalam 60 menit. Halaman ini akan otomatis berubah saat pembayaran dikonfirmasi.
+            Halaman ini akan otomatis berubah saat pembayaran dikonfirmasi via webhook.
           </p>
         </div>
       )}

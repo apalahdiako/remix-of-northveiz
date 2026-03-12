@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY");
+    const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY")?.trim();
     if (!MIDTRANS_SERVER_KEY) throw new Error("MIDTRANS_SERVER_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -23,26 +22,46 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const notification = await req.json();
-    console.log("Midtrans notification received:", JSON.stringify(notification));
+    console.log("Midtrans webhook received:", JSON.stringify(notification));
 
-    const { order_id, transaction_status, fraud_status, status_code, signature_key, gross_amount } = notification;
+    const {
+      order_id,
+      transaction_status,
+      fraud_status,
+      status_code,
+      signature_key,
+      gross_amount,
+      payment_type,
+      va_numbers,
+      permata_va_number,
+      bill_key,
+      payment_code,
+    } = notification;
 
-    // Verify signature: SHA512(order_id + status_code + gross_amount + server_key)
+    // ========== SIGNATURE VERIFICATION ==========
+    // SHA512(order_id + status_code + gross_amount + server_key)
     const rawSignature = order_id + status_code + gross_amount + MIDTRANS_SERVER_KEY;
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest("SHA-512", encoder.encode(rawSignature));
     const hashArray = new Uint8Array(hashBuffer);
-    const expectedSignature = Array.from(hashArray).map(b => b.toString(16).padStart(2, "0")).join("");
+    const expectedSignature = Array.from(hashArray)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
 
     if (signature_key !== expectedSignature) {
-      console.error("Invalid signature!", { expected: expectedSignature, received: signature_key });
+      console.error("Invalid signature!", {
+        expected: expectedSignature.substring(0, 20) + "...",
+        received: signature_key?.substring(0, 20) + "...",
+      });
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Map Midtrans status to our order status
+    console.log("Signature verified ✓");
+
+    // ========== MAP STATUS ==========
     let orderStatus: string;
     let paymentStatus: string;
     let paidAt: string | null = null;
@@ -53,6 +72,7 @@ serve(async (req) => {
         paymentStatus = "paid";
         paidAt = new Date().toISOString();
       } else {
+        // fraud_status = challenge/deny
         orderStatus = "pending";
         paymentStatus = "pending";
       }
@@ -70,14 +90,28 @@ serve(async (req) => {
       paymentStatus = "pending";
     }
 
-    // Extract original order_number from unique order_id (format: ORD-xxx-timestamp)
-    // Strip the last -timestamp suffix to get back ORD-xxx
-    const orderNumber = order_id.replace(/-\d+$/, '');
+    // ========== EXTRACT VA NUMBER ==========
+    let vaNumber: string | null = null;
+    if (va_numbers && va_numbers.length > 0) {
+      vaNumber = va_numbers[0].va_number;
+    } else if (permata_va_number) {
+      vaNumber = permata_va_number;
+    } else if (bill_key) {
+      vaNumber = bill_key;
+    } else if (payment_code) {
+      vaNumber = payment_code;
+    }
 
-    // Update order by order_number
-    const updateData: any = {
+    // ========== EXTRACT ORDER NUMBER ==========
+    // Format: ORD-xxx-timestamp → strip last -timestamp suffix
+    const orderNumber = order_id.replace(/-\d+$/, "");
+
+    // ========== UPDATE ORDER ==========
+    const updateData: Record<string, any> = {
       order_status: orderStatus,
       payment_status: paymentStatus,
+      payment_type: payment_type || null,
+      va_number: vaNumber,
       updated_at: new Date().toISOString(),
     };
     if (paidAt) updateData.paid_at = paidAt;
@@ -93,7 +127,9 @@ serve(async (req) => {
       throw updateError;
     }
 
-    console.log(`Order ${order_id} updated to status: ${orderStatus}`);
+    console.log(
+      `Order ${orderNumber} updated: status=${orderStatus}, payment=${paymentStatus}, type=${payment_type}, va=${vaNumber}`
+    );
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

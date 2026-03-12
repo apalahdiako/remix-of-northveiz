@@ -360,6 +360,7 @@ export type Database = {
           paid_at: string | null
           payment_method: string
           payment_status: string
+          payment_type: string | null
           postal_code: string
           product_id: string
           product_image: string
@@ -369,10 +370,12 @@ export type Database = {
           return_reason: string | null
           shipping_address: string
           size: string
+          snap_token: string | null
           total_amount: number
           tracking_number: string | null
           updated_at: string
           user_id: string | null
+          va_number: string | null
         }
         Insert: {
           cancelled_at?: string | null
@@ -392,6 +395,7 @@ export type Database = {
           paid_at?: string | null
           payment_method: string
           payment_status?: string
+          payment_type?: string | null
           postal_code: string
           product_id: string
           product_image: string
@@ -401,10 +405,12 @@ export type Database = {
           return_reason?: string | null
           shipping_address: string
           size: string
+          snap_token?: string | null
           total_amount: number
           tracking_number?: string | null
           updated_at?: string
           user_id?: string | null
+          va_number?: string | null
         }
         Update: {
           cancelled_at?: string | null
@@ -424,6 +430,7 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string
           payment_status?: string
+          payment_type?: string | null
           postal_code?: string
           product_id?: string
           product_image?: string
@@ -433,10 +440,12 @@ export type Database = {
           return_reason?: string | null
           shipping_address?: string
           size?: string
+          snap_token?: string | null
           total_amount?: number
           tracking_number?: string | null
           updated_at?: string
           user_id?: string | null
+          va_number?: string | null
         }
         Relationships: []
       }

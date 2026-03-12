@@ -5,22 +5,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
-import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
-import PaymentResultDisplay, { type PaymentResultData } from "@/components/payment/PaymentResult";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
+import { loadSnapJs } from "@/lib/midtransSnap";
+
+declare global {
+  interface Window {
+    snap: {
+      pay: (
+        token: string,
+        options: {
+          onSuccess?: (result: any) => void;
+          onPending?: (result: any) => void;
+          onError?: (result: any) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
+
+const MIN_AMOUNT = 10000;
+
+const checkoutSchema = z.object({
+  customerName: z.string().trim().min(2, "Nama minimal 2 karakter").max(100),
+  customerEmail: z.string().trim().email("Email tidak valid").max(255),
+  customerPhone: z.string().trim().regex(/^[0-9+\-\s()]{8,20}$/, "Nomor telepon tidak valid"),
+  shippingAddress: z.string().trim().min(10, "Alamat minimal 10 karakter").max(500),
+  city: z.string().trim().min(2, "Kota minimal 2 karakter").max(100),
+  postalCode: z.string().trim().regex(/^[0-9]{5,10}$/, "Kode pos harus 5-10 digit angka"),
+});
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [selectedChannel, setSelectedChannel] = useState<string>("");
-  const [paymentResult, setPaymentResult] = useState<PaymentResultData | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState(false);
@@ -28,6 +52,11 @@ const Checkout = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
+
+  // Load Snap.js on mount
+  useEffect(() => {
+    loadSnapJs().catch(console.error);
+  }, []);
 
   // Realtime listener for payment status
   useEffect(() => {
@@ -57,38 +86,21 @@ const Checkout = () => {
   });
 
   const formatPrice = (price: number) => `Rp ${price.toLocaleString("id-ID")}`;
+  const totalPrice = getTotalPrice();
+  const isBelowMinimum = totalPrice > 0 && totalPrice < MIN_AMOUNT;
 
-  const checkoutSchema = z.object({
-    customerName: z.string().trim().min(2, "Nama minimal 2 karakter").max(100),
-    customerEmail: z.string().trim().email("Email tidak valid").max(255),
-    customerPhone: z.string().trim().regex(/^[0-9+\-\s()]{8,20}$/, "Nomor telepon tidak valid"),
-    shippingAddress: z.string().trim().min(10, "Alamat minimal 10 karakter").max(500),
-    city: z.string().trim().min(2, "Kota minimal 2 karakter").max(100),
-    postalCode: z.string().trim().regex(/^[0-9]{5,10}$/, "Kode pos harus 5-10 digit angka"),
-  });
-
-  const mapMidtransResponse = (data: any): PaymentResultData => {
-    return {
-      type: data.type || "qris",
-      va_number: data.va_number,
-      bank_name: data.bank_name,
-      biller_code: data.biller_code,
-      qr_string: data.qr_string,
-      qr_code_url: data.qr_code_url,
-      payment_url: data.payment_url,
-      payment_code: data.payment_code,
-      store_name: data.store_name,
-      expiry_time: data.expiry_time,
-    };
-  };
-
-  const handleSubmit = async (channelId: string) => {
+  const handleSubmit = async () => {
     if (items.length === 0) {
       toast({ title: "Cart kosong", description: "Tambahkan produk terlebih dahulu", variant: "destructive" });
       return;
     }
-    if (!channelId) {
-      toast({ title: "Pilih metode", description: "Silakan pilih metode pembayaran", variant: "destructive" });
+
+    if (isBelowMinimum) {
+      toast({
+        title: "Minimal Transaksi",
+        description: `Minimal transaksi Rp${MIN_AMOUNT.toLocaleString("id-ID")}. Beberapa metode pembayaran (Alfamart/Indomaret) tidak tersedia di bawah nominal tersebut.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -108,6 +120,7 @@ const Checkout = () => {
         product_name: item.name, product_price: formatPrice(item.price), product_image: item.image,
       }));
 
+      // Step 1: Create order via RPC
       const { data: newOrderId, error } = await supabase.rpc('checkout_order', {
         p_user_id: currentUser?.id || null,
         p_order_number: newOrderNumber,
@@ -117,7 +130,7 @@ const Checkout = () => {
         p_shipping_address: formData.shippingAddress,
         p_city: formData.city,
         p_postal_code: formData.postalCode,
-        p_payment_method: channelId,
+        p_payment_method: "midtrans_snap",
         p_items: p_items,
       });
 
@@ -126,19 +139,51 @@ const Checkout = () => {
       setOrderId(newOrderId);
       setOrderNumber(newOrderNumber);
 
-      // Call Midtrans initiate-payment
+      // Step 2: Get Snap token from edge function
       const { data: payData, error: payError } = await supabase.functions.invoke("initiate-payment", {
-        body: { orderId: newOrderId, paymentChannel: channelId },
+        body: { orderId: newOrderId },
       });
 
       if (payError) throw payError;
       if (!payData.success) throw new Error(payData.error || "Gagal membuat pembayaran");
 
-      const result = mapMidtransResponse(payData);
-      setPaymentResult(result);
+      const snapToken = payData.snap_token;
+      if (!snapToken) throw new Error("Snap token tidak ditemukan");
 
-      toast({ title: "Pesanan berhasil dibuat!", description: `Nomor pesanan: ${newOrderNumber}` });
+      // Step 3: Open Midtrans Snap popup
       clearCart();
+      toast({ title: "Pesanan berhasil dibuat!", description: `Nomor pesanan: ${newOrderNumber}` });
+
+      if (window.snap) {
+        window.snap.pay(snapToken, {
+          onSuccess: (result: any) => {
+            console.log("Payment success:", result);
+            setIsPaid(true);
+            toast({ title: "Pembayaran Berhasil! 🎉", description: "Pesanan kamu sedang diproses." });
+          },
+          onPending: (result: any) => {
+            console.log("Payment pending:", result);
+            toast({ title: "Menunggu Pembayaran", description: "Selesaikan pembayaran sesuai instruksi." });
+            navigate(`/payment?orderId=${newOrderId}&orderNumber=${newOrderNumber}`);
+          },
+          onError: (result: any) => {
+            console.error("Payment error:", result);
+            toast({ title: "Pembayaran Gagal", description: "Silakan coba lagi.", variant: "destructive" });
+          },
+          onClose: () => {
+            console.log("Snap popup closed");
+            // Navigate to payment page so user can see order status
+            navigate(`/payment?orderId=${newOrderId}&orderNumber=${newOrderNumber}`);
+          },
+        });
+      } else {
+        // Fallback: redirect to Midtrans payment page
+        if (payData.redirect_url) {
+          window.location.href = payData.redirect_url;
+        } else {
+          navigate(`/payment?orderId=${newOrderId}&orderNumber=${newOrderNumber}`);
+        }
+      }
     } catch (error: any) {
       console.error("Error creating order:", error);
       const message = error.message?.includes('Stok tidak cukup') ? error.message : error.message || "Gagal membuat pesanan";
@@ -167,27 +212,6 @@ const Checkout = () => {
     );
   }
 
-  // After payment created, show result
-  if (paymentResult && orderId) {
-    return (
-      <div className="container px-4 py-6 pt-24 max-w-2xl">
-        <h1 className="text-2xl font-bold mb-6 text-center">Pesanan Berhasil Dibuat!</h1>
-        <p className="text-center text-muted-foreground mb-6">Nomor Pesanan: {orderNumber}</p>
-
-        <PaymentResultDisplay result={paymentResult} />
-
-        <div className="mt-6 space-y-3">
-          <Button onClick={() => navigate(`/payment?orderId=${orderId}&orderNumber=${orderNumber}`)} className="w-full h-14 rounded-full text-base font-bold">
-            Lihat Detail Pesanan
-          </Button>
-          <Button onClick={() => navigate("/")} variant="outline" className="w-full h-14 rounded-full text-base font-bold">
-            Kembali ke Beranda
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container px-4 py-6 pt-24 max-w-2xl">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 mb-6 hover:opacity-70 transition-opacity">
@@ -195,6 +219,19 @@ const Checkout = () => {
       </button>
 
       <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+
+      {/* Minimum Amount Warning */}
+      {isBelowMinimum && (
+        <div className="flex items-start gap-3 p-4 mb-6 bg-destructive/10 border border-destructive/30 rounded-lg">
+          <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold text-destructive text-sm">Nominal di bawah minimum</p>
+            <p className="text-sm text-destructive/80">
+              Minimal transaksi Rp{MIN_AMOUNT.toLocaleString("id-ID")}. Metode pembayaran seperti Alfamart/Indomaret tidak tersedia di bawah nominal tersebut.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Order Summary */}
       <div className="bg-muted p-4 rounded-lg mb-6">
@@ -233,28 +270,22 @@ const Checkout = () => {
         </div>
       </div>
 
-      {/* Payment Method */}
-      <div className="mb-6">
-        <h2 className="font-bold text-lg mb-4">Metode Pembayaran</h2>
-        <PaymentMethodSelector
-          onPaymentCreated={() => {}}
-          onCreatePayment={handleSubmit}
-          loading={loading}
-          paymentResult={null}
-          hideButton
-          onChannelChange={setSelectedChannel}
-        />
-      </div>
-
       {/* Total */}
       <div className="border-t pt-6 space-y-3 mb-6">
-        <div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold">{formatPrice(getTotalPrice())}</span></div>
+        <div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold">{formatPrice(totalPrice)}</span></div>
         <div className="flex justify-between items-center"><span className="text-muted-foreground">Pengiriman</span><span className="font-semibold">Gratis</span></div>
         <Separator className="my-2" />
-        <div className="flex justify-between items-center"><span className="text-lg font-bold">Total</span><span className="text-lg font-bold">{formatPrice(getTotalPrice())}</span></div>
+        <div className="flex justify-between items-center"><span className="text-lg font-bold">Total</span><span className="text-lg font-bold">{formatPrice(totalPrice)}</span></div>
       </div>
 
-      <Button onClick={() => handleSubmit(selectedChannel)} className="w-full h-14 rounded-full text-base font-bold" disabled={loading || !selectedChannel}>
+      {/* Payment info */}
+      <div className="bg-muted/50 border rounded-lg p-4 mb-6">
+        <p className="text-sm text-muted-foreground text-center">
+          Setelah klik tombol di bawah, popup Midtrans akan muncul untuk memilih metode pembayaran (Transfer Bank, e-Wallet, QRIS, Kartu Kredit, Alfamart/Indomaret, dll).
+        </p>
+      </div>
+
+      <Button onClick={handleSubmit} className="w-full h-14 rounded-full text-base font-bold" disabled={loading || items.length === 0 || isBelowMinimum}>
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses...</> : "BAYAR SEKARANG"}
       </Button>
     </div>
