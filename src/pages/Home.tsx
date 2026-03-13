@@ -82,12 +82,13 @@ const Home = () => {
               {paymentLogos.map((logo) => (
                 <div
                   key={logo.alt}
-                  className="flex items-center justify-center w-full aspect-square bg-white rounded-lg p-2"
+                  className="flex items-center justify-center aspect-square bg-white rounded-lg p-2"
                 >
                   <img
                     src={logo.src}
                     alt={logo.alt}
                     className="w-full h-full object-contain"
+                    loading="lazy"
                   />
                 </div>
               ))}
@@ -102,8 +103,8 @@ const Home = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
             <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-              <div className="flex items-center justify-center w-full aspect-square bg-white rounded-lg p-2">
-                <img src={jneLogo} alt="JNE Express" className="w-full h-full object-contain" />
+              <div className="flex items-center justify-center aspect-square bg-white rounded-lg p-2">
+                <img src={jneLogo} alt="JNE Express" className="w-full h-full object-contain" loading="lazy" />
               </div>
             </div>
           </CollapsibleContent>
