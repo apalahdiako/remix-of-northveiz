@@ -16,10 +16,25 @@ import ovoLogo from "@/assets/payment/ovo-new.jpg";
 import briLogo from "@/assets/payment/bri-new.jpg";
 import bniLogo from "@/assets/payment/bni-new.jpg";
 import bcaLogo from "@/assets/payment/bca.jpg";
-
+import visaLogo from "@/assets/payment/visa.png";
+import mastercardLogo from "@/assets/payment/mastercard.png";
 
 // Shipping method logos
 import jneLogo from "@/assets/shipping/jne-new.jpg";
+
+const paymentLogos = [
+  { src: qrisLogo, alt: "QRIS" },
+  { src: ovoLogo, alt: "OVO" },
+  { src: shopeepayLogo, alt: "ShopeePay" },
+  { src: akulakuLogo, alt: "Akulaku" },
+  { src: alfamartLogo, alt: "Alfamart" },
+  { src: indomaretLogo, alt: "Indomaret" },
+  { src: briLogo, alt: "BRI" },
+  { src: bniLogo, alt: "BNI" },
+  { src: bcaLogo, alt: "BCA" },
+  { src: visaLogo, alt: "Visa" },
+  { src: mastercardLogo, alt: "Mastercard" },
+];
 
 const Home = () => {
   const { t } = useTranslation();
@@ -63,34 +78,19 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-4 items-center">
-              <div className="flex items-center justify-center p-2">
-                <img src={qrisLogo} alt="QRIS" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={ovoLogo} alt="OVO" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={shopeepayLogo} alt="ShopeePay" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={akulakuLogo} alt="Akulaku" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={alfamartLogo} alt="Alfamart" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={indomaretLogo} alt="Indomaret" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={briLogo} alt="BRI" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={bniLogo} alt="BNI" className="h-10 w-auto object-contain" />
-              </div>
-              <div className="flex items-center justify-center p-2">
-                <img src={bcaLogo} alt="BCA" className="h-10 w-auto object-contain" />
-              </div>
+            <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+              {paymentLogos.map((logo) => (
+                <div
+                  key={logo.alt}
+                  className="flex items-center justify-center w-full aspect-square bg-white rounded-lg p-2"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ))}
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -101,9 +101,9 @@ const Home = () => {
             <ChevronDown className="h-5 w-5 transition-transform ui-expanded:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
-            <div className="flex items-center">
-              <div className="flex items-center justify-center p-2 w-32">
-                <img src={jneLogo} alt="JNE Express" className="w-full h-auto object-contain" />
+            <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+              <div className="flex items-center justify-center w-full aspect-square bg-white rounded-lg p-2">
+                <img src={jneLogo} alt="JNE Express" className="w-full h-full object-contain" />
               </div>
             </div>
           </CollapsibleContent>
