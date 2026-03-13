@@ -7,6 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// PRODUCTION ONLY — no sandbox detection
+const SNAP_URL = "https://app.midtrans.com/snap/v1/transactions";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,18 +20,10 @@ serve(async (req) => {
     if (!rawKey) throw new Error("MIDTRANS_SERVER_KEY not configured");
 
     const MIDTRANS_SERVER_KEY = rawKey.trim();
-    const isSandbox = MIDTRANS_SERVER_KEY.startsWith("SB-");
-
-    // Snap API endpoint (NOT Core API /v2/charge)
-    const snapUrl = isSandbox
-      ? "https://app.sandbox.midtrans.com/snap/v1/transactions"
-      : "https://app.midtrans.com/snap/v1/transactions";
-
     const authToken = btoa(MIDTRANS_SERVER_KEY + ":");
 
-    console.log("=== MIDTRANS SNAP INITIATE ===");
-    console.log("Environment:", isSandbox ? "SANDBOX" : "PRODUCTION");
-    console.log("Snap URL:", snapUrl);
+    console.log("=== MIDTRANS SNAP INITIATE (PRODUCTION) ===");
+    console.log("Snap URL:", SNAP_URL);
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -99,7 +94,7 @@ serve(async (req) => {
 
     console.log("Snap payload:", JSON.stringify(snapPayload));
 
-    const midtransResponse = await fetch(snapUrl, {
+    const midtransResponse = await fetch(SNAP_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
