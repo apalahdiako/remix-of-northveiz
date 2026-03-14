@@ -5,36 +5,10 @@ import heroVideo from "@/assets/hero-video.mp4";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalTimer } from "@/components/GlobalTimer";
-
-// Payment method logos
-import qrisLogo from "@/assets/payment/qris-new.jpg";
-import alfamartLogo from "@/assets/payment/alfamart-new.jpg";
-import indomaretLogo from "@/assets/payment/indomaret.jpg";
-import akulakuLogo from "@/assets/payment/akulaku-new.jpg";
-import shopeepayLogo from "@/assets/payment/shopeepay-new.jpg";
-import ovoLogo from "@/assets/payment/ovo-new.jpg";
-import briLogo from "@/assets/payment/bri-new.jpg";
-import bniLogo from "@/assets/payment/bni-new.jpg";
-import bcaLogo from "@/assets/payment/bca.jpg";
-import visaLogo from "@/assets/payment/visa.png";
-import mastercardLogo from "@/assets/payment/mastercard.png";
+import { allPaymentLogos } from "@/components/payment/PaymentMethodSelector";
 
 // Shipping method logos
 import jneLogo from "@/assets/shipping/jne-new.jpg";
-
-const paymentLogos = [
-  { src: qrisLogo, alt: "QRIS" },
-  { src: ovoLogo, alt: "OVO" },
-  { src: shopeepayLogo, alt: "ShopeePay" },
-  { src: akulakuLogo, alt: "Akulaku" },
-  { src: alfamartLogo, alt: "Alfamart" },
-  { src: indomaretLogo, alt: "Indomaret" },
-  { src: briLogo, alt: "BRI" },
-  { src: bniLogo, alt: "BNI" },
-  { src: bcaLogo, alt: "BCA" },
-  { src: visaLogo, alt: "Visa" },
-  { src: mastercardLogo, alt: "Mastercard" },
-];
 
 const Home = () => {
   const { t } = useTranslation();
@@ -79,7 +53,7 @@ const Home = () => {
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-6">
             <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-              {paymentLogos.map((logo) => (
+              {allPaymentLogos.map((logo) => (
                 <div
                   key={logo.alt}
                   className="flex items-center justify-center aspect-square bg-white rounded-lg p-2"

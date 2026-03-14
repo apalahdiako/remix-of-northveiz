@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// PRODUCTION ONLY — no sandbox detection
+// PRODUCTION ONLY
 const SNAP_URL = "https://app.midtrans.com/snap/v1/transactions";
 
 serve(async (req) => {
@@ -23,7 +23,6 @@ serve(async (req) => {
     const authToken = btoa(MIDTRANS_SERVER_KEY + ":");
 
     console.log("=== MIDTRANS SNAP INITIATE (PRODUCTION) ===");
-    console.log("Snap URL:", SNAP_URL);
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -33,7 +32,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { orderId } = await req.json();
+    const { orderId, enabled_payments } = await req.json();
     if (!orderId) throw new Error("orderId is required");
 
     const { data: order, error: orderError } = await supabase
@@ -44,22 +43,16 @@ serve(async (req) => {
 
     if (orderError || !order) throw new Error("Order not found");
 
-    // Ensure unique order_id for Midtrans (append timestamp)
     const uniqueOrderId = `${order.order_number}-${Date.now()}`;
-
-    // Ensure gross_amount is integer (Midtrans requirement)
     const grossAmount = Math.floor(Number(order.total_amount));
     if (isNaN(grossAmount) || grossAmount <= 0) {
       throw new Error(`Invalid gross_amount: ${order.total_amount}`);
     }
 
-    // Minimum amount validation for retail channels
     if (grossAmount < 10000) {
       throw new Error("Minimal transaksi Rp10.000 untuk semua metode pembayaran");
     }
 
-    // Build Snap transaction parameter
-    // NO enabled_payments — let Midtrans show all active methods from Dashboard
     const snapPayload: any = {
       transaction_details: {
         order_id: uniqueOrderId,
@@ -86,11 +79,16 @@ serve(async (req) => {
           quantity: order.quantity,
         },
       ],
-      // Enable 3DS for Visa/Mastercard international cards
       credit_card: {
         secure: true,
       },
     };
+
+    // Apply enabled_payments filter if provided
+    if (enabled_payments && Array.isArray(enabled_payments) && enabled_payments.length > 0) {
+      snapPayload.enabled_payments = enabled_payments;
+      console.log("Enabled payments:", enabled_payments);
+    }
 
     console.log("Snap payload:", JSON.stringify(snapPayload));
 
@@ -114,9 +112,7 @@ serve(async (req) => {
     }
 
     console.log("Snap token created:", midtransData.token ? "OK" : "MISSING");
-    console.log("Snap redirect URL:", midtransData.redirect_url ? "OK" : "MISSING");
 
-    // Store snap_token in order for reference
     await supabase
       .from("orders")
       .update({

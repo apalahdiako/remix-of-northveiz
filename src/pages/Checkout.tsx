@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
+import PaymentMethodSelector, { type PaymentOption } from "@/components/payment/PaymentMethodSelector";
 import { loadSnapJs } from "@/lib/midtransSnap";
 
 declare global {
@@ -48,12 +49,12 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentOption | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
-  // Load Snap.js on mount
   useEffect(() => {
     loadSnapJs().catch(console.error);
   }, []);
@@ -76,7 +77,6 @@ const Checkout = () => {
         }
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [orderId]);
 
@@ -94,13 +94,12 @@ const Checkout = () => {
       toast({ title: "Cart kosong", description: "Tambahkan produk terlebih dahulu", variant: "destructive" });
       return;
     }
-
+    if (!selectedPayment) {
+      toast({ title: "Pilih metode", description: "Silakan pilih metode pembayaran", variant: "destructive" });
+      return;
+    }
     if (isBelowMinimum) {
-      toast({
-        title: "Minimal Transaksi",
-        description: `Minimal transaksi Rp${MIN_AMOUNT.toLocaleString("id-ID")}. Beberapa metode pembayaran (Alfamart/Indomaret) tidak tersedia di bawah nominal tersebut.`,
-        variant: "destructive",
-      });
+      toast({ title: "Minimal Transaksi", description: `Minimal transaksi Rp${MIN_AMOUNT.toLocaleString("id-ID")}.`, variant: "destructive" });
       return;
     }
 
@@ -120,7 +119,6 @@ const Checkout = () => {
         product_name: item.name, product_price: formatPrice(item.price), product_image: item.image,
       }));
 
-      // Step 1: Create order via RPC
       const { data: newOrderId, error } = await supabase.rpc('checkout_order', {
         p_user_id: currentUser?.id || null,
         p_order_number: newOrderNumber,
@@ -130,7 +128,7 @@ const Checkout = () => {
         p_shipping_address: formData.shippingAddress,
         p_city: formData.city,
         p_postal_code: formData.postalCode,
-        p_payment_method: "midtrans_snap",
+        p_payment_method: selectedPayment.id,
         p_items: p_items,
       });
 
@@ -139,9 +137,12 @@ const Checkout = () => {
       setOrderId(newOrderId);
       setOrderNumber(newOrderNumber);
 
-      // Step 2: Get Snap token from edge function
+      // Get Snap token with enabled_payments filter
       const { data: payData, error: payError } = await supabase.functions.invoke("initiate-payment", {
-        body: { orderId: newOrderId },
+        body: {
+          orderId: newOrderId,
+          enabled_payments: selectedPayment.midtransCode,
+        },
       });
 
       if (payError) throw payError;
@@ -150,7 +151,6 @@ const Checkout = () => {
       const snapToken = payData.snap_token;
       if (!snapToken) throw new Error("Snap token tidak ditemukan");
 
-      // Step 3: Open Midtrans Snap popup
       clearCart();
       toast({ title: "Pesanan berhasil dibuat!", description: `Nomor pesanan: ${newOrderNumber}` });
 
@@ -171,13 +171,10 @@ const Checkout = () => {
             toast({ title: "Pembayaran Gagal", description: "Silakan coba lagi.", variant: "destructive" });
           },
           onClose: () => {
-            console.log("Snap popup closed");
-            // Navigate to payment page so user can see order status
             navigate(`/payment?orderId=${newOrderId}&orderNumber=${newOrderNumber}`);
           },
         });
       } else {
-        // Fallback: redirect to Midtrans payment page
         if (payData.redirect_url) {
           window.location.href = payData.redirect_url;
         } else {
@@ -203,7 +200,6 @@ const Checkout = () => {
 
   if (!user) return null;
 
-  // Show success screen when paid
   if (isPaid && orderId && orderNumber) {
     return (
       <div className="container px-4 py-6 pt-24 max-w-2xl">
@@ -220,15 +216,12 @@ const Checkout = () => {
 
       <h1 className="text-3xl font-bold mb-6">Checkout</h1>
 
-      {/* Minimum Amount Warning */}
       {isBelowMinimum && (
         <div className="flex items-start gap-3 p-4 mb-6 bg-destructive/10 border border-destructive/30 rounded-lg">
           <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
           <div>
             <p className="font-semibold text-destructive text-sm">Nominal di bawah minimum</p>
-            <p className="text-sm text-destructive/80">
-              Minimal transaksi Rp{MIN_AMOUNT.toLocaleString("id-ID")}. Metode pembayaran seperti Alfamart/Indomaret tidak tersedia di bawah nominal tersebut.
-            </p>
+            <p className="text-sm text-destructive/80">Minimal transaksi Rp{MIN_AMOUNT.toLocaleString("id-ID")}.</p>
           </div>
         </div>
       )}
@@ -278,16 +271,16 @@ const Checkout = () => {
         <div className="flex justify-between items-center"><span className="text-lg font-bold">Total</span><span className="text-lg font-bold">{formatPrice(totalPrice)}</span></div>
       </div>
 
-      {/* Payment info */}
-      <div className="bg-muted/50 border rounded-lg p-4 mb-6">
-        <p className="text-sm text-muted-foreground text-center">
-          Setelah klik tombol di bawah, popup Midtrans akan muncul untuk memilih metode pembayaran (Transfer Bank, e-Wallet, QRIS, Kartu Kredit, Alfamart/Indomaret, dll).
-        </p>
+      {/* Payment Method Selection */}
+      <div className="mb-6">
+        <h2 className="font-bold text-lg mb-4">Pilih Metode Pembayaran</h2>
+        <PaymentMethodSelector
+          onSelect={setSelectedPayment}
+          selectedId={selectedPayment?.id || null}
+          loading={loading}
+          onConfirm={handleSubmit}
+        />
       </div>
-
-      <Button onClick={handleSubmit} className="w-full h-14 rounded-full text-base font-bold" disabled={loading || items.length === 0 || isBelowMinimum}>
-        {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses...</> : "BAYAR SEKARANG"}
-      </Button>
     </div>
   );
 };
