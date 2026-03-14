@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import heroVideo from "@/assets/hero-video.mp4";
@@ -15,34 +14,28 @@ const Home = () => {
   
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[600px] md:h-[700px] bg-gradient-hero overflow-hidden">
-        <div className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover object-center"
-          >
-            <source src={heroVideo} type="video/mp4" />
-          </video>
-        </div>
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Link to="/catalog">
-            <Button
-              size="lg"
-              className="h-14 px-12 text-lg font-bold rounded-full bg-transparent border-2 border-white text-white hover:bg-white/10 backdrop-blur-sm transition-all hover:scale-105"
+      {/* Hero Section - entire area is clickable */}
+      <Link to="/catalog" className="block">
+        <section className="relative h-[600px] md:h-[700px] bg-foreground overflow-hidden cursor-pointer">
+          <div className="absolute inset-0">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover object-center"
             >
-              {t("home.shopButton")}
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Global Timer Section */}
-      <GlobalTimer />
+              <source src={heroVideo} type="video/mp4" />
+            </video>
+          </div>
+          <div className="absolute inset-0 bg-black/30" />
+          
+          {/* Timer overlay at top-center */}
+          <div className="absolute top-8 md:top-12 left-0 right-0 z-10 px-4">
+            <GlobalTimer />
+          </div>
+        </section>
+      </Link>
 
       {/* Info Sections */}
       <section className="bg-foreground text-background">
