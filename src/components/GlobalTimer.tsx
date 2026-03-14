@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 interface TimerData {
   id: string;
@@ -20,7 +18,6 @@ interface TimeRemaining {
 }
 
 export const GlobalTimer = () => {
-  const navigate = useNavigate();
   const [timerData, setTimerData] = useState<TimerData | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>({
     days: 0,
@@ -30,7 +27,6 @@ export const GlobalTimer = () => {
   });
 
   useEffect(() => {
-    // Fetch initial timer data
     const fetchTimer = async () => {
       const { data, error } = await supabase
         .from("global_timer")
@@ -45,7 +41,6 @@ export const GlobalTimer = () => {
 
     fetchTimer();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel("global-timer-changes")
       .on(
@@ -85,12 +80,12 @@ export const GlobalTimer = () => {
         return;
       }
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      setTimeRemaining({ days, hours, minutes, seconds });
+      setTimeRemaining({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      });
     };
 
     calculateTimeRemaining();
@@ -103,43 +98,22 @@ export const GlobalTimer = () => {
     return null;
   }
 
-  const handleViewMore = () => {
-    if (timerData.action_link) {
-      navigate(timerData.action_link);
-    }
-  };
-
   return (
-    <div className="w-full py-8 px-4 bg-gradient-to-br from-accent/10 to-background">
-      <div className="max-w-4xl mx-auto">
-        <div className="relative bg-background border-2 border-accent rounded-3xl p-8 shadow-lg">
-          {/* Title */}
-          <h2 className="text-center text-xl md:text-2xl font-bold mb-6 text-foreground">
-            {timerData.title}
-          </h2>
+    <div className="text-center">
+      {/* Title */}
+      <h2 className="text-sm md:text-base font-bold uppercase tracking-[0.2em] text-white mb-3 drop-shadow-lg">
+        {timerData.title}
+      </h2>
 
-          {/* Timer Display */}
-          <div className="flex justify-center items-center gap-2 md:gap-4 mb-4">
-            <TimeUnit value={timeRemaining.days} label="Hari" />
-            <Separator />
-            <TimeUnit value={timeRemaining.hours} label="Jam" />
-            <Separator />
-            <TimeUnit value={timeRemaining.minutes} label="Menit" />
-            <Separator />
-            <TimeUnit value={timeRemaining.seconds} label="Detik" />
-          </div>
-
-          {/* View More Button */}
-          <div className="flex justify-center mt-6">
-            <Button
-              onClick={handleViewMore}
-              size="lg"
-              className="rounded-full px-8 font-bold"
-            >
-              View More
-            </Button>
-          </div>
-        </div>
+      {/* Timer Display */}
+      <div className="flex justify-center items-center gap-3 md:gap-5">
+        <TimeUnit value={timeRemaining.days} label="Days" />
+        <Separator />
+        <TimeUnit value={timeRemaining.hours} label="Hours" />
+        <Separator />
+        <TimeUnit value={timeRemaining.minutes} label="Minutes" />
+        <Separator />
+        <TimeUnit value={timeRemaining.seconds} label="Seconds" />
       </div>
     </div>
   );
@@ -147,13 +121,15 @@ export const GlobalTimer = () => {
 
 const TimeUnit = ({ value, label }: { value: number; label: string }) => (
   <div className="flex flex-col items-center">
-    <div className="text-3xl md:text-5xl font-bold text-foreground tabular-nums min-w-[3ch] text-center">
+    <div className="text-3xl md:text-5xl font-bold text-white tabular-nums min-w-[2ch] text-center drop-shadow-lg">
       {value.toString().padStart(2, "0")}
     </div>
-    <div className="text-xs md:text-sm text-muted-foreground mt-1">{label}</div>
+    <div className="text-[10px] md:text-xs text-white/80 mt-1 uppercase tracking-widest font-medium">
+      {label}
+    </div>
   </div>
 );
 
 const Separator = () => (
-  <div className="text-3xl md:text-5xl font-bold text-muted-foreground">:</div>
+  <div className="text-2xl md:text-4xl font-bold text-white/70 drop-shadow-lg -mt-4">:</div>
 );
