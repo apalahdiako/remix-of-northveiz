@@ -30,8 +30,8 @@ const Home = () => {
           </div>
           <div className="absolute inset-0 bg-black/30" />
           
-          {/* Timer overlay at top-center */}
-          <div className="absolute top-8 md:top-12 left-0 right-0 z-10 px-4">
+          {/* Timer overlay at bottom-center */}
+          <div className="absolute bottom-8 md:bottom-12 left-0 right-0 z-10 px-4">
             <GlobalTimer />
           </div>
         </section>
