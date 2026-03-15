@@ -1,7 +1,6 @@
 import { Instagram } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { useTranslation } from "react-i18next";
-import founderPhoto from "@/assets/founder-photo.png";
 import logo from "@/assets/logo.png";
 
 const About = () => {
@@ -10,16 +9,6 @@ const About = () => {
   return (
     <div className="min-h-screen flex flex-col pt-16">
       <div className="container px-6 py-12 max-w-4xl mx-auto flex-grow">
-        {/* Founder Photo */}
-        <div className="flex justify-center mb-8 md:mb-12">
-          <div className="w-full max-w-sm md:max-w-md">
-            <img 
-              src={founderPhoto} 
-              alt="Founder - Bayu Raja Syah" 
-              className="w-full h-auto rounded-lg shadow-lg object-cover"
-            />
-          </div>
-        </div>
 
         {/* Brand Logo */}
         <div className="flex justify-center mb-8 md:mb-12">
