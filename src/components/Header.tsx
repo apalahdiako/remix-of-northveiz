@@ -51,7 +51,20 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
         </Button>
 
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="NRTVZ" className="h-[50px] w-auto" />
+          {isHomePage ? (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-[50px] w-auto"
+              style={{ mixBlendMode: isScrolled ? 'multiply' : 'screen' }}
+            >
+              <source src={logoVideo} type="video/mp4" />
+            </video>
+          ) : (
+            <img src={logo} alt="NRTVZ" className="h-[50px] w-auto" style={{ mixBlendMode: 'multiply' }} />
+          )}
         </Link>
 
         <div className="flex items-center gap-2">
