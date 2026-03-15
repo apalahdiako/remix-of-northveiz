@@ -2,7 +2,7 @@ import { Menu, ShoppingBag, User, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import logoVideo from "@/assets/logo-video.mp4";
+import logoVideo from "@/assets/logo-video.webm";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { Badge } from "@/components/ui/badge";
@@ -58,9 +58,8 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
               muted
               playsInline
               className="h-[50px] w-auto"
-              style={{ mixBlendMode: isScrolled ? 'multiply' : 'screen' }}
             >
-              <source src={logoVideo} type="video/mp4" />
+              <source src={logoVideo} type="video/webm" />
             </video>
           ) : (
             <img src={logo} alt="NRTVZ" className="h-[50px] w-auto" style={{ mixBlendMode: 'multiply' }} />
