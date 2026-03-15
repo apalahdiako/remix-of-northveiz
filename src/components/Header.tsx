@@ -57,7 +57,7 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
               loop
               muted
               playsInline
-              className="h-[50px] w-auto"
+            className="h-[70px] w-auto"
             >
               <source src={logoVideo} type="video/webm" />
             </video>
