@@ -58,9 +58,8 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
               muted
               playsInline
               className="h-[50px] w-auto"
-              style={{ mixBlendMode: isScrolled ? 'multiply' : 'screen' }}
             >
-              <source src={logoVideo} type="video/mp4" />
+              <source src={logoVideo} type="video/webm" />
             </video>
           ) : (
             <img src={logo} alt="NRTVZ" className="h-[50px] w-auto" style={{ mixBlendMode: 'multiply' }} />
