@@ -2,13 +2,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import Header from "./components/Header";
 import MobileMenu from "./components/MobileMenu";
 import CartDrawer from "./components/CartDrawer";
 import SearchSheet from "./components/SearchSheet";
+import ChatWindow from "./components/ChatWindow";
+import AdminChatPanel from "./components/AdminChatPanel";
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
 import ProductDetail from "./pages/ProductDetail";
@@ -32,6 +34,9 @@ function AppContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const isAdminMode = searchParams.get("mode") === "admin";
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,10 +44,17 @@ function AppContent() {
         onMenuClick={() => setMenuOpen(true)} 
         onCartClick={() => setCartOpen(true)}
         onSearchClick={() => setSearchOpen(true)}
+        onChatClick={() => setChatOpen(true)}
       />
       <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
       <SearchSheet open={searchOpen} onOpenChange={setSearchOpen} />
+      
+      {isAdminMode ? (
+        <AdminChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
+      ) : (
+        <ChatWindow open={chatOpen} onClose={() => setChatOpen(false)} />
+      )}
       
       <Routes>
         <Route path="/" element={<Home />} />
