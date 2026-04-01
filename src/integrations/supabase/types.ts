@@ -604,32 +604,53 @@ export type Database = {
       products: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           image: string
           name: string
           price: string
+          size_guide_url: string | null
           stock: number
+          stock_l: number
+          stock_m: number
+          stock_s: number
           stock_status: string
+          stock_xl: number
+          stock_xxl: number
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id: string
           image: string
           name: string
           price: string
+          size_guide_url?: string | null
           stock?: number
+          stock_l?: number
+          stock_m?: number
+          stock_s?: number
           stock_status?: string
+          stock_xl?: number
+          stock_xxl?: number
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           image?: string
           name?: string
           price?: string
+          size_guide_url?: string | null
           stock?: number
+          stock_l?: number
+          stock_m?: number
+          stock_s?: number
           stock_status?: string
+          stock_xl?: number
+          stock_xxl?: number
           updated_at?: string | null
         }
         Relationships: []
