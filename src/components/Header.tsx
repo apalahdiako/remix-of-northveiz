@@ -1,4 +1,4 @@
-import { Menu, ShoppingBag, User, LogOut, Search } from "lucide-react";
+import { Menu, ShoppingBag, User, Search, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/logo.png";
@@ -12,10 +12,11 @@ interface HeaderProps {
   onMenuClick: () => void;
   onCartClick: () => void;
   onSearchClick: () => void;
+  onChatClick: () => void;
 }
 
-const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
-  const { user, signOut } = useAuth();
+const Header = ({ onMenuClick, onCartClick, onSearchClick, onChatClick }: HeaderProps) => {
+  const { user } = useAuth();
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
   const location = useLocation();
@@ -26,10 +27,11 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const iconClass = isHomePage && !isScrolled ? "text-white hover:bg-white/10" : "";
 
   return (
     <header 
@@ -45,20 +47,14 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
           size="icon"
           onClick={onMenuClick}
           aria-label="Open menu"
-          className={isHomePage && !isScrolled ? "text-white hover:bg-white/10" : ""}
+          className={iconClass}
         >
           <Menu className="h-6 w-6" />
         </Button>
 
         <Link to="/" className="flex items-center">
           {isHomePage ? (
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-            className="h-[70px] w-auto"
-            >
+            <video autoPlay loop muted playsInline className="h-[70px] w-auto">
               <source src={logoVideo} type="video/webm" />
             </video>
           ) : (
@@ -66,66 +62,26 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick }: HeaderProps) => {
           )}
         </Link>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onSearchClick}
-            aria-label="Search products"
-            className={isHomePage && !isScrolled ? "text-white hover:bg-white/10" : ""}
-          >
-            <Search className="h-6 w-6" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onCartClick}
-            aria-label="Shopping cart"
-            className={`relative ${isHomePage && !isScrolled ? "text-white hover:bg-white/10" : ""}`}
-          >
-            <ShoppingBag className="h-6 w-6" />
+        <div className="flex items-center gap-4">
+          <button onClick={onSearchClick} aria-label="Search" className={`${iconClass} p-1 transition-colors`}>
+            <Search size={20} strokeWidth={1.5} />
+          </button>
+          <button onClick={onChatClick} aria-label="Chat" className={`${iconClass} p-1 transition-colors`}>
+            <MessageCircle size={20} strokeWidth={1.5} />
+          </button>
+          <button onClick={onCartClick} aria-label="Cart" className={`relative ${iconClass} p-1 transition-colors`}>
+            <ShoppingBag size={20} strokeWidth={1.5} />
             {cartItemCount > 0 && (
-              <Badge className={`absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs ${
+              <Badge className={`absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] ${
                 isHomePage && !isScrolled ? "bg-white text-foreground" : "bg-foreground text-background"
               }`}>
                 {cartItemCount}
               </Badge>
             )}
-          </Button>
-          {user ? (
-            <>
-              <Link to="/account">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  aria-label="Account"
-                  className={isHomePage && !isScrolled ? "text-white hover:bg-white/10" : ""}
-                >
-                  <User className="h-6 w-6" />
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => signOut()}
-                aria-label="Logout"
-                className={isHomePage && !isScrolled ? "text-white hover:bg-white/10" : ""}
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </>
-          ) : (
-            <Link to="/auth">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                aria-label="Login"
-                className={isHomePage && !isScrolled ? "text-white hover:bg-white/10" : ""}
-              >
-                <User className="h-6 w-6" />
-              </Button>
-            </Link>
-          )}
+          </button>
+          <Link to={user ? "/account" : "/auth"} aria-label={user ? "Account" : "Login"} className={`${iconClass} p-1 transition-colors`}>
+            <User size={20} strokeWidth={1.5} />
+          </Link>
         </div>
       </div>
     </header>
