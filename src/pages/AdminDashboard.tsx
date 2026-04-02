@@ -288,6 +288,9 @@ Tim NORTHVEIZ`);
             <GlobeIcon className="mr-2 h-4 w-4" />
             Peta Global
           </TabsTrigger>
+          <TabsTrigger value="chat">
+            💬 Live Chat
+          </TabsTrigger>
           <TabsTrigger value="inbox">
             <Inbox className="mr-2 h-4 w-4" />
             Inbox
