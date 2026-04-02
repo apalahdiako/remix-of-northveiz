@@ -337,6 +337,10 @@ Tim NORTHVEIZ`);
           </Card>
         </TabsContent>
 
+        <TabsContent value="chat">
+          <AdminChatDashboard />
+        </TabsContent>
+
         <TabsContent value="inbox">
           <InboxManagement />
         </TabsContent>
