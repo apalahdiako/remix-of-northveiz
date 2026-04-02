@@ -20,6 +20,7 @@ import { OrderManagement } from "@/components/admin/OrderManagement";
 import { InboxManagement } from "@/components/admin/InboxManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { BroadcastManagement } from "@/components/admin/BroadcastManagement";
+import AdminChatDashboard from "@/components/admin/AdminChatDashboard";
 
 interface UserProfile {
   id: string;
