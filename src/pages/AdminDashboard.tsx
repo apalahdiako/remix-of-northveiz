@@ -20,6 +20,7 @@ import { OrderManagement } from "@/components/admin/OrderManagement";
 import { InboxManagement } from "@/components/admin/InboxManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { BroadcastManagement } from "@/components/admin/BroadcastManagement";
+import AdminChatDashboard from "@/components/admin/AdminChatDashboard";
 
 interface UserProfile {
   id: string;
@@ -287,6 +288,9 @@ Tim NORTHVEIZ`);
             <GlobeIcon className="mr-2 h-4 w-4" />
             Peta Global
           </TabsTrigger>
+          <TabsTrigger value="chat">
+            💬 Live Chat
+          </TabsTrigger>
           <TabsTrigger value="inbox">
             <Inbox className="mr-2 h-4 w-4" />
             Inbox
@@ -331,6 +335,10 @@ Tim NORTHVEIZ`);
               <InteractiveGlobe locations={locations} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="chat">
+          <AdminChatDashboard />
         </TabsContent>
 
         <TabsContent value="inbox">

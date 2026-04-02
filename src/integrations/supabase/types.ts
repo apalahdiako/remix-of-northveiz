@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          read_at: string | null
           role: string
           session_id: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          read_at?: string | null
           role?: string
           session_id: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          read_at?: string | null
           role?: string
           session_id?: string
         }
