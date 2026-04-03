@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import AudioPlayer from "@/components/chat/AudioPlayer";
 
 interface ChatMessage {
   id: string;
@@ -14,6 +16,8 @@ interface ChatMessage {
   role: string;
   content: string | null;
   image_url: string | null;
+  file_url: string | null;
+  message_type: string;
   created_at: string;
   read_at: string | null;
 }
@@ -39,22 +43,22 @@ export default function AdminChatDashboard() {
   const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const prevSessionCountRef = useRef(0);
 
-  // Load sessions
   const loadSessions = useCallback(async () => {
     const { data } = await supabase
       .from("chat_messages")
-      .select("session_id, content, created_at, role, read_at")
+      .select("session_id, content, created_at, role, read_at, message_type")
       .order("created_at", { ascending: false });
     if (!data) return;
 
     const map = new Map<string, ChatSession>();
     for (const row of data) {
       if (!map.has(row.session_id)) {
+        let preview = row.content;
+        if (row.message_type === "voice") preview = "🎤 Voice note";
         map.set(row.session_id, {
           session_id: row.session_id,
-          last_message: row.content,
+          last_message: preview,
           last_at: row.created_at,
           unread: 0,
         });
@@ -68,7 +72,6 @@ export default function AdminChatDashboard() {
       (a, b) => new Date(b.last_at).getTime() - new Date(a.last_at).getTime()
     );
     setSessions(arr);
-    return arr;
   }, []);
 
   useEffect(() => {
@@ -77,7 +80,6 @@ export default function AdminChatDashboard() {
       .channel("admin-dashboard-chat")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
         const msg = payload.new as ChatMessage;
-        // Play sound for user messages
         if (msg.role === "user") {
           try {
             const audio = new Audio(PING_SOUND_URL);
@@ -86,7 +88,6 @@ export default function AdminChatDashboard() {
           } catch {}
         }
         loadSessions();
-        // Update messages if in selected session
         if (msg.session_id === selected) {
           setMessages((prev) => {
             if (prev.find((m) => m.id === msg.id)) return prev;
@@ -98,7 +99,6 @@ export default function AdminChatDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [loadSessions, selected]);
 
-  // Load messages for selected session
   useEffect(() => {
     if (!selected) return;
     const load = async () => {
@@ -109,7 +109,6 @@ export default function AdminChatDashboard() {
         .order("created_at", { ascending: true });
       if (data) setMessages(data as ChatMessage[]);
 
-      // Mark as read
       await supabase
         .from("chat_messages")
         .update({ read_at: new Date().toISOString() })
@@ -132,6 +131,7 @@ export default function AdminChatDashboard() {
       role: "admin",
       content: content?.trim() || null,
       image_url: imageUrl || null,
+      message_type: imageUrl ? "image" : "text",
     });
     setInput("");
     setShowEmoji(false);
@@ -154,6 +154,25 @@ export default function AdminChatDashboard() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleVoiceRecorded = async (blob: Blob) => {
+    if (!selected) return;
+    setUploading(true);
+    const path = `admin/${selected}/${Date.now()}.webm`;
+    const { error } = await supabase.storage.from("voice-notes").upload(path, blob, { contentType: "audio/webm" });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("voice-notes").getPublicUrl(path);
+      await supabase.from("chat_messages").insert({
+        session_id: selected,
+        role: "admin",
+        message_type: "voice",
+        file_url: urlData.publicUrl,
+      });
+    } else {
+      toast.error("Gagal upload voice note");
+    }
+    setUploading(false);
+  };
+
   const filteredSessions = sessions.filter((s) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -168,31 +187,19 @@ export default function AdminChatDashboard() {
     return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "2-digit" });
   };
 
-  const getAvatarLabel = (sessionId: string) => {
-    return sessionId.slice(0, 2).toUpperCase();
-  };
-
-  const selectedSession = sessions.find((s) => s.session_id === selected);
+  const getAvatarLabel = (sessionId: string) => sessionId.slice(0, 2).toUpperCase();
 
   return (
     <div className="flex h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border bg-background shadow-lg">
       {/* Sidebar */}
       <div className={`flex flex-col border-r border-border bg-card ${selected ? "hidden md:flex" : "flex"} w-full md:w-[35%] md:min-w-[300px]`}>
-        {/* Sidebar Header */}
         <div className="px-4 py-4 border-b border-border bg-muted/30">
           <h2 className="text-lg font-bold text-foreground mb-3">Dukungan Chat</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari percakapan..."
-              className="pl-9 bg-background/50 border-border/50 h-9 text-sm"
-            />
+            <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari percakapan..." className="pl-9 bg-background/50 border-border/50 h-9 text-sm" />
           </div>
         </div>
-
-        {/* Session List */}
         <ScrollArea className="flex-1">
           {filteredSessions.length === 0 && (
             <p className="text-center text-sm text-muted-foreground py-12">Belum ada percakapan</p>
@@ -201,32 +208,20 @@ export default function AdminChatDashboard() {
             <button
               key={s.session_id}
               onClick={() => setSelected(s.session_id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 border-b border-border/30 hover:bg-muted/40 transition-colors text-left ${
-                selected === s.session_id ? "bg-muted/60" : ""
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 border-b border-border/30 hover:bg-muted/40 transition-colors text-left ${selected === s.session_id ? "bg-muted/60" : ""}`}
             >
               <Avatar className="h-12 w-12 shrink-0">
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                  {getAvatarLabel(s.session_id)}
-                </AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">{getAvatarLabel(s.session_id)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground truncate">
-                    User {s.session_id.slice(0, 8)}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
-                    {formatTime(s.last_at)}
-                  </span>
+                  <span className="text-sm font-semibold text-foreground truncate">User {s.session_id.slice(0, 8)}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0 ml-2">{formatTime(s.last_at)}</span>
                 </div>
                 <div className="flex items-center justify-between mt-0.5">
-                  <p className="text-xs text-muted-foreground truncate pr-2">
-                    {s.last_message || "📷 Gambar"}
-                  </p>
+                  <p className="text-xs text-muted-foreground truncate pr-2">{s.last_message || "📷 Gambar"}</p>
                   {s.unread > 0 && (
-                    <Badge className="bg-green-500 hover:bg-green-500 text-white text-[10px] h-5 min-w-5 flex items-center justify-center rounded-full px-1.5 shrink-0">
-                      {s.unread}
-                    </Badge>
+                    <Badge className="bg-green-500 hover:bg-green-500 text-white text-[10px] h-5 min-w-5 flex items-center justify-center rounded-full px-1.5 shrink-0">{s.unread}</Badge>
                   )}
                 </div>
               </div>
@@ -251,16 +246,11 @@ export default function AdminChatDashboard() {
           <>
             {/* Chat Header */}
             <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-3">
-              <button
-                onClick={() => { setSelected(null); setMessages([]); }}
-                className="md:hidden p-1 text-muted-foreground hover:text-foreground"
-              >
+              <button onClick={() => { setSelected(null); setMessages([]); }} className="md:hidden p-1 text-muted-foreground hover:text-foreground">
                 <X size={20} />
               </button>
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                  {selected ? getAvatarLabel(selected) : "?"}
-                </AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">{getAvatarLabel(selected)}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="text-sm font-semibold text-foreground">User {selected.slice(0, 8)}</p>
@@ -275,23 +265,16 @@ export default function AdminChatDashboard() {
                   const isAdmin = msg.role === "admin";
                   return (
                     <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${
-                          isAdmin
-                            ? "bg-green-600 text-white rounded-br-none"
-                            : "bg-card text-foreground border border-border/50 rounded-bl-none"
-                        }`}
-                      >
-                        {msg.image_url && (
-                          <img
-                            src={msg.image_url}
-                            alt="shared"
-                            className="rounded max-w-full mb-1.5 max-h-52 object-cover cursor-pointer"
-                            onClick={() => window.open(msg.image_url!, "_blank")}
-                          />
-                        )}
-                        {msg.content && (
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      <div className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${isAdmin ? "bg-green-600 text-white rounded-br-none" : "bg-card text-foreground border border-border/50 rounded-bl-none"}`}>
+                        {msg.message_type === "voice" && msg.file_url ? (
+                          <AudioPlayer src={msg.file_url} isAdmin={isAdmin} />
+                        ) : (
+                          <>
+                            {msg.image_url && (
+                              <img src={msg.image_url} alt="shared" className="rounded max-w-full mb-1.5 max-h-52 object-cover cursor-pointer" onClick={() => window.open(msg.image_url!, "_blank")} />
+                            )}
+                            {msg.content && <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>}
+                          </>
                         )}
                         <p className={`text-[10px] mt-1 text-right ${isAdmin ? "text-green-200" : "text-muted-foreground"}`}>
                           {new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
@@ -308,13 +291,7 @@ export default function AdminChatDashboard() {
             {showEmoji && (
               <div className="px-4 py-2 border-t border-border bg-card flex flex-wrap gap-1">
                 {EMOJI_LIST.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => setInput((prev) => prev + emoji)}
-                    className="text-xl hover:bg-muted rounded p-1 transition-colors"
-                  >
-                    {emoji}
-                  </button>
+                  <button key={emoji} onClick={() => setInput((prev) => prev + emoji)} className="text-xl hover:bg-muted rounded p-1 transition-colors">{emoji}</button>
                 ))}
               </div>
             )}
@@ -322,17 +299,10 @@ export default function AdminChatDashboard() {
             {/* Input Bar */}
             <div className="px-3 py-2 border-t border-border bg-card flex items-center gap-2">
               <input type="file" ref={fileRef} accept="image/*" className="hidden" onChange={handleImageUpload} />
-              <button
-                onClick={() => setShowEmoji(!showEmoji)}
-                className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setShowEmoji(!showEmoji)} className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors">
                 <Smile size={22} />
               </button>
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
-              >
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors">
                 <ImageIcon size={22} />
               </button>
               <Input
@@ -342,14 +312,13 @@ export default function AdminChatDashboard() {
                 placeholder="Ketik pesan..."
                 className="flex-1 bg-muted/30 border-border/50 rounded-full h-10 text-sm"
               />
-              <Button
-                onClick={() => sendMessage(input)}
-                disabled={!input.trim() && !uploading}
-                size="icon"
-                className="rounded-full bg-green-600 hover:bg-green-700 h-10 w-10 shrink-0"
-              >
-                <Send size={18} />
-              </Button>
+              {input.trim() ? (
+                <Button onClick={() => sendMessage(input)} size="icon" className="rounded-full bg-green-600 hover:bg-green-700 h-10 w-10 shrink-0">
+                  <Send size={18} />
+                </Button>
+              ) : (
+                <VoiceRecorder onRecorded={handleVoiceRecorded} disabled={uploading} />
+              )}
             </div>
           </>
         )}
