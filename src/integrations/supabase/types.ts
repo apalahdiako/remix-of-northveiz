@@ -18,8 +18,10 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          file_url: string | null
           id: string
           image_url: string | null
+          message_type: string
           read_at: string | null
           role: string
           session_id: string
@@ -27,8 +29,10 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string
+          file_url?: string | null
           id?: string
           image_url?: string | null
+          message_type?: string
           read_at?: string | null
           role?: string
           session_id: string
@@ -36,8 +40,10 @@ export type Database = {
         Update: {
           content?: string | null
           created_at?: string
+          file_url?: string | null
           id?: string
           image_url?: string | null
+          message_type?: string
           read_at?: string | null
           role?: string
           session_id?: string

@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Send, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import AudioPlayer from "@/components/chat/AudioPlayer";
 
 interface ChatMessage {
   id: string;
@@ -9,6 +11,8 @@ interface ChatMessage {
   role: string;
   content: string | null;
   image_url: string | null;
+  file_url: string | null;
+  message_type: string;
   created_at: string;
 }
 
@@ -36,28 +40,21 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
 
   useEffect(() => {
     if (!open) return;
-    // Load existing messages
     const load = async () => {
       const { data } = await supabase
         .from("chat_messages")
         .select("*")
         .eq("session_id", sessionId.current)
         .order("created_at", { ascending: true });
-      if (data) setMessages(data);
+      if (data) setMessages(data as ChatMessage[]);
     };
     load();
 
-    // Subscribe to realtime
     const channel = supabase
       .channel(`chat-${sessionId.current}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `session_id=eq.${sessionId.current}`,
-        },
+        { event: "INSERT", schema: "public", table: "chat_messages", filter: `session_id=eq.${sessionId.current}` },
         (payload) => {
           setMessages((prev) => {
             if (prev.find((m) => m.id === (payload.new as ChatMessage).id)) return prev;
@@ -67,9 +64,7 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [open]);
 
   useEffect(() => {
@@ -83,6 +78,7 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
       role: "user",
       content: content?.trim() || null,
       image_url: imageUrl || null,
+      message_type: imageUrl ? "image" : "text",
     });
     setInput("");
   };
@@ -102,6 +98,22 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleVoiceRecorded = async (blob: Blob) => {
+    setUploading(true);
+    const path = `${sessionId.current}/${Date.now()}.webm`;
+    const { error } = await supabase.storage.from("voice-notes").upload(path, blob, { contentType: "audio/webm" });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("voice-notes").getPublicUrl(path);
+      await supabase.from("chat_messages").insert({
+        session_id: sessionId.current,
+        role: "user",
+        message_type: "voice",
+        file_url: urlData.publicUrl,
+      });
+    }
+    setUploading(false);
+  };
+
   if (!open) return null;
 
   return (
@@ -119,11 +131,17 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
           )}
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 bg-white border border-gray-100 shadow-sm`}>
-                {msg.image_url && (
-                  <img src={msg.image_url} alt="shared" className="rounded-lg max-w-full mb-1.5 max-h-40 object-cover" />
+              <div className="max-w-[75%] rounded-2xl px-4 py-2.5 bg-white border border-gray-100 shadow-sm">
+                {msg.message_type === "voice" && msg.file_url ? (
+                  <AudioPlayer src={msg.file_url} />
+                ) : (
+                  <>
+                    {msg.image_url && (
+                      <img src={msg.image_url} alt="shared" className="rounded-lg max-w-full mb-1.5 max-h-40 object-cover" />
+                    )}
+                    {msg.content && <p className="text-sm text-gray-800 leading-relaxed">{msg.content}</p>}
+                  </>
                 )}
-                {msg.content && <p className="text-sm text-gray-800 leading-relaxed">{msg.content}</p>}
                 <p className="text-[10px] text-gray-400 mt-1">
                   {new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                 </p>
@@ -143,19 +161,33 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
           >
             <ImageIcon size={20} />
           </button>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder="Ketik pesan..."
-            className="flex-1 text-sm bg-gray-50 rounded-full px-4 py-2.5 outline-none border border-gray-100 focus:border-gray-300 transition-colors text-gray-800 placeholder:text-gray-400"
-          />
-          <button
-            onClick={() => sendMessage(input)}
-            className="p-2.5 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded-full transition-colors"
-          >
-            <Send size={18} />
-          </button>
+          {input.trim() ? (
+            <>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+                placeholder="Ketik pesan..."
+                className="flex-1 text-sm bg-gray-50 rounded-full px-4 py-2.5 outline-none border border-gray-100 focus:border-gray-300 transition-colors text-gray-800 placeholder:text-gray-400"
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                className="p-2.5 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded-full transition-colors"
+              >
+                <Send size={18} />
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ketik pesan..."
+                className="flex-1 text-sm bg-gray-50 rounded-full px-4 py-2.5 outline-none border border-gray-100 focus:border-gray-300 transition-colors text-gray-800 placeholder:text-gray-400"
+              />
+              <VoiceRecorder onRecorded={handleVoiceRecorded} disabled={uploading} />
+            </>
+          )}
         </div>
       </div>
 
