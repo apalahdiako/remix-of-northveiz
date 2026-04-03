@@ -113,6 +113,7 @@ function Globe({ locations }: { locations: LocationData[] }) {
     <>
       {/* Main Globe */}
       <Sphere ref={meshRef} args={[2, 64, 64]}>
+        {/* @ts-ignore - react-three-fiber type mismatch */}
         <meshStandardMaterial
           color="#1e293b"
           roughness={0.7}
