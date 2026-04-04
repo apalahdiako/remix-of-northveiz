@@ -321,20 +321,8 @@ Tim NORTHVEIZ`);
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="globe" className="space-y-6">
-          <AnalyticsCards data={analyticsData} />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Peta Interaktif Pengunjung & Pesanan</CardTitle>
-              <CardDescription>
-                Putar peta untuk melihat lokasi pengunjung dan pesanan dari berbagai negara
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InteractiveGlobe locations={locations} />
-            </CardContent>
-          </Card>
+        <TabsContent value="globe" className="space-y-0">
+          <AnalyticsDashboard analyticsData={analyticsData} locations={locations} />
         </TabsContent>
 
         <TabsContent value="chat">
