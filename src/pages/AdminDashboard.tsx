@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import InteractiveGlobe from "@/components/admin/InteractiveGlobe";
+import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import AnalyticsCards from "@/components/admin/AnalyticsCards";
 import { TimerManagement } from "@/components/admin/TimerManagement";
 import ProductManagement from "@/components/admin/ProductManagement";
@@ -321,20 +321,8 @@ Tim NORTHVEIZ`);
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="globe" className="space-y-6">
-          <AnalyticsCards data={analyticsData} />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Peta Interaktif Pengunjung & Pesanan</CardTitle>
-              <CardDescription>
-                Putar peta untuk melihat lokasi pengunjung dan pesanan dari berbagai negara
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InteractiveGlobe locations={locations} />
-            </CardContent>
-          </Card>
+        <TabsContent value="globe" className="space-y-0">
+          <AnalyticsDashboard analyticsData={analyticsData} locations={locations} />
         </TabsContent>
 
         <TabsContent value="chat">
