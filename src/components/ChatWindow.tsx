@@ -98,10 +98,11 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleVoiceRecorded = async (blob: Blob) => {
+  const handleVoiceRecorded = async (blob: Blob, _durationSec: number) => {
     setUploading(true);
-    const path = `${sessionId.current}/${Date.now()}.webm`;
-    const { error } = await supabase.storage.from("voice-notes").upload(path, blob, { contentType: "audio/webm" });
+    const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+    const path = `${sessionId.current}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("voice-notes").upload(path, blob, { contentType: blob.type || "audio/webm" });
     if (!error) {
       const { data: urlData } = supabase.storage.from("voice-notes").getPublicUrl(path);
       await supabase.from("chat_messages").insert({
