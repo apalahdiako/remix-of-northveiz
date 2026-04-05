@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Send, Smile, ImageIcon, X } from "lucide-react";
+import { Search, Send, Smile, ImageIcon, X, Phone } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioPlayer from "@/components/chat/AudioPlayer";
+import { useIncomingCall, useVoIPCall, AdminIncomingCall, AdminCallBar } from "@/components/chat/VoIPCall";
+import { AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
   id: string;
