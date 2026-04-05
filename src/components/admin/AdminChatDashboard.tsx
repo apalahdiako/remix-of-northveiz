@@ -373,5 +373,6 @@ export default function AdminChatDashboard() {
         )}
       </div>
     </div>
+    </>
   );
 }
