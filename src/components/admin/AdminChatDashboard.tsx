@@ -43,8 +43,39 @@ export default function AdminChatDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [activeCallSession, setActiveCallSession] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const { incomingCall, dismiss: dismissIncoming } = useIncomingCall();
+
+  const adminCall = useVoIPCall(
+    activeCallSession || "none",
+    "admin",
+    () => setActiveCallSession(null)
+  );
+
+  const handleAcceptCall = () => {
+    if (incomingCall) {
+      setActiveCallSession(incomingCall.sessionId);
+      dismissIncoming();
+      setTimeout(() => adminCall.acceptCall(), 300);
+    }
+  };
+
+  const handleRejectCall = () => {
+    if (incomingCall) {
+      // Setup signaling just to send reject
+      const ch = supabase.channel(`voip-${incomingCall.sessionId}`, { config: { broadcast: { self: false } } });
+      ch.subscribe((st) => {
+        if (st === "SUBSCRIBED") {
+          ch.send({ type: "broadcast", event: "call_signal", payload: { type: "CALL_REJECTED", from: "admin" } });
+          setTimeout(() => supabase.removeChannel(ch), 1000);
+        }
+      });
+      dismissIncoming();
+    }
+  };
 
   const loadSessions = useCallback(async () => {
     const { data } = await supabase
