@@ -325,7 +325,12 @@ export default function AdminChatDashboard() {
                   return (
                     <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${isAdmin ? "bg-green-600 text-white rounded-br-none" : "bg-card text-foreground border border-border/50 rounded-bl-none"}`}>
-                        {msg.message_type === "voice" && msg.file_url ? (
+                        {msg.message_type === "call_log" ? (
+                          <div className="flex items-center gap-2 opacity-80">
+                            <Phone size={14} />
+                            <p className="text-xs">{msg.content}</p>
+                          </div>
+                        ) : msg.message_type === "voice" && msg.file_url ? (
                           <AudioPlayer src={msg.file_url} isAdmin={isAdmin} />
                         ) : (
                           <>
