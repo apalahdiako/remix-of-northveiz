@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Send, Smile, ImageIcon, X } from "lucide-react";
+import { Search, Send, Smile, ImageIcon, X, Phone } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioPlayer from "@/components/chat/AudioPlayer";
+import { useIncomingCall, useVoIPCall, AdminIncomingCall, AdminCallBar } from "@/components/chat/VoIPCall";
+import { AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
   id: string;
@@ -41,8 +43,39 @@ export default function AdminChatDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [activeCallSession, setActiveCallSession] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const { incomingCall, dismiss: dismissIncoming } = useIncomingCall();
+
+  const adminCall = useVoIPCall(
+    activeCallSession || "none",
+    "admin",
+    () => setActiveCallSession(null)
+  );
+
+  const handleAcceptCall = () => {
+    if (incomingCall) {
+      setActiveCallSession(incomingCall.sessionId);
+      dismissIncoming();
+      setTimeout(() => adminCall.acceptCall(), 300);
+    }
+  };
+
+  const handleRejectCall = () => {
+    if (incomingCall) {
+      // Setup signaling just to send reject
+      const ch = supabase.channel(`voip-${incomingCall.sessionId}`, { config: { broadcast: { self: false } } });
+      ch.subscribe((st) => {
+        if (st === "SUBSCRIBED") {
+          ch.send({ type: "broadcast", event: "call_signal", payload: { type: "CALL_REJECTED", from: "admin" } });
+          setTimeout(() => supabase.removeChannel(ch), 1000);
+        }
+      });
+      dismissIncoming();
+    }
+  };
 
   const loadSessions = useCallback(async () => {
     const { data } = await supabase
@@ -191,6 +224,21 @@ export default function AdminChatDashboard() {
   const getAvatarLabel = (sessionId: string) => sessionId.slice(0, 2).toUpperCase();
 
   return (
+    <>
+      {/* Incoming Call Notification */}
+      <AnimatePresence>
+        {incomingCall && (
+          <AdminIncomingCall
+            sessionId={incomingCall.sessionId}
+            onAccept={handleAcceptCall}
+            onReject={handleRejectCall}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Remote audio element for active call */}
+      <audio ref={adminCall.remoteAudioRef} autoPlay className="hidden" />
+
     <div className="flex h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border bg-background shadow-lg">
       {/* Sidebar */}
       <div className={`flex flex-col border-r border-border bg-card ${selected ? "hidden md:flex" : "flex"} w-full md:w-[35%] md:min-w-[300px]`}>
@@ -245,6 +293,16 @@ export default function AdminChatDashboard() {
           </div>
         ) : (
           <>
+            {/* Active Call Bar */}
+            {activeCallSession && adminCall.status === "active" && (
+              <AdminCallBar
+                duration={adminCall.duration}
+                muted={adminCall.muted}
+                onToggleMute={adminCall.toggleMute}
+                onEndCall={adminCall.handleEndCall}
+              />
+            )}
+
             {/* Chat Header */}
             <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-3">
               <button onClick={() => { setSelected(null); setMessages([]); }} className="md:hidden p-1 text-muted-foreground hover:text-foreground">
@@ -267,7 +325,12 @@ export default function AdminChatDashboard() {
                   return (
                     <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${isAdmin ? "bg-green-600 text-white rounded-br-none" : "bg-card text-foreground border border-border/50 rounded-bl-none"}`}>
-                        {msg.message_type === "voice" && msg.file_url ? (
+                        {msg.message_type === "call_log" ? (
+                          <div className="flex items-center gap-2 opacity-80">
+                            <Phone size={14} />
+                            <p className="text-xs">{msg.content}</p>
+                          </div>
+                        ) : msg.message_type === "voice" && msg.file_url ? (
                           <AudioPlayer src={msg.file_url} isAdmin={isAdmin} />
                         ) : (
                           <>
@@ -325,5 +388,6 @@ export default function AdminChatDashboard() {
         )}
       </div>
     </div>
+    </>
   );
 }
