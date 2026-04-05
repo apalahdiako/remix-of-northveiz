@@ -293,6 +293,16 @@ export default function AdminChatDashboard() {
           </div>
         ) : (
           <>
+            {/* Active Call Bar */}
+            {activeCallSession && adminCall.status === "active" && (
+              <AdminCallBar
+                duration={adminCall.duration}
+                muted={adminCall.muted}
+                onToggleMute={adminCall.toggleMute}
+                onEndCall={adminCall.handleEndCall}
+              />
+            )}
+
             {/* Chat Header */}
             <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-3">
               <button onClick={() => { setSelected(null); setMessages([]); }} className="md:hidden p-1 text-muted-foreground hover:text-foreground">
