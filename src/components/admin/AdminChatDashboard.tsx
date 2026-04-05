@@ -224,6 +224,21 @@ export default function AdminChatDashboard() {
   const getAvatarLabel = (sessionId: string) => sessionId.slice(0, 2).toUpperCase();
 
   return (
+    <>
+      {/* Incoming Call Notification */}
+      <AnimatePresence>
+        {incomingCall && (
+          <AdminIncomingCall
+            sessionId={incomingCall.sessionId}
+            onAccept={handleAcceptCall}
+            onReject={handleRejectCall}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Remote audio element for active call */}
+      <audio ref={adminCall.remoteAudioRef} autoPlay className="hidden" />
+
     <div className="flex h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border bg-background shadow-lg">
       {/* Sidebar */}
       <div className={`flex flex-col border-r border-border bg-card ${selected ? "hidden md:flex" : "flex"} w-full md:w-[35%] md:min-w-[300px]`}>
