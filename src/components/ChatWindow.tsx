@@ -37,9 +37,25 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
   const [input, setInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const [showCallOverlay, setShowCallOverlay] = useState(false);
+  const [incomingAdminCall, setIncomingAdminCall] = useState(false);
   const sessionId = useRef(getSessionId());
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Listen for admin-initiated calls (callback)
+  useEffect(() => {
+    const channel = supabase.channel(`user-call-notify-${sessionId.current}`, {
+      config: { broadcast: { self: false } },
+    });
+    channel.on("broadcast", { event: "incoming_call" }, ({ payload }) => {
+      if (payload?.type === "ADMIN_CALLING") {
+        setIncomingAdminCall(true);
+        setTimeout(() => setIncomingAdminCall(prev => prev ? false : prev), 30000);
+      }
+    });
+    channel.subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
