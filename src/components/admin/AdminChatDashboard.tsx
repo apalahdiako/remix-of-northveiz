@@ -480,9 +480,25 @@ export default function AdminChatDashboard() {
       <div className={`flex flex-col border-r border-border bg-card ${selected ? "hidden md:flex" : "flex"} w-full md:w-[35%] md:min-w-[300px]`}>
         <div className="px-4 py-4 border-b border-border bg-muted/30">
           <h2 className="text-lg font-bold text-foreground mb-3">Dukungan Chat</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari percakapan..." className="pl-9 bg-background/50 border-border/50 h-9 text-sm" />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari percakapan..." className="pl-9 bg-background/50 border-border/50 h-9 text-sm" />
+            </div>
+            <button
+              onClick={() => {
+                if (selected) {
+                  handleCallBackUser(selected);
+                } else {
+                  toast.error("Pilih percakapan terlebih dahulu");
+                }
+              }}
+              disabled={!!activeCall}
+              className="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors disabled:opacity-30 shrink-0"
+              title="Telepon User Aktif"
+            >
+              <Phone size={20} />
+            </button>
           </div>
         </div>
         <ScrollArea className="flex-1">

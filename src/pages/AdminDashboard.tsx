@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio, Phone } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
@@ -21,6 +21,7 @@ import { InboxManagement } from "@/components/admin/InboxManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { BroadcastManagement } from "@/components/admin/BroadcastManagement";
 import AdminChatDashboard from "@/components/admin/AdminChatDashboard";
+import CallHistory, { useMissedCallCount } from "@/components/admin/CallHistory";
 
 interface UserProfile {
   id: string;
@@ -32,7 +33,9 @@ interface UserProfile {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const missedCallCount = useMissedCallCount();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [callActiveSession, setCallActiveSession] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -291,6 +294,15 @@ Tim NORTHVEIZ`);
           <TabsTrigger value="chat">
             💬 Live Chat
           </TabsTrigger>
+          <TabsTrigger value="calls" className="relative">
+            <Phone className="mr-2 h-4 w-4" />
+            Panggilan
+            {missedCallCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 min-w-5 flex items-center justify-center px-1">
+                {missedCallCount}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="inbox">
             <Inbox className="mr-2 h-4 w-4" />
             Inbox
@@ -327,6 +339,11 @@ Tim NORTHVEIZ`);
 
         <TabsContent value="chat">
           <AdminChatDashboard />
+        </TabsContent>
+
+
+        <TabsContent value="calls">
+          <CallHistory onCallBack={(sid) => setCallActiveSession(sid)} activeCallSessionId={callActiveSession} />
         </TabsContent>
 
         <TabsContent value="inbox">
