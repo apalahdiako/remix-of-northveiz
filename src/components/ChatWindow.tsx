@@ -1,10 +1,11 @@
 
 import { useState, useEffect, useRef } from "react";
-import { X, Send, ImageIcon, Phone } from "lucide-react";
+import { X, Send, ImageIcon, Phone, PhoneIncoming } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioPlayer from "@/components/chat/AudioPlayer";
 import { UserCallingOverlay } from "@/components/chat/VoIPCall";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface ChatMessage {
   id: string;
