@@ -141,6 +141,43 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
       {showCallOverlay && (
         <UserCallingOverlay sessionId={sessionId.current} onClose={() => setShowCallOverlay(false)} />
       )}
+
+      {/* Incoming call from admin notification */}
+      <AnimatePresence>
+        {incomingAdminCall && !showCallOverlay && open && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-gray-900/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10 min-w-[260px]"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                <PhoneIncoming className="text-green-400" size={20} />
+              </motion.div>
+              <div>
+                <p className="text-white font-semibold text-sm">Panggilan dari Admin</p>
+                <p className="text-white/50 text-xs">NORTHVEIZ Support</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIncomingAdminCall(false)}
+                className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors"
+              >
+                Tolak
+              </button>
+              <button
+                onClick={() => { setIncomingAdminCall(false); setShowCallOverlay(true); }}
+                className="flex-1 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+              >
+                Terima
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="fixed bottom-0 right-0 z-[60] flex flex-col items-end p-4 pointer-events-none">
         <div className="pointer-events-auto w-[340px] max-w-[calc(100vw-2rem)] h-[480px] max-h-[70vh] bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-gray-200/50">
           {/* Header */}
