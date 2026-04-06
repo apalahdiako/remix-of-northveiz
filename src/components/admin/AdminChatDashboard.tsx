@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Send, Smile, ImageIcon, X, Phone } from "lucide-react";
+import { Search, Send, Smile, ImageIcon, X, Phone, PhoneOff, PhoneMissed } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioPlayer from "@/components/chat/AudioPlayer";
-import { useIncomingCall, useVoIPCall, AdminIncomingCall, AdminCallBar } from "@/components/chat/VoIPCall";
+import { AdminIncomingCall, AdminCallBar } from "@/components/chat/VoIPCall";
 import { AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
@@ -35,6 +35,213 @@ const EMOJI_LIST = ["😀","😂","❤️","👍","🔥","🎉","😍","🙏","�
 
 const PING_SOUND_URL = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipGQeWBUW3yOm5V/YUxKYIKSl4xzV0lOZH+RmpJ4WUVFXnyPm5Z+YExFT2qFl5yPdVhGQFZ0ipifk3RMNT1ff5SgnYFlRz5VdI2aoZB1TzY7XXqQoaCMb0czQWF/lqKfjG1CMkFhgJijoIxsQTBCYoKapKGMa0AvQGGBmaShjWtBL0BhgZmkoY1rQS9AYYGZpKGNa0EvQGGBmKShjGtBMEBhgZqkoY1qQC9AYYGapKKOa0EwQWKCm6WijmtALz9ggJijoI1rQjFCY4OcpqOPbEEuP2CAmKOfjGtCMUNkg52mo49sQS4/X3+Xop6La0IxQ2SDnaajj2xBLj9ff5ein4trQjFDZIOdpqOPbEEuP19/l6KfimtCMkRlhJ6no5BtQS0+Xn6Wop6Ka0IyRWaFn6ikkW1ALT1dfZWhnYlqQjJFZoWfp6SRbkEtPV19laCciGpCM0ZnhqCopZJuQCw8XHyUn5uHaUEzR2iHoammlG9ALDxcfJOfmoZoQTRIaYiiqaeVb0ArO1t7k56ZhWhBNUlqiKOqqJZwQCo6WnmSnZeEZ0E2SmyKpKuqlnBAKjpZeZGdlYNoQTdLbYumrKuXcD8pOVh4kJyTgmdBOExui6etq5hwPyg4V3eOmpKBZkE5Tm+Mqa6smXA/KDdWdo2ZkH9lQDpQcY2qr62acD8nNlV1jJiOfmRAO1Fyj6ywr5txPyc2VHSLl4x9Y0A8UnOQrbGwm3E/JjVTc4qVi3tiQD5UdZKvs7GdckAmNFJyiZSJeWFAPFN0ka6ysZ1yQCY0UnKJlIl5YEA+VXaUsbSzoHNAJTNQcIiSh3dgQD9WeJW0trWhc0AkMk9viJGFdV9AQFZ4l7W4t6N0QSQyTm6HkIN0XkBBV3qZt7q5pXVBIzFNbYaOgXJeQENZfJu5vLundkIjME1thI1/cV1ARFp9nbu+vKl3QiIvS2yDjH1vW0BGW3+fvb/ArHlDIi5KaoGKem5aQEdcgaHAwr+tekMhLUhogIh4bFlAS16Do8LEvq98RCEsSGd+hXZrWEBNYIWlxMbBsX5EICpGZXyDc2lXQE9ihqjHycK0gEYgKURjeoFxZ1ZAUWWJ";
 
+function formatCallDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+// Dedicated admin call manager component that mounts/unmounts with correct session
+function AdminCallManager({
+  sessionId,
+  mode,
+  onEnd,
+}: {
+  sessionId: string;
+  mode: "accept" | "initiate";
+  onEnd: () => void;
+}) {
+  const [status, setStatus] = useState<"connecting" | "active" | "ended">("connecting");
+  const [duration, setDuration] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const localStream = useRef<MediaStream | null>(null);
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const callStartTime = useRef<number>(0);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+
+  const cleanup = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    localStream.current?.getTracks().forEach(t => t.stop());
+    localStream.current = null;
+    peerConnection.current?.close();
+    peerConnection.current = null;
+    if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null; }
+  }, []);
+
+  const logCall = useCallback(async (dur: number) => {
+    await supabase.from("chat_messages").insert({
+      session_id: sessionId,
+      role: "admin",
+      message_type: "call_log",
+      content: `📞 Panggilan suara — ${formatCallDuration(dur)}`,
+    });
+  }, [sessionId]);
+
+  const endCall = useCallback(() => {
+    const dur = Math.floor((Date.now() - callStartTime.current) / 1000);
+    channelRef.current?.send({
+      type: "broadcast", event: "call_signal",
+      payload: { type: "CALL_ENDED", from: "admin" },
+    });
+    cleanup();
+    if (dur > 0 && callStartTime.current > 0) logCall(dur);
+    setStatus("ended");
+    setTimeout(onEnd, 1200);
+  }, [cleanup, logCall, onEnd]);
+
+  const createPC = useCallback(() => {
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+      ],
+    });
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        channelRef.current?.send({
+          type: "broadcast", event: "call_signal",
+          payload: { type: "ICE_CANDIDATE", candidate: e.candidate.toJSON(), from: "admin" },
+        });
+      }
+    };
+    pc.ontrack = (e) => {
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = e.streams[0];
+        remoteAudioRef.current.play().catch(() => {});
+      }
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connected") {
+        setStatus("active");
+        callStartTime.current = Date.now();
+        timerRef.current = window.setInterval(() => {
+          setDuration(Math.floor((Date.now() - callStartTime.current) / 1000));
+        }, 1000);
+      }
+      if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
+        endCall();
+      }
+    };
+    localStream.current?.getTracks().forEach(track => {
+      pc.addTrack(track, localStream.current!);
+    });
+    peerConnection.current = pc;
+    return pc;
+  }, [endCall]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const start = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        localStream.current = stream;
+
+        const channel = supabase.channel(`voip-${sessionId}`, {
+          config: { broadcast: { self: false } },
+        });
+
+        channel.on("broadcast", { event: "call_signal" }, async ({ payload }) => {
+          if (!payload || payload.from === "admin") return;
+
+          if (payload.type === "CALL_ENDED") {
+            cleanup();
+            setStatus("ended");
+            setTimeout(onEnd, 1200);
+            return;
+          }
+
+          if (payload.type === "SDP_OFFER" && localStream.current) {
+            const pc = createPC();
+            await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            channel.send({
+              type: "broadcast", event: "call_signal",
+              payload: { type: "SDP_ANSWER", sdp: answer, from: "admin" },
+            });
+          }
+
+          if (payload.type === "SDP_ANSWER" && peerConnection.current) {
+            await peerConnection.current.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+          }
+
+          if (payload.type === "ICE_CANDIDATE" && peerConnection.current) {
+            try { await peerConnection.current.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch {}
+          }
+
+          if (payload.type === "CALL_ACCEPTED" && mode === "initiate") {
+            // Admin initiated, user accepted → admin creates offer
+            const pc = createPC();
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            channel.send({
+              type: "broadcast", event: "call_signal",
+              payload: { type: "SDP_OFFER", sdp: offer, from: "admin" },
+            });
+          }
+        });
+
+        channel.subscribe((st) => {
+          if (st === "SUBSCRIBED") {
+            channelRef.current = channel;
+
+            if (mode === "accept") {
+              // Tell user we accepted
+              channel.send({
+                type: "broadcast", event: "call_signal",
+                payload: { type: "CALL_ACCEPTED", from: "admin" },
+              });
+            } else if (mode === "initiate") {
+              // Admin calling user → notify on user channel
+              const notify = supabase.channel(`user-call-notify-${sessionId}`);
+              notify.subscribe((nst) => {
+                if (nst === "SUBSCRIBED") {
+                  notify.send({
+                    type: "broadcast", event: "incoming_call",
+                    payload: { type: "ADMIN_CALLING", sessionId },
+                  });
+                  setTimeout(() => supabase.removeChannel(notify), 2000);
+                }
+              });
+            }
+          }
+        });
+      } catch {
+        toast.error("Izin mikrofon diperlukan");
+        onEnd();
+      }
+    };
+
+    start();
+    return () => { cancelled = true; cleanup(); };
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleMute = () => {
+    if (localStream.current) {
+      const t = localStream.current.getAudioTracks()[0];
+      if (t) { t.enabled = !t.enabled; setMuted(!t.enabled); }
+    }
+  };
+
+  return (
+    <>
+      <audio ref={remoteAudioRef} autoPlay className="hidden" />
+      <AdminCallBar
+        duration={duration}
+        muted={muted}
+        onToggleMute={toggleMute}
+        onEndCall={endCall}
+      />
+    </>
+  );
+}
+
 export default function AdminChatDashboard() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -43,29 +250,44 @@ export default function AdminChatDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [activeCallSession, setActiveCallSession] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { incomingCall, dismiss: dismissIncoming } = useIncomingCall();
+  // Call state
+  const [incomingCall, setIncomingCall] = useState<{ sessionId: string } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate" } | null>(null);
 
-  const adminCall = useVoIPCall(
-    activeCallSession || "none",
-    "admin",
-    () => setActiveCallSession(null)
-  );
+  // Listen for incoming calls from users
+  useEffect(() => {
+    const channel = supabase.channel("admin-voip-listener", {
+      config: { broadcast: { self: false } },
+    });
+    channel.on("broadcast", { event: "admin_call_notify" }, ({ payload }) => {
+      if (payload?.type === "CALL_INITIATED") {
+        setIncomingCall({ sessionId: payload.sessionId });
+        // Auto-dismiss after 30s
+        setTimeout(() => setIncomingCall(prev => prev?.sessionId === payload.sessionId ? null : prev), 30000);
+        // Play ring sound
+        try {
+          const audio = new Audio(PING_SOUND_URL);
+          audio.volume = 0.7;
+          audio.play().catch(() => {});
+        } catch {}
+      }
+    });
+    channel.subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const handleAcceptCall = () => {
     if (incomingCall) {
-      setActiveCallSession(incomingCall.sessionId);
-      dismissIncoming();
-      setTimeout(() => adminCall.acceptCall(), 300);
+      setActiveCall({ sessionId: incomingCall.sessionId, mode: "accept" });
+      setIncomingCall(null);
     }
   };
 
   const handleRejectCall = () => {
     if (incomingCall) {
-      // Setup signaling just to send reject
       const ch = supabase.channel(`voip-${incomingCall.sessionId}`, { config: { broadcast: { self: false } } });
       ch.subscribe((st) => {
         if (st === "SUBSCRIBED") {
@@ -73,8 +295,24 @@ export default function AdminChatDashboard() {
           setTimeout(() => supabase.removeChannel(ch), 1000);
         }
       });
-      dismissIncoming();
+      // Log missed call
+      supabase.from("chat_messages").insert({
+        session_id: incomingCall.sessionId,
+        role: "admin",
+        message_type: "call_log",
+        content: "📞 Panggilan tidak dijawab",
+      });
+      setIncomingCall(null);
     }
+  };
+
+  const handleCallBackUser = (sessionId: string) => {
+    if (activeCall) {
+      toast.error("Sedang dalam panggilan aktif");
+      return;
+    }
+    setActiveCall({ sessionId, mode: "initiate" });
+    toast.success("Menghubungi user...");
   };
 
   const loadSessions = useCallback(async () => {
@@ -89,6 +327,7 @@ export default function AdminChatDashboard() {
       if (!map.has(row.session_id)) {
         let preview = row.content;
         if (row.message_type === "voice") preview = "🎤 Voice note";
+        if (row.message_type === "call_log") preview = "📞 Panggilan";
         map.set(row.session_id, {
           session_id: row.session_id,
           last_message: preview,
@@ -227,7 +466,7 @@ export default function AdminChatDashboard() {
     <>
       {/* Incoming Call Notification */}
       <AnimatePresence>
-        {incomingCall && (
+        {incomingCall && !activeCall && (
           <AdminIncomingCall
             sessionId={incomingCall.sessionId}
             onAccept={handleAcceptCall}
@@ -235,9 +474,6 @@ export default function AdminChatDashboard() {
           />
         )}
       </AnimatePresence>
-
-      {/* Remote audio element for active call */}
-      <audio ref={adminCall.remoteAudioRef} autoPlay className="hidden" />
 
     <div className="flex h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border bg-background shadow-lg">
       {/* Sidebar */}
@@ -293,13 +529,12 @@ export default function AdminChatDashboard() {
           </div>
         ) : (
           <>
-            {/* Active Call Bar */}
-            {activeCallSession && adminCall.status === "active" && (
-              <AdminCallBar
-                duration={adminCall.duration}
-                muted={adminCall.muted}
-                onToggleMute={adminCall.toggleMute}
-                onEndCall={adminCall.handleEndCall}
+            {/* Active Call Bar - mounts dedicated component */}
+            {activeCall && (
+              <AdminCallManager
+                sessionId={activeCall.sessionId}
+                mode={activeCall.mode}
+                onEnd={() => setActiveCall(null)}
               />
             )}
 
@@ -311,10 +546,19 @@ export default function AdminChatDashboard() {
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">{getAvatarLabel(selected)}</AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">User {selected.slice(0, 8)}</p>
                 <p className="text-[11px] text-muted-foreground">Session: {selected.slice(0, 16)}...</p>
               </div>
+              {/* Call Back Button */}
+              <button
+                onClick={() => handleCallBackUser(selected)}
+                disabled={!!activeCall}
+                className="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors disabled:opacity-30"
+                title="Telepon User"
+              >
+                <Phone size={20} />
+              </button>
             </div>
 
             {/* Messages */}
@@ -327,7 +571,11 @@ export default function AdminChatDashboard() {
                       <div className={`max-w-[75%] rounded-lg px-3 py-2 shadow-sm ${isAdmin ? "bg-green-600 text-white rounded-br-none" : "bg-card text-foreground border border-border/50 rounded-bl-none"}`}>
                         {msg.message_type === "call_log" ? (
                           <div className="flex items-center gap-2 opacity-80">
-                            <Phone size={14} />
+                            {msg.content?.includes("tidak dijawab") ? (
+                              <PhoneMissed size={14} className="text-red-400" />
+                            ) : (
+                              <Phone size={14} />
+                            )}
                             <p className="text-xs">{msg.content}</p>
                           </div>
                         ) : msg.message_type === "voice" && msg.file_url ? (
