@@ -294,6 +294,15 @@ Tim NORTHVEIZ`);
           <TabsTrigger value="chat">
             💬 Live Chat
           </TabsTrigger>
+          <TabsTrigger value="calls" className="relative">
+            <Phone className="mr-2 h-4 w-4" />
+            Panggilan
+            {missedCallCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 min-w-5 flex items-center justify-center px-1">
+                {missedCallCount}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="inbox">
             <Inbox className="mr-2 h-4 w-4" />
             Inbox
