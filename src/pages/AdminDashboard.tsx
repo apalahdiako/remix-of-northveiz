@@ -341,6 +341,11 @@ Tim NORTHVEIZ`);
           <AdminChatDashboard />
         </TabsContent>
 
+
+        <TabsContent value="calls">
+          <CallHistory onCallBack={(sid) => setCallActiveSession(sid)} activeCallSessionId={callActiveSession} />
+        </TabsContent>
+
         <TabsContent value="inbox">
           <InboxManagement />
         </TabsContent>
