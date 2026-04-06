@@ -21,6 +21,7 @@ import { InboxManagement } from "@/components/admin/InboxManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { BroadcastManagement } from "@/components/admin/BroadcastManagement";
 import AdminChatDashboard from "@/components/admin/AdminChatDashboard";
+import CallHistory, { useMissedCallCount } from "@/components/admin/CallHistory";
 
 interface UserProfile {
   id: string;
