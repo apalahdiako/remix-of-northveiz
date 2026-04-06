@@ -33,7 +33,9 @@ interface UserProfile {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const missedCallCount = useMissedCallCount();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [callActiveSession, setCallActiveSession] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
