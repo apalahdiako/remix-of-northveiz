@@ -71,24 +71,20 @@ Tim NORTHVEIZ`);
       fetchUsers();
       fetchAnalytics();
       
-      // Set up realtime subscription for visitor sessions
-      const channel = supabase
+      // Set up realtime subscription for visitor sessions + orders
+      const visitorChannel = supabase
         .channel('visitor-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'visitor_sessions'
-          },
-          () => {
-            fetchAnalytics();
-          }
-        )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'visitor_sessions' }, () => fetchAnalytics())
+        .subscribe();
+
+      const ordersChannel = supabase
+        .channel('orders-changes-analytics')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchAnalytics())
         .subscribe();
 
       return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(visitorChannel);
+        supabase.removeChannel(ordersChannel);
       };
     }
   }, [isAdmin]);
