@@ -26,7 +26,7 @@ export default function LiveActivityFeed({ isDark }: { isDark: boolean }) {
     // Fetch recent orders
     const { data: orders } = await supabase
       .from("orders")
-      .select("id, customer_name, city, country_name, created_at, order_status, total_amount")
+      .select("id, customer_name, city, created_at, order_status, total_amount")
       .order("created_at", { ascending: false })
       .limit(10);
 
@@ -55,12 +55,12 @@ export default function LiveActivityFeed({ isDark }: { isDark: boolean }) {
       });
     });
 
-    orders?.forEach((o) => {
+    orders?.forEach((o: any) => {
       items.push({
         id: `o-${o.id}`,
         name: o.customer_name,
         action: `Transaksi ${o.order_status} - Rp ${Number(o.total_amount || 0).toLocaleString()}`,
-        location: [o.city, o.country_name].filter(Boolean).join(", ") || "Lokasi tidak diketahui",
+        location: o.city || "Lokasi tidak diketahui",
         time: o.created_at,
         type: "order",
       });
