@@ -144,58 +144,65 @@ Tim NORTHVEIZ`);
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch active visitors by location
+      // Fetch all visitor sessions (with location)
       const { data: visitorData, error: visitorError } = await supabase
         .from("visitor_sessions")
-        .select("*")
-        .eq("is_active", true);
+        .select("country_code, country_name, city, latitude, longitude, is_active");
 
       if (visitorError) throw visitorError;
 
-      // Fetch all visitor sessions for total count
-      const { count: totalCount } = await supabase
-        .from("visitor_sessions")
-        .select("*", { count: "exact", head: true });
+      const totalCount = visitorData?.length || 0;
+      const activeCount = visitorData?.filter((v) => v.is_active).length || 0;
 
-      // Fetch orders with location data
+      // Fetch ALL orders (real-time SUM/COUNT)
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
-        .select("*");
+        .select("total_amount, country_code, country_name, city, latitude, longitude, payment_status");
 
       if (ordersError) throw ordersError;
 
-      // Group data by country
-      const locationMap = new Map();
-      
-      // Add visitor data
+      // Aggregate by country code (or city fallback) for globe markers
+      const locationMap = new Map<string, any>();
+
       visitorData?.forEach((session) => {
-        if (!session.country_code || !session.latitude || !session.longitude) return;
-        
-        const key = session.country_code;
+        if (session.latitude == null || session.longitude == null) return;
+        const key = session.country_code || session.city || `${session.latitude},${session.longitude}`;
         if (!locationMap.has(key)) {
           locationMap.set(key, {
-            country_code: session.country_code,
-            country_name: session.country_name,
-            latitude: session.latitude,
-            longitude: session.longitude,
+            country_code: session.country_code || "XX",
+            country_name: session.country_name || session.city || "Unknown",
+            latitude: Number(session.latitude),
+            longitude: Number(session.longitude),
             visitor_count: 0,
             order_count: 0,
             total_sales: 0,
           });
         }
-        
-        const loc = locationMap.get(key);
-        loc.visitor_count += 1;
+        locationMap.get(key).visitor_count += 1;
       });
 
-      // Add order data
+      // SUM revenue + COUNT orders (real-time)
       let totalRevenue = 0;
-      ordersData?.forEach((order) => {
-        const amount = parseFloat(String(order.total_amount || "0"));
+      let totalOrders = 0;
+      ordersData?.forEach((order: any) => {
+        const amount = Number(order.total_amount) || 0;
         totalRevenue += amount;
-        
-        if (order.country_code && locationMap.has(order.country_code)) {
-          const loc = locationMap.get(order.country_code);
+        totalOrders += 1;
+
+        if (order.latitude != null && order.longitude != null) {
+          const key = order.country_code || order.city || `${order.latitude},${order.longitude}`;
+          if (!locationMap.has(key)) {
+            locationMap.set(key, {
+              country_code: order.country_code || "XX",
+              country_name: order.country_name || order.city || "Unknown",
+              latitude: Number(order.latitude),
+              longitude: Number(order.longitude),
+              visitor_count: 0,
+              order_count: 0,
+              total_sales: 0,
+            });
+          }
+          const loc = locationMap.get(key);
           loc.order_count += 1;
           loc.total_sales += amount;
         }
@@ -204,7 +211,6 @@ Tim NORTHVEIZ`);
       const locationsArray = Array.from(locationMap.values());
       setLocations(locationsArray);
 
-      // Calculate top countries
       const topCountries = locationsArray
         .sort((a, b) => (b.visitor_count + b.order_count) - (a.visitor_count + a.order_count))
         .slice(0, 5)
@@ -214,9 +220,9 @@ Tim NORTHVEIZ`);
         }));
 
       setAnalyticsData({
-        totalVisitors: totalCount || 0,
-        activeVisitors: visitorData?.length || 0,
-        totalOrders: ordersData?.length || 0,
+        totalVisitors: totalCount,
+        activeVisitors: activeCount,
+        totalOrders,
         totalRevenue,
         topCountries,
       });
