@@ -153,7 +153,7 @@ Tim NORTHVEIZ`);
       // Fetch ALL orders (real-time SUM/COUNT)
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
-        .select("total_amount, country_code, country_name, city, latitude, longitude, payment_status");
+        .select("total_amount, country_code, city, latitude, longitude, payment_status");
 
       if (ordersError) throw ordersError;
 
@@ -190,7 +190,7 @@ Tim NORTHVEIZ`);
           if (!locationMap.has(key)) {
             locationMap.set(key, {
               country_code: order.country_code || "XX",
-              country_name: order.country_name || order.city || "Unknown",
+              country_name: order.city || "Unknown",
               latitude: Number(order.latitude),
               longitude: Number(order.longitude),
               visitor_count: 0,
