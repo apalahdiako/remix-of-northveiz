@@ -16,46 +16,58 @@ export default function LiveActivityFeed({ isDark }: { isDark: boolean }) {
   const [feed, setFeed] = useState<FeedItem[]>([]);
 
   const fetchFeed = async () => {
-    // Fetch recent visitor sessions
+    // Fetch recent visitor sessions (with user_id)
     const { data: visitors } = await supabase
       .from("visitor_sessions")
-      .select("id, session_id, country_name, city, created_at, page_path")
+      .select("id, session_id, user_id, country_name, city, created_at, page_path")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(15);
 
     // Fetch recent orders
     const { data: orders } = await supabase
       .from("orders")
-      .select("id, customer_name, city, created_at, order_status")
+      .select("id, customer_name, city, created_at, order_status, total_amount")
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(10);
+
+    // Resolve visitor user_ids to profile names
+    const userIds = Array.from(new Set((visitors || []).map((v) => v.user_id).filter(Boolean))) as string[];
+    let profileMap = new Map<string, string>();
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+      profiles?.forEach((p) => profileMap.set(p.id, p.full_name || "User"));
+    }
 
     const items: FeedItem[] = [];
 
     visitors?.forEach((v) => {
+      const name = v.user_id ? (profileMap.get(v.user_id) || "User") : `Tamu ${v.session_id.slice(-4)}`;
       items.push({
         id: `v-${v.id}`,
-        name: `Visitor ${v.session_id.slice(0, 6)}`,
+        name,
         action: `Mengunjungi ${v.page_path || "/"}`,
-        location: [v.city, v.country_name].filter(Boolean).join(", ") || "Unknown",
+        location: [v.city, v.country_name].filter(Boolean).join(", ") || "Lokasi tidak diketahui",
         time: v.created_at,
-        type: "visit",
+        type: v.user_id ? "login" : "visit",
       });
     });
 
-    orders?.forEach((o) => {
+    orders?.forEach((o: any) => {
       items.push({
         id: `o-${o.id}`,
         name: o.customer_name,
-        action: `Order ${o.order_status}`,
-        location: o.city || "Unknown",
+        action: `Transaksi ${o.order_status} - Rp ${Number(o.total_amount || 0).toLocaleString()}`,
+        location: o.city || "Lokasi tidak diketahui",
         time: o.created_at,
         type: "order",
       });
     });
 
     items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-    setFeed(items.slice(0, 15));
+    setFeed(items.slice(0, 20));
   };
 
   useEffect(() => {

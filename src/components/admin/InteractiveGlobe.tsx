@@ -1,7 +1,10 @@
-import { useRef, useEffect, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useRef, useEffect, useState, useMemo } from 'react';
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { OrbitControls, Sphere, Html } from '@react-three/drei';
 import * as THREE from 'three';
+
+const EARTH_TEXTURE_DARK = "https://unpkg.com/three-globe/example/img/earth-dark.jpg";
+const EARTH_TEXTURE_LIGHT = "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
 
 interface LocationData {
   country_code: string;
@@ -155,21 +158,22 @@ function Globe({ locations, isDark }: { locations: LocationData[]; isDark: boole
     }
   });
 
-  const globeColor = isDark ? "#0f1729" : "#334155";
   const wireColor = isDark ? "#1e3a5f" : "#94a3b8";
+  const textureUrl = isDark ? EARTH_TEXTURE_DARK : EARTH_TEXTURE_LIGHT;
+  const earthTexture = useLoader(THREE.TextureLoader, textureUrl);
 
   return (
     <>
-      {/* Main globe */}
+      {/* Main globe with real Earth texture */}
       <Sphere ref={meshRef} args={[2, 64, 64]}>
         {/* @ts-ignore */}
-        <meshStandardMaterial color={globeColor} roughness={0.8} metalness={0.1} />
+        <meshStandardMaterial map={earthTexture} roughness={0.85} metalness={0.05} />
       </Sphere>
 
       {/* Wireframe overlay */}
-      <Sphere args={[2.01, 32, 32]}>
+      <Sphere args={[2.015, 32, 32]}>
         {/* @ts-ignore */}
-        <meshBasicMaterial color={wireColor} wireframe transparent opacity={0.15} />
+        <meshBasicMaterial color={wireColor} wireframe transparent opacity={0.08} />
       </Sphere>
 
       {/* Location markers */}

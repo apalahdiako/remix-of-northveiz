@@ -28,7 +28,7 @@ export default function AnalyticsDashboard({ analyticsData, locations }: Analyti
   const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
 
   return (
-    <div className={`rounded-2xl p-4 md:p-6 space-y-5 transition-colors duration-300 ${bgMain}`}>
+    <div className={`rounded-2xl p-3 md:p-6 space-y-5 transition-colors duration-300 overflow-hidden max-w-full ${bgMain}`}>
       {/* Header with theme toggle */}
       <div className="flex items-center justify-between">
         <div>

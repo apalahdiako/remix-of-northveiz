@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_todos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          done: boolean
+          id: string
+          label_color: string | null
+          label_text: string | null
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          id?: string
+          label_color?: string | null
+          label_text?: string | null
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          id?: string
+          label_color?: string | null
+          label_text?: string | null
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string | null
