@@ -24,6 +24,7 @@ import BuyNow from "./pages/BuyNow";
 import Checkout from "./pages/Checkout";
 import Payment from "./pages/Payment";
 import AdminDashboard from "./pages/AdminDashboard";
+import PetaGlobal from "./pages/PetaGlobal";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 
@@ -69,6 +70,7 @@ function AppContent() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/peta-global" element={<PetaGlobal />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
