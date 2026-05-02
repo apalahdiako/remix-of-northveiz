@@ -70,6 +70,7 @@ function AppContent() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/peta-global" element={<PetaGlobal />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
