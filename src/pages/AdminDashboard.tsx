@@ -8,20 +8,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio, Phone } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio, Phone, BarChart3, Users, Tag, Truck, FileText, Settings, Home } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
-import AnalyticsCards from "@/components/admin/AnalyticsCards";
+import OverviewEnhancements from "@/components/admin/OverviewEnhancements";
 import { TimerManagement } from "@/components/admin/TimerManagement";
 import ProductManagement from "@/components/admin/ProductManagement";
 import ProductImageManagement from "@/components/admin/ProductImageManagement";
-import { OrderManagement } from "@/components/admin/OrderManagement";
+import EnhancedOrderManagement from "@/components/admin/EnhancedOrderManagement";
 import { InboxManagement } from "@/components/admin/InboxManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { BroadcastManagement } from "@/components/admin/BroadcastManagement";
 import AdminChatDashboard from "@/components/admin/AdminChatDashboard";
 import CallHistory, { useMissedCallCount } from "@/components/admin/CallHistory";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import AdminCustomerManagement from "@/components/admin/AdminCustomerManagement";
+import AdminMarketing from "@/components/admin/AdminMarketing";
+import AdminShipping from "@/components/admin/AdminShipping";
+import AdminContent from "@/components/admin/AdminContent";
+import AdminSettings from "@/components/admin/AdminSettings";
 
 interface UserProfile {
   id: string;
@@ -39,6 +45,7 @@ export default function AdminDashboard() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const [subject, setSubject] = useState("Terima Kasih Telah Bergabung dengan NORTHVEIZ");
   const [emailContent, setEmailContent] = useState(`Terima kasih telah mengunjungi NORTHVEIZ! Kami sangat senang bisa memperkenalkan produk dan layanan kami kepada Anda. Kehadiran Anda sangat berarti bagi kami.
 
@@ -49,7 +56,6 @@ Sekali lagi, terima kasih atas dukungan Anda, dan kami berharap dapat melayani A
 Salam hangat,
 Tim NORTHVEIZ`);
   
-  // Analytics state
   const [locations, setLocations] = useState<any[]>([]);
   const [analyticsData, setAnalyticsData] = useState({
     totalVisitors: 0,
@@ -71,7 +77,6 @@ Tim NORTHVEIZ`);
       fetchUsers();
       fetchAnalytics();
       
-      // Set up realtime subscription for visitor sessions + orders
       const visitorChannel = supabase
         .channel('visitor-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'visitor_sessions' }, () => fetchAnalytics())
@@ -92,8 +97,6 @@ Tim NORTHVEIZ`);
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
-      // Get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, full_name, created_at")
@@ -101,11 +104,6 @@ Tim NORTHVEIZ`);
 
       if (profilesError) throw profilesError;
 
-      // Get auth users to get emails - note: this requires service role access
-      // For now, we'll just show profiles without emails from auth
-      // In production, this would need to be done via an edge function with service role
-
-      // Map profiles to user list (email will be fetched server-side when sending)
       const userList: UserProfile[] = profiles?.map((profile) => ({
         id: profile.id,
         full_name: profile.full_name,
@@ -124,40 +122,30 @@ Tim NORTHVEIZ`);
 
   const toggleUser = (userId: string) => {
     setSelectedUsers((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
   const toggleAll = () => {
-    if (selectedUsers.length === users.length) {
-      setSelectedUsers([]);
-    } else {
-      setSelectedUsers(users.map((u) => u.id));
-    }
+    if (selectedUsers.length === users.length) setSelectedUsers([]);
+    else setSelectedUsers(users.map((u) => u.id));
   };
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch all visitor sessions (with location)
       const { data: visitorData, error: visitorError } = await supabase
         .from("visitor_sessions")
         .select("country_code, country_name, city, latitude, longitude, is_active");
-
       if (visitorError) throw visitorError;
 
       const totalCount = visitorData?.length || 0;
       const activeCount = visitorData?.filter((v) => v.is_active).length || 0;
 
-      // Fetch ALL orders (real-time SUM/COUNT)
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
         .select("total_amount, country_code, city, latitude, longitude, payment_status");
-
       if (ordersError) throw ordersError;
 
-      // Aggregate by country code (or city fallback) for globe markers
       const locationMap = new Map<string, any>();
 
       visitorData?.forEach((session) => {
@@ -169,15 +157,12 @@ Tim NORTHVEIZ`);
             country_name: session.country_name || session.city || "Unknown",
             latitude: Number(session.latitude),
             longitude: Number(session.longitude),
-            visitor_count: 0,
-            order_count: 0,
-            total_sales: 0,
+            visitor_count: 0, order_count: 0, total_sales: 0,
           });
         }
         locationMap.get(key).visitor_count += 1;
       });
 
-      // SUM revenue + COUNT orders (real-time)
       let totalRevenue = 0;
       let totalOrders = 0;
       ordersData?.forEach((order: any) => {
@@ -193,9 +178,7 @@ Tim NORTHVEIZ`);
               country_name: order.city || "Unknown",
               latitude: Number(order.latitude),
               longitude: Number(order.longitude),
-              visitor_count: 0,
-              order_count: 0,
-              total_sales: 0,
+              visitor_count: 0, order_count: 0, total_sales: 0,
             });
           }
           const loc = locationMap.get(key);
@@ -210,52 +193,26 @@ Tim NORTHVEIZ`);
       const topCountries = locationsArray
         .sort((a, b) => (b.visitor_count + b.order_count) - (a.visitor_count + a.order_count))
         .slice(0, 5)
-        .map((loc) => ({
-          country: loc.country_name,
-          count: loc.visitor_count + loc.order_count,
-        }));
+        .map((loc) => ({ country: loc.country_name, count: loc.visitor_count + loc.order_count }));
 
-      setAnalyticsData({
-        totalVisitors: totalCount,
-        activeVisitors: activeCount,
-        totalOrders,
-        totalRevenue,
-        topCountries,
-      });
+      setAnalyticsData({ totalVisitors: totalCount, activeVisitors: activeCount, totalOrders, totalRevenue, topCountries });
     } catch (error) {
       console.error("Error fetching analytics:", error);
-      toast.error("Gagal memuat data analytics");
     }
   };
 
   const sendEmails = async () => {
-    if (selectedUsers.length === 0) {
-      toast.error("Pilih minimal satu pengguna");
-      return;
-    }
-
-    if (!subject.trim() || !emailContent.trim()) {
-      toast.error("Subjek dan isi email tidak boleh kosong");
-      return;
-    }
-
+    if (selectedUsers.length === 0) { toast.error("Pilih minimal satu pengguna"); return; }
+    if (!subject.trim() || !emailContent.trim()) { toast.error("Subjek dan isi email tidak boleh kosong"); return; }
     try {
       setSending(true);
-
       const { data, error } = await supabase.functions.invoke("send-welcome-email", {
-        body: {
-          userIds: selectedUsers,
-          subject: subject,
-          content: emailContent,
-        },
+        body: { userIds: selectedUsers, subject, content: emailContent },
       });
-
       if (error) throw error;
-
       toast.success(`Email berhasil dikirim ke ${data.sent} pengguna`);
       setSelectedUsers([]);
     } catch (error: any) {
-      console.error("Error sending emails:", error);
       toast.error("Gagal mengirim email: " + error.message);
     } finally {
       setSending(false);
@@ -263,231 +220,177 @@ Tim NORTHVEIZ`);
   };
 
   if (adminLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen pt-16">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen pt-16"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
     <div className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
-      <Button
-        variant="ghost"
-        onClick={() => navigate("/")}
-        className="mb-6"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Kembali
+      <Button variant="ghost" onClick={() => navigate("/")} className="mb-6">
+        <ArrowLeft className="mr-2 h-4 w-4" />Kembali
       </Button>
 
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
-      <Tabs defaultValue="globe" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="globe">
-            <GlobeIcon className="mr-2 h-4 w-4" />
-            Peta Global
-          </TabsTrigger>
-          <TabsTrigger value="chat">
-            💬 Live Chat
-          </TabsTrigger>
-          <TabsTrigger value="calls" className="relative">
-            <Phone className="mr-2 h-4 w-4" />
-            Panggilan
-            {missedCallCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 min-w-5 flex items-center justify-center px-1">
-                {missedCallCount}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="inbox">
-            <Inbox className="mr-2 h-4 w-4" />
-            Inbox
-          </TabsTrigger>
-          <TabsTrigger value="timer">
-            Timer Global
-          </TabsTrigger>
-          <TabsTrigger value="products">
-            Produk
-          </TabsTrigger>
-          <TabsTrigger value="images">
-            Gambar Produk
-          </TabsTrigger>
-          <TabsTrigger value="orders">
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            Pesanan
-          </TabsTrigger>
-          <TabsTrigger value="community">
-            Komunitas
-          </TabsTrigger>
-          <TabsTrigger value="broadcast">
-            <Radio className="mr-2 h-4 w-4" />
-            Broadcast
-          </TabsTrigger>
-          <TabsTrigger value="email">
-            <MailIcon className="mr-2 h-4 w-4" />
-            Kirim Email
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="overflow-x-auto">
+          <TabsList className="inline-flex min-w-max">
+            <TabsTrigger value="overview"><Home className="mr-1.5 h-3.5 w-3.5" />Overview</TabsTrigger>
+            <TabsTrigger value="orders"><ShoppingBag className="mr-1.5 h-3.5 w-3.5" />Pesanan</TabsTrigger>
+            <TabsTrigger value="products">Produk</TabsTrigger>
+            <TabsTrigger value="analytics"><BarChart3 className="mr-1.5 h-3.5 w-3.5" />Analytics</TabsTrigger>
+            <TabsTrigger value="customers"><Users className="mr-1.5 h-3.5 w-3.5" />Customer</TabsTrigger>
+            <TabsTrigger value="chat">💬 Live Chat</TabsTrigger>
+            <TabsTrigger value="calls" className="relative">
+              <Phone className="mr-1.5 h-3.5 w-3.5" />Panggilan
+              {missedCallCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 min-w-5 flex items-center justify-center px-1">{missedCallCount}</span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="marketing"><Tag className="mr-1.5 h-3.5 w-3.5" />Promo</TabsTrigger>
+            <TabsTrigger value="shipping"><Truck className="mr-1.5 h-3.5 w-3.5" />Shipping</TabsTrigger>
+            <TabsTrigger value="content"><FileText className="mr-1.5 h-3.5 w-3.5" />Konten</TabsTrigger>
+            <TabsTrigger value="inbox"><Inbox className="mr-1.5 h-3.5 w-3.5" />Inbox</TabsTrigger>
+            <TabsTrigger value="community">Komunitas</TabsTrigger>
+            <TabsTrigger value="broadcast"><Radio className="mr-1.5 h-3.5 w-3.5" />Broadcast</TabsTrigger>
+            <TabsTrigger value="timer">Timer</TabsTrigger>
+            <TabsTrigger value="images">Gambar</TabsTrigger>
+            <TabsTrigger value="settings"><Settings className="mr-1.5 h-3.5 w-3.5" />Settings</TabsTrigger>
+            <TabsTrigger value="globe"><GlobeIcon className="mr-1.5 h-3.5 w-3.5" />Peta Global</TabsTrigger>
+            <TabsTrigger value="email"><MailIcon className="mr-1.5 h-3.5 w-3.5" />Email</TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="globe" className="space-y-0">
+        <TabsContent value="overview" className="space-y-6">
+          <OverviewEnhancements isDark={false} onNavigateToOrders={() => setActiveTab("orders")} />
           <AnalyticsDashboard analyticsData={analyticsData} locations={locations} />
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <EnhancedOrderManagement />
+        </TabsContent>
+
+        <TabsContent value="products">
+          <ProductManagement />
+          <div className="mt-6">
+            <ProductImageManagement />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <AdminAnalytics />
+        </TabsContent>
+
+        <TabsContent value="customers">
+          <AdminCustomerManagement />
         </TabsContent>
 
         <TabsContent value="chat">
           <AdminChatDashboard />
         </TabsContent>
 
-
         <TabsContent value="calls">
           <CallHistory onCallBack={(sid) => setCallActiveSession(sid)} activeCallSessionId={callActiveSession} />
+        </TabsContent>
+
+        <TabsContent value="marketing">
+          <AdminMarketing />
+        </TabsContent>
+
+        <TabsContent value="shipping">
+          <AdminShipping />
+        </TabsContent>
+
+        <TabsContent value="content">
+          <AdminContent />
         </TabsContent>
 
         <TabsContent value="inbox">
           <InboxManagement />
         </TabsContent>
 
-        <TabsContent value="timer">
-          <TimerManagement />
+        <TabsContent value="community">
+          <CommunityManagement />
         </TabsContent>
 
-        <TabsContent value="products">
-          <ProductManagement />
+        <TabsContent value="broadcast">
+          <BroadcastManagement />
+        </TabsContent>
+
+        <TabsContent value="timer">
+          <TimerManagement />
         </TabsContent>
 
         <TabsContent value="images">
           <ProductImageManagement />
         </TabsContent>
 
-        <TabsContent value="orders">
-          <OrderManagement />
+        <TabsContent value="settings">
+          <AdminSettings />
         </TabsContent>
 
-            <TabsContent value="community">
-              <CommunityManagement />
-            </TabsContent>
+        <TabsContent value="globe" className="space-y-0">
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" onClick={() => navigate("/peta-global")}>
+              <GlobeIcon className="mr-2 h-4 w-4" />Buka Halaman Penuh
+            </Button>
+          </div>
+          <AnalyticsDashboard analyticsData={analyticsData} locations={locations} />
+        </TabsContent>
 
-            <TabsContent value="broadcast">
-              <BroadcastManagement />
-            </TabsContent>
-
-            <TabsContent value="email">
+        <TabsContent value="email">
           <div className="grid gap-6 md:grid-cols-2">
-        {/* User Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pilih Pengguna</CardTitle>
-            <CardDescription>
-              Pilih pengguna yang akan menerima email
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2 pb-4 border-b">
-                <Checkbox
-                  id="select-all"
-                  checked={selectedUsers.length === users.length && users.length > 0}
-                  onCheckedChange={toggleAll}
-                />
-                <label
-                  htmlFor="select-all"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Pilih Semua ({users.length} pengguna)
-                </label>
-              </div>
-
-              <div className="max-h-96 overflow-y-auto space-y-2">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md"
-                  >
-                    <Checkbox
-                      id={user.id}
-                      checked={selectedUsers.includes(user.id)}
-                      onCheckedChange={() => toggleUser(user.id)}
-                    />
-                    <label
-                      htmlFor={user.id}
-                      className="flex-1 text-sm cursor-pointer"
-                    >
-                      <div className="font-medium">
-                        {user.full_name || "No Name"}
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {user.email}
-                      </div>
-                    </label>
+            <Card>
+              <CardHeader>
+                <CardTitle>Pilih Pengguna</CardTitle>
+                <CardDescription>Pilih pengguna yang akan menerima email</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 pb-4 border-b">
+                    <Checkbox id="select-all" checked={selectedUsers.length === users.length && users.length > 0} onCheckedChange={toggleAll} />
+                    <label htmlFor="select-all" className="text-sm font-medium">Pilih Semua ({users.length} pengguna)</label>
                   </div>
-                ))}
-              </div>
-
-              {selectedUsers.length > 0 && (
-                <div className="pt-4 border-t text-sm text-muted-foreground">
-                  {selectedUsers.length} pengguna dipilih
+                  <div className="max-h-96 overflow-y-auto space-y-2">
+                    {users.map((user) => (
+                      <div key={user.id} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md">
+                        <Checkbox id={user.id} checked={selectedUsers.includes(user.id)} onCheckedChange={() => toggleUser(user.id)} />
+                        <label htmlFor={user.id} className="flex-1 text-sm cursor-pointer">
+                          <div className="font-medium">{user.full_name || "No Name"}</div>
+                          <div className="text-muted-foreground text-xs">{user.email}</div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedUsers.length > 0 && (
+                    <div className="pt-4 border-t text-sm text-muted-foreground">{selectedUsers.length} pengguna dipilih</div>
+                  )}
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Email Editor */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Isi Email</CardTitle>
-            <CardDescription>
-              Sesuaikan subjek dan isi email
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subjek Email</Label>
-                <Input
-                  id="subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Subjek email"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="content">Isi Email</Label>
-                <Textarea
-                  id="content"
-                  value={emailContent}
-                  onChange={(e) => setEmailContent(e.target.value)}
-                  placeholder="Tulis isi email..."
-                  className="min-h-[300px]"
-                />
-              </div>
-
-              <Button
-                onClick={sendEmails}
-                disabled={sending || selectedUsers.length === 0}
-                className="w-full"
-              >
-                {sending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Mengirim...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Kirim Email ({selectedUsers.length} pengguna)
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Isi Email</CardTitle>
+                <CardDescription>Sesuaikan subjek dan isi email</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subjek Email</Label>
+                    <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subjek email" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Isi Email</Label>
+                    <Textarea id="content" value={emailContent} onChange={(e) => setEmailContent(e.target.value)} placeholder="Tulis isi email..." className="min-h-[300px]" />
+                  </div>
+                  <Button onClick={sendEmails} disabled={sending || selectedUsers.length === 0} className="w-full">
+                    {sending ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengirim...</>) : (<><Mail className="mr-2 h-4 w-4" />Kirim Email ({selectedUsers.length} pengguna)</>)}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
