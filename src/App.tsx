@@ -24,6 +24,7 @@ import BuyNow from "./pages/BuyNow";
 import Checkout from "./pages/Checkout";
 import Payment from "./pages/Payment";
 import AdminDashboard from "./pages/AdminDashboard";
+import PetaGlobal from "./pages/PetaGlobal";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 
