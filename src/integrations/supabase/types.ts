@@ -730,6 +730,134 @@ export type Database = {
         }
         Relationships: []
       }
+      shipment_tracking: {
+        Row: {
+          checkpoints: Json | null
+          courier: string
+          created_at: string
+          current_lat: number | null
+          current_lng: number | null
+          current_location: string | null
+          current_phase: Database["public"]["Enums"]["shipping_phase"]
+          current_status: string
+          dest_city: string | null
+          dest_lat: number | null
+          dest_lng: number | null
+          distance_to_dest_km: number | null
+          estimated_arrival: string | null
+          icon_type: Database["public"]["Enums"]["icon_type"]
+          id: string
+          order_id: string
+          origin_city: string | null
+          resi_number: string
+          updated_at: string
+        }
+        Insert: {
+          checkpoints?: Json | null
+          courier?: string
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          current_location?: string | null
+          current_phase?: Database["public"]["Enums"]["shipping_phase"]
+          current_status?: string
+          dest_city?: string | null
+          dest_lat?: number | null
+          dest_lng?: number | null
+          distance_to_dest_km?: number | null
+          estimated_arrival?: string | null
+          icon_type?: Database["public"]["Enums"]["icon_type"]
+          id?: string
+          order_id: string
+          origin_city?: string | null
+          resi_number: string
+          updated_at?: string
+        }
+        Update: {
+          checkpoints?: Json | null
+          courier?: string
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          current_location?: string | null
+          current_phase?: Database["public"]["Enums"]["shipping_phase"]
+          current_status?: string
+          dest_city?: string | null
+          dest_lat?: number | null
+          dest_lng?: number | null
+          distance_to_dest_km?: number | null
+          estimated_arrival?: string | null
+          icon_type?: Database["public"]["Enums"]["icon_type"]
+          id?: string
+          order_id?: string
+          origin_city?: string | null
+          resi_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_checkpoints: {
+        Row: {
+          checkpoint_name: string
+          id: string
+          lat: number | null
+          lng: number | null
+          location_name: string | null
+          order_id: string
+          phase: Database["public"]["Enums"]["shipping_phase"]
+          resi_number: string
+          shipment_id: string
+          timestamp: string
+        }
+        Insert: {
+          checkpoint_name: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location_name?: string | null
+          order_id: string
+          phase?: Database["public"]["Enums"]["shipping_phase"]
+          resi_number: string
+          shipment_id: string
+          timestamp?: string
+        }
+        Update: {
+          checkpoint_name?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location_name?: string | null
+          order_id?: string
+          phase?: Database["public"]["Enums"]["shipping_phase"]
+          resi_number?: string
+          shipment_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_checkpoints_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_checkpoints_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipment_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_addresses: {
         Row: {
           city: string
@@ -877,6 +1005,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      icon_type: "truck" | "motor"
       order_status:
         | "pending"
         | "paid"
@@ -887,6 +1016,12 @@ export type Database = {
         | "completed"
         | "return_requested"
         | "cancelled"
+      shipping_phase:
+        | "intercity"
+        | "transition"
+        | "lastmile"
+        | "neardest"
+        | "delivered"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1015,6 +1150,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      icon_type: ["truck", "motor"],
       order_status: [
         "pending",
         "paid",
@@ -1025,6 +1161,13 @@ export const Constants = {
         "completed",
         "return_requested",
         "cancelled",
+      ],
+      shipping_phase: [
+        "intercity",
+        "transition",
+        "lastmile",
+        "neardest",
+        "delivered",
       ],
     },
   },
