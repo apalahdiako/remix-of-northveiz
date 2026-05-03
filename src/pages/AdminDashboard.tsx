@@ -329,15 +329,6 @@ Tim NORTHVEIZ`);
           <AdminSettings />
         </TabsContent>
 
-        <TabsContent value="globe" className="space-y-0">
-          <div className="flex justify-end mb-4">
-            <Button variant="outline" onClick={() => navigate("/peta-global")}>
-              <GlobeIcon className="mr-2 h-4 w-4" />Buka Halaman Penuh
-            </Button>
-          </div>
-          <AnalyticsDashboard analyticsData={analyticsData} locations={locations} />
-        </TabsContent>
-
         <TabsContent value="email">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
