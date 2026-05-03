@@ -257,7 +257,6 @@ Tim NORTHVEIZ`);
             <TabsTrigger value="timer">Timer</TabsTrigger>
             <TabsTrigger value="images">Gambar</TabsTrigger>
             <TabsTrigger value="settings"><Settings className="mr-1.5 h-3.5 w-3.5" />Settings</TabsTrigger>
-            <TabsTrigger value="globe"><GlobeIcon className="mr-1.5 h-3.5 w-3.5" />Peta Global</TabsTrigger>
             <TabsTrigger value="email"><MailIcon className="mr-1.5 h-3.5 w-3.5" />Email</TabsTrigger>
           </TabsList>
         </div>
