@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, ArrowLeft, Globe as GlobeIcon, MailIcon, ShoppingBag, Inbox, Radio, Phone, BarChart3, Users, Tag, Truck, FileText, Settings, Home } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, MailIcon, ShoppingBag, Inbox, Radio, Phone, BarChart3, Users, Tag, Truck, FileText, Settings, Home } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
@@ -257,7 +257,6 @@ Tim NORTHVEIZ`);
             <TabsTrigger value="timer">Timer</TabsTrigger>
             <TabsTrigger value="images">Gambar</TabsTrigger>
             <TabsTrigger value="settings"><Settings className="mr-1.5 h-3.5 w-3.5" />Settings</TabsTrigger>
-            <TabsTrigger value="globe"><GlobeIcon className="mr-1.5 h-3.5 w-3.5" />Peta Global</TabsTrigger>
             <TabsTrigger value="email"><MailIcon className="mr-1.5 h-3.5 w-3.5" />Email</TabsTrigger>
           </TabsList>
         </div>
@@ -328,15 +327,6 @@ Tim NORTHVEIZ`);
 
         <TabsContent value="settings">
           <AdminSettings />
-        </TabsContent>
-
-        <TabsContent value="globe" className="space-y-0">
-          <div className="flex justify-end mb-4">
-            <Button variant="outline" onClick={() => navigate("/peta-global")}>
-              <GlobeIcon className="mr-2 h-4 w-4" />Buka Halaman Penuh
-            </Button>
-          </div>
-          <AnalyticsDashboard analyticsData={analyticsData} locations={locations} />
         </TabsContent>
 
         <TabsContent value="email">
