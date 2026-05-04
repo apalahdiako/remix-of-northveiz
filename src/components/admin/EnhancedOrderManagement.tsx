@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { toast } from "sonner";
-import { Search, Filter, Eye, FileText, Truck, Clock, Package, CheckCircle, XCircle, CreditCard, PackageCheck, Star, RotateCcw, Loader2 } from "lucide-react";
+import { Search, Filter, Eye, FileText, Truck, Clock, Package, CheckCircle, XCircle, CreditCard, PackageCheck, Star, RotateCcw, Loader2, Printer } from "lucide-react";
+import { generateInvoicePDF, generateShippingLabelPDF } from "@/lib/invoiceGenerator";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
