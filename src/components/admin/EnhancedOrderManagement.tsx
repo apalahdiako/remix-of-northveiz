@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { toast } from "sonner";
-import { Search, Filter, Eye, FileText, Truck, Clock, Package, CheckCircle, XCircle, CreditCard, PackageCheck, Star, RotateCcw, Loader2 } from "lucide-react";
+import { Search, Filter, Eye, FileText, Truck, Clock, Package, CheckCircle, XCircle, CreditCard, PackageCheck, Star, RotateCcw, Loader2, Printer } from "lucide-react";
+import { generateInvoicePDF, generateShippingLabelPDF } from "@/lib/invoiceGenerator";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -72,7 +73,18 @@ export default function EnhancedOrderManagement() {
   useEffect(() => {
     fetchOrders();
     const ch = supabase.channel("admin-orders-enhanced")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload) => {
+        setOrders(prev => [payload.new as Order, ...prev]);
+        toast.success("Order baru masuk!");
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, (payload) => {
+        const updated = payload.new as Order;
+        setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+        if (selectedOrder?.id === updated.id) setSelectedOrder(updated);
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" }, (payload) => {
+        setOrders(prev => prev.filter(o => o.id !== (payload.old as any).id));
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
@@ -310,11 +322,11 @@ export default function EnhancedOrderManagement() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => toast.info("Fitur cetak invoice akan segera hadir")}>
+                  <Button variant="outline" className="flex-1" onClick={() => generateInvoicePDF(selectedOrder.id)}>
                     <FileText className="h-4 w-4 mr-2" />Cetak Invoice
                   </Button>
-                  <Button variant="outline" className="flex-1" onClick={() => toast.info("Fitur cetak label akan segera hadir")}>
-                    <Truck className="h-4 w-4 mr-2" />Cetak Label
+                  <Button variant="outline" className="flex-1" onClick={() => generateShippingLabelPDF(selectedOrder.id)}>
+                    <Printer className="h-4 w-4 mr-2" />Cetak Label
                   </Button>
                 </div>
 
