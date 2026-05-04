@@ -311,11 +311,11 @@ export default function EnhancedOrderManagement() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => toast.info("Fitur cetak invoice akan segera hadir")}>
+                  <Button variant="outline" className="flex-1" onClick={() => generateInvoicePDF(selectedOrder.id)}>
                     <FileText className="h-4 w-4 mr-2" />Cetak Invoice
                   </Button>
-                  <Button variant="outline" className="flex-1" onClick={() => toast.info("Fitur cetak label akan segera hadir")}>
-                    <Truck className="h-4 w-4 mr-2" />Cetak Label
+                  <Button variant="outline" className="flex-1" onClick={() => generateShippingLabelPDF(selectedOrder.id)}>
+                    <Printer className="h-4 w-4 mr-2" />Cetak Label
                   </Button>
                 </div>
 
