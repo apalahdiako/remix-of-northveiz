@@ -804,6 +804,39 @@ export type Database = {
           },
         ]
       }
+      store_settings: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          store_address: string
+          store_email: string
+          store_name: string
+          store_phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          store_address?: string
+          store_email?: string
+          store_name?: string
+          store_phone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          store_address?: string
+          store_email?: string
+          store_name?: string
+          store_phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tracking_checkpoints: {
         Row: {
           checkpoint_name: string
