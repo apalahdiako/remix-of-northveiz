@@ -73,7 +73,18 @@ export default function EnhancedOrderManagement() {
   useEffect(() => {
     fetchOrders();
     const ch = supabase.channel("admin-orders-enhanced")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload) => {
+        setOrders(prev => [payload.new as Order, ...prev]);
+        toast.success("Order baru masuk!");
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, (payload) => {
+        const updated = payload.new as Order;
+        setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+        if (selectedOrder?.id === updated.id) setSelectedOrder(updated);
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" }, (payload) => {
+        setOrders(prev => prev.filter(o => o.id !== (payload.old as any).id));
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
