@@ -119,20 +119,39 @@ export default function EnhancedOrderManagement() {
 
   const paymentMethods = useMemo(() => [...new Set(orders.map(o => o.payment_method).filter(Boolean))], [orders]);
 
+  const sendWaNotification = async (orderId: string, newStatus: string, trackingNumber?: string) => {
+    try {
+      const { error } = await supabase.functions.invoke("send-wa-notification", {
+        body: { order_id: orderId, new_status: newStatus, tracking_number: trackingNumber },
+      });
+      if (error) console.error("WA notification failed:", error);
+      else toast.success("Notifikasi WhatsApp terkirim ✅");
+    } catch (e) {
+      console.error("WA notification error:", e);
+    }
+  };
+
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     const updateData: any = { order_status: newStatus };
     if (newStatus === "completed") updateData.completed_at = new Date().toISOString();
     if (newStatus === "paid") { updateData.payment_status = "paid"; updateData.paid_at = new Date().toISOString(); }
     const { error } = await supabase.from("orders").update(updateData).eq("id", orderId);
     if (error) toast.error("Gagal mengubah status");
-    else toast.success(`Status diperbarui ke ${statusConfig[newStatus]?.label}`);
+    else {
+      toast.success(`Status diperbarui ke ${statusConfig[newStatus]?.label}`);
+      sendWaNotification(orderId, newStatus);
+    }
   };
 
   const handleAddTracking = async (orderId: string) => {
     if (!trackingInput.trim()) return;
     const { error } = await supabase.from("orders").update({ tracking_number: trackingInput, order_status: "shipped" }).eq("id", orderId);
     if (error) toast.error("Gagal menambahkan resi");
-    else { toast.success("Nomor resi ditambahkan"); setTrackingInput(""); }
+    else {
+      toast.success("Nomor resi ditambahkan");
+      sendWaNotification(orderId, "shipped", trackingInput);
+      setTrackingInput("");
+    }
   };
 
   const formatCurrency = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
