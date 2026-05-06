@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
         method: "POST",
         headers: { "api-key": BREVO_API_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
-          sender: { name: "Northveiz Admin", email: "admin@northveiz.com" },
+          sender: { name: "NORTHVEIZ", email: "northveiz@gmail.com" },
           to: [{ email: authUser.email! }],
           subject,
           htmlContent: `
