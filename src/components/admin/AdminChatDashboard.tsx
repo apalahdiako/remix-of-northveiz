@@ -45,10 +45,14 @@ function formatCallDuration(seconds: number): string {
 function AdminCallManager({
   sessionId,
   mode,
+  customerName,
+  customerEmail,
   onEnd,
 }: {
   sessionId: string;
   mode: "accept" | "initiate";
+  customerName?: string | null;
+  customerEmail?: string | null;
   onEnd: () => void;
 }) {
   const [status, setStatus] = useState<"connecting" | "active" | "ended">("connecting");
