@@ -497,6 +497,18 @@ export default function AdminChatDashboard() {
         )}
       </AnimatePresence>
 
+      {/* Full-screen Active Call Overlay (admin view, mirrors user calling UI) */}
+      {activeCall && (
+        <AdminCallManager
+          sessionId={activeCall.sessionId}
+          mode={activeCall.mode}
+          customerName={activeCall.customerName}
+          customerEmail={activeCall.customerEmail}
+          onEnd={() => setActiveCall(null)}
+        />
+      )}
+
+
     <div className="flex h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border bg-background shadow-lg">
       {/* Sidebar */}
       <div className={`flex flex-col border-r border-border bg-card ${selected ? "hidden md:flex" : "flex"} w-full md:w-[35%] md:min-w-[300px]`}>
