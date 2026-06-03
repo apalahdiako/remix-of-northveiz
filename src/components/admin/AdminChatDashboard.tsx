@@ -254,7 +254,11 @@ export default function AdminChatDashboard() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Call state
-  const [incomingCall, setIncomingCall] = useState<{ sessionId: string } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{
+    sessionId: string;
+    customerName?: string | null;
+    customerEmail?: string | null;
+  } | null>(null);
   const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate" } | null>(null);
 
   // Listen for incoming calls from users
@@ -264,7 +268,11 @@ export default function AdminChatDashboard() {
     });
     channel.on("broadcast", { event: "admin_call_notify" }, ({ payload }) => {
       if (payload?.type === "CALL_INITIATED") {
-        setIncomingCall({ sessionId: payload.sessionId });
+        setIncomingCall({
+          sessionId: payload.sessionId,
+          customerName: payload.customerName ?? null,
+          customerEmail: payload.customerEmail ?? null,
+        });
         // Auto-dismiss after 30s
         setTimeout(() => setIncomingCall(prev => prev?.sessionId === payload.sessionId ? null : prev), 30000);
         // Play ring sound
