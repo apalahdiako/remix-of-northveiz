@@ -428,7 +428,7 @@ export const AdminIncomingCall = ({
   );
 };
 
-// ─── Admin Active Call Mini-Bar ───
+// ─── Admin Active Call Mini-Bar (legacy, kept for compatibility) ───
 export const AdminCallBar = ({ duration, muted, onToggleMute, onEndCall }: {
   duration: number; muted: boolean; onToggleMute: () => void; onEndCall: () => void;
 }) => (
@@ -448,6 +448,93 @@ export const AdminCallBar = ({ duration, muted, onToggleMute, onEndCall }: {
     </div>
   </div>
 );
+
+// ─── Admin Calling Overlay (Full screen — mirrors UserCallingOverlay) ───
+export const AdminCallingOverlay = ({
+  customerName,
+  customerEmail,
+  status,
+  duration,
+  muted,
+  onToggleMute,
+  onEndCall,
+}: {
+  customerName?: string | null;
+  customerEmail?: string | null;
+  status: "connecting" | "active" | "ended";
+  duration: number;
+  muted: boolean;
+  onToggleMute: () => void;
+  onEndCall: () => void;
+}) => {
+  const displayName = customerName?.trim() || "Customer";
+  const initials = displayName
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "CS";
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-gradient-to-b from-gray-900 via-gray-800 to-black flex flex-col items-center justify-center"
+      >
+        <p className="text-white/60 text-sm tracking-widest uppercase mb-6">
+          {status === "connecting" && "Menghubungkan..."}
+          {status === "active" && "Terhubung"}
+          {status === "ended" && "Panggilan berakhir"}
+        </p>
+
+        <div className="relative mb-4">
+          {(status === "connecting" || status === "active") && (
+            <>
+              <motion.div animate={{ scale: [1, 1.5], opacity: [0.4, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="absolute inset-0 rounded-full bg-green-500/30" />
+              <motion.div animate={{ scale: [1, 1.3], opacity: [0.3, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }} className="absolute inset-0 rounded-full bg-green-500/20" />
+            </>
+          )}
+          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center border-2 border-white/20">
+            <span className="text-white text-3xl font-bold">{initials}</span>
+          </div>
+        </div>
+
+        <h2 className="text-white text-xl font-semibold mb-1">{displayName}</h2>
+        {customerEmail && (
+          <p className="text-white/50 text-xs flex items-center gap-1 mb-2">
+            <Mail size={11} /> {customerEmail}
+          </p>
+        )}
+        {status === "active" && (
+          <p className="text-green-400 text-lg font-mono mb-8 mt-2">{formatDuration(duration)}</p>
+        )}
+        {status === "connecting" && (
+          <p className="text-white/40 text-sm mb-8 mt-2">Menyiapkan koneksi suara...</p>
+        )}
+
+        <div className="flex items-center gap-6">
+          {status === "active" && (
+            <button
+              onClick={onToggleMute}
+              className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${muted ? "bg-red-500/30 text-red-400" : "bg-white/10 text-white"}`}
+            >
+              {muted ? <MicOff size={24} /> : <Mic size={24} />}
+            </button>
+          )}
+          <button
+            onClick={onEndCall}
+            className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg shadow-red-600/30 transition-colors"
+          >
+            <PhoneOff size={28} />
+          </button>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
 
 export type IncomingCallInfo = {
   sessionId: string;

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioPlayer from "@/components/chat/AudioPlayer";
-import { AdminIncomingCall, AdminCallBar } from "@/components/chat/VoIPCall";
+import { AdminIncomingCall, AdminCallingOverlay } from "@/components/chat/VoIPCall";
 import { AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
@@ -45,10 +45,14 @@ function formatCallDuration(seconds: number): string {
 function AdminCallManager({
   sessionId,
   mode,
+  customerName,
+  customerEmail,
   onEnd,
 }: {
   sessionId: string;
   mode: "accept" | "initiate";
+  customerName?: string | null;
+  customerEmail?: string | null;
   onEnd: () => void;
 }) {
   const [status, setStatus] = useState<"connecting" | "active" | "ended">("connecting");
@@ -232,7 +236,10 @@ function AdminCallManager({
   return (
     <>
       <audio ref={remoteAudioRef} autoPlay className="hidden" />
-      <AdminCallBar
+      <AdminCallingOverlay
+        customerName={customerName}
+        customerEmail={customerEmail}
+        status={status}
         duration={duration}
         muted={muted}
         onToggleMute={toggleMute}
@@ -259,7 +266,7 @@ export default function AdminChatDashboard() {
     customerName?: string | null;
     customerEmail?: string | null;
   } | null>(null);
-  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate" } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate"; customerName?: string | null; customerEmail?: string | null } | null>(null);
 
   // Listen for incoming calls from users
   useEffect(() => {
@@ -289,7 +296,12 @@ export default function AdminChatDashboard() {
 
   const handleAcceptCall = () => {
     if (incomingCall) {
-      setActiveCall({ sessionId: incomingCall.sessionId, mode: "accept" });
+      setActiveCall({
+        sessionId: incomingCall.sessionId,
+        mode: "accept",
+        customerName: incomingCall.customerName,
+        customerEmail: incomingCall.customerEmail,
+      });
       setIncomingCall(null);
     }
   };
@@ -485,6 +497,18 @@ export default function AdminChatDashboard() {
         )}
       </AnimatePresence>
 
+      {/* Full-screen Active Call Overlay (admin view, mirrors user calling UI) */}
+      {activeCall && (
+        <AdminCallManager
+          sessionId={activeCall.sessionId}
+          mode={activeCall.mode}
+          customerName={activeCall.customerName}
+          customerEmail={activeCall.customerEmail}
+          onEnd={() => setActiveCall(null)}
+        />
+      )}
+
+
     <div className="flex h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border bg-background shadow-lg">
       {/* Sidebar */}
       <div className={`flex flex-col border-r border-border bg-card ${selected ? "hidden md:flex" : "flex"} w-full md:w-[35%] md:min-w-[300px]`}>
@@ -555,14 +579,8 @@ export default function AdminChatDashboard() {
           </div>
         ) : (
           <>
-            {/* Active Call Bar - mounts dedicated component */}
-            {activeCall && (
-              <AdminCallManager
-                sessionId={activeCall.sessionId}
-                mode={activeCall.mode}
-                onEnd={() => setActiveCall(null)}
-              />
-            )}
+
+
 
             {/* Chat Header */}
             <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-3">
