@@ -236,7 +236,10 @@ function AdminCallManager({
   return (
     <>
       <audio ref={remoteAudioRef} autoPlay className="hidden" />
-      <AdminCallBar
+      <AdminCallingOverlay
+        customerName={customerName}
+        customerEmail={customerEmail}
+        status={status}
         duration={duration}
         muted={muted}
         onToggleMute={toggleMute}
