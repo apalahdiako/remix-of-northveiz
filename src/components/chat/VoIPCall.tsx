@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Phone, PhoneOff, Mic, MicOff } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { startRingtone, stopRingtone } from "@/lib/ringtone";
 
 export type CallStatus = "idle" | "requesting" | "ringing" | "active" | "ended";
 
