@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioPlayer from "@/components/chat/AudioPlayer";
-import { AdminIncomingCall, AdminCallBar } from "@/components/chat/VoIPCall";
+import { AdminIncomingCall, AdminCallingOverlay } from "@/components/chat/VoIPCall";
 import { AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
