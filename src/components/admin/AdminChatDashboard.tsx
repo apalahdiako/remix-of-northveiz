@@ -266,7 +266,7 @@ export default function AdminChatDashboard() {
     customerName?: string | null;
     customerEmail?: string | null;
   } | null>(null);
-  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate" } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate"; customerName?: string | null; customerEmail?: string | null } | null>(null);
 
   // Listen for incoming calls from users
   useEffect(() => {
