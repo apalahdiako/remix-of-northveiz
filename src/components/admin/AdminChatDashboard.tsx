@@ -296,7 +296,12 @@ export default function AdminChatDashboard() {
 
   const handleAcceptCall = () => {
     if (incomingCall) {
-      setActiveCall({ sessionId: incomingCall.sessionId, mode: "accept" });
+      setActiveCall({
+        sessionId: incomingCall.sessionId,
+        mode: "accept",
+        customerName: incomingCall.customerName,
+        customerEmail: incomingCall.customerEmail,
+      });
       setIncomingCall(null);
     }
   };
