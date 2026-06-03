@@ -285,6 +285,16 @@ export const UserCallingOverlay = ({ sessionId, onClose }: { sessionId: string; 
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Customer ringtone: play while waiting for admin to pick up
+  useEffect(() => {
+    if (call.status === "ringing") {
+      startRingtone("customer", 0.5);
+    } else {
+      stopRingtone();
+    }
+    return () => stopRingtone();
+  }, [call.status]);
+
   return (
     <AnimatePresence>
       <motion.div
