@@ -357,30 +357,76 @@ export const UserCallingOverlay = ({ sessionId, onClose }: { sessionId: string; 
 };
 
 // ─── Admin Incoming Call Notification ───
-export const AdminIncomingCall = ({ sessionId, onAccept, onReject }: {
-  sessionId: string; onAccept: () => void; onReject: () => void;
-}) => (
-  <motion.div
-    initial={{ y: -100, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    exit={{ y: -100, opacity: 0 }}
-    className="fixed top-4 right-4 z-[90] bg-gray-900/95 backdrop-blur-xl rounded-2xl p-5 shadow-2xl border border-white/10 min-w-[280px]"
-  >
-    <div className="flex items-center gap-3 mb-4">
-      <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
-        <Phone className="text-green-400" size={22} />
-      </motion.div>
-      <div>
-        <p className="text-white font-semibold text-sm">Panggilan Masuk</p>
-        <p className="text-white/50 text-xs">User {sessionId.slice(0, 8)}</p>
+export const AdminIncomingCall = ({
+  sessionId,
+  customerName,
+  customerEmail,
+  onAccept,
+  onReject,
+}: {
+  sessionId: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  onAccept: () => void;
+  onReject: () => void;
+}) => {
+  // Play admin ringtone while this notification is mounted
+  useEffect(() => {
+    startRingtone("admin", 0.6);
+    return () => stopRingtone();
+  }, []);
+
+  const displayName = customerName?.trim() || `User ${sessionId.slice(0, 8)}`;
+  const initials = displayName
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <motion.div
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: -100, opacity: 0 }}
+      className="fixed top-4 right-4 z-[90] bg-gray-900/95 backdrop-blur-xl rounded-2xl p-5 shadow-2xl border border-white/10 min-w-[300px] max-w-[340px]"
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <motion.div
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 1, repeat: Infinity }}
+          className="relative w-12 h-12 rounded-full bg-gradient-to-br from-green-500/30 to-emerald-500/30 flex items-center justify-center shrink-0"
+        >
+          <span className="text-green-300 font-bold text-sm">{initials || <Phone size={20} />}</span>
+        </motion.div>
+        <div className="min-w-0 flex-1">
+          <p className="text-white/60 text-[11px] uppercase tracking-wider">Panggilan Masuk</p>
+          <p className="text-white font-semibold text-sm truncate">{displayName}</p>
+          {customerEmail && (
+            <p className="text-white/50 text-xs flex items-center gap-1 truncate">
+              <Mail size={11} /> <span className="truncate">{customerEmail}</span>
+            </p>
+          )}
+        </div>
       </div>
-    </div>
-    <div className="flex gap-3">
-      <button onClick={onReject} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">Tolak</button>
-      <button onClick={onAccept} className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">Terima</button>
-    </div>
-  </motion.div>
-);
+      <div className="flex gap-3">
+        <button
+          onClick={onReject}
+          className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors"
+        >
+          Tolak
+        </button>
+        <button
+          onClick={onAccept}
+          className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+        >
+          Terima
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
 // ─── Admin Active Call Mini-Bar ───
 export const AdminCallBar = ({ duration, muted, onToggleMute, onEndCall }: {
@@ -403,9 +449,15 @@ export const AdminCallBar = ({ duration, muted, onToggleMute, onEndCall }: {
   </div>
 );
 
+export type IncomingCallInfo = {
+  sessionId: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+};
+
 // ─── Hook for admin to listen for incoming calls ───
 export function useIncomingCall() {
-  const [incomingCall, setIncomingCall] = useState<{ sessionId: string } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<IncomingCallInfo | null>(null);
 
   useEffect(() => {
     const channel = supabase.channel("admin-voip-listener", {
@@ -413,7 +465,11 @@ export function useIncomingCall() {
     });
     channel.on("broadcast", { event: "admin_call_notify" }, ({ payload }) => {
       if (payload?.type === "CALL_INITIATED") {
-        setIncomingCall({ sessionId: payload.sessionId });
+        setIncomingCall({
+          sessionId: payload.sessionId,
+          customerName: payload.customerName ?? null,
+          customerEmail: payload.customerEmail ?? null,
+        });
         setTimeout(() => setIncomingCall(null), 30000);
       }
     });
@@ -423,3 +479,4 @@ export function useIncomingCall() {
 
   return { incomingCall, dismiss: () => setIncomingCall(null) };
 }
+
