@@ -186,6 +186,26 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
       localStream.current = stream;
       setupSignaling();
 
+      // Fetch authenticated customer info for the admin notification
+      let customerName = "Tamu";
+      let customerEmail: string | null = null;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          customerEmail = user.email ?? null;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .maybeSingle();
+          customerName =
+            profile?.full_name ||
+            (user.user_metadata as any)?.full_name ||
+            user.email?.split("@")[0] ||
+            "Tamu";
+        }
+      } catch {}
+
       // Also notify admin on a global channel
       const notifyChannel = supabase.channel("admin-voip-listener");
       notifyChannel.subscribe((st) => {
@@ -193,7 +213,7 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
           notifyChannel.send({
             type: "broadcast",
             event: "admin_call_notify",
-            payload: { type: "CALL_INITIATED", sessionId },
+            payload: { type: "CALL_INITIATED", sessionId, customerName, customerEmail },
           });
           setTimeout(() => supabase.removeChannel(notifyChannel), 2000);
         }
