@@ -469,6 +469,8 @@ export default function AdminChatDashboard() {
         {incomingCall && !activeCall && (
           <AdminIncomingCall
             sessionId={incomingCall.sessionId}
+            customerName={incomingCall.customerName}
+            customerEmail={incomingCall.customerEmail}
             onAccept={handleAcceptCall}
             onReject={handleRejectCall}
           />
