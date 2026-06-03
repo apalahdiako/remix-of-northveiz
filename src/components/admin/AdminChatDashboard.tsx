@@ -579,14 +579,8 @@ export default function AdminChatDashboard() {
           </div>
         ) : (
           <>
-            {/* Active Call Bar - mounts dedicated component */}
-            {activeCall && (
-              <AdminCallManager
-                sessionId={activeCall.sessionId}
-                mode={activeCall.mode}
-                onEnd={() => setActiveCall(null)}
-              />
-            )}
+
+
 
             {/* Chat Header */}
             <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-3">
