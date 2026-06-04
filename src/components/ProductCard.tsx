@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { getProductImageFallback } from "@/lib/productImageFallbacks";
 import { useProductLikes } from "@/hooks/useProductLikes";
 import { Heart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProductCardProps {
   id: string;
@@ -16,63 +17,91 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, name, price, image, comingSoon, outOfStock }: ProductCardProps) => {
   const navigate = useNavigate();
-  const { likeCount, isLiked } = useProductLikes(id);
+  const { isLiked, toggleLike, isLoading } = useProductLikes(id);
   const fallback = getProductImageFallback(id);
-  const displaySrc = image || fallback?.front || '/placeholder.svg';
+  const primary = image || fallback?.front || "/placeholder.svg";
+  const [secondary, setSecondary] = useState<string | null>(fallback?.back || null);
 
-  const handleBuyNow = (e: React.MouseEvent) => {
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("product_images")
+        .select("image_url,image_type")
+        .eq("product_id", id)
+        .eq("image_type", "back")
+        .limit(1);
+      if (active && data && data[0]?.image_url) setSecondary(data[0].image_url);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate(`/buy-now?id=${id}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}&image=${encodeURIComponent(displaySrc)}`);
+    e.stopPropagation();
+    toggleLike();
   };
 
   return (
     <div className="group">
-      <Link to={`/product/${id}`}>
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-muted mb-3">
+      <Link to={`/product/${id}`} className="block">
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           {comingSoon && (
-            <Badge className="absolute top-3 left-3 z-10 bg-foreground text-background font-bold">
-              COMING SOON
-            </Badge>
+            <span className="absolute top-3 left-3 z-10 eyebrow bg-background/80 backdrop-blur px-2 py-1">
+              Coming soon
+            </span>
           )}
           {outOfStock && (
-            <Badge className="absolute top-3 left-3 z-10 bg-destructive text-destructive-foreground font-bold">
-              STOK HABIS
-            </Badge>
+            <span className="absolute top-3 left-3 z-10 eyebrow bg-background/80 backdrop-blur px-2 py-1 text-destructive">
+              Sold out
+            </span>
           )}
+
           <img
-            src={displaySrc}
+            src={primary}
             alt={name}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className={`w-full h-full object-cover transition-opacity duration-500 ${
+              secondary ? "group-hover:opacity-0" : "group-hover:scale-[1.02]"
+            }`}
             loading="lazy"
             decoding="async"
-            onError={(e) => { e.currentTarget.src = fallback?.front || '/placeholder.svg'; }}
+            onError={(e) => {
+              e.currentTarget.src = fallback?.front || "/placeholder.svg";
+            }}
           />
-        </div>
-      </Link>
-      <Link to={`/product/${id}`}>
-        <h3 className="font-bold text-sm mb-1 uppercase tracking-tight">{name}</h3>
-        <div className="flex items-center justify-between mb-2">
-          <p className="font-bold text-sm">{price}</p>
-          {likeCount > 0 && (
-            <div className="flex items-center gap-1">
-              <Heart 
-                className={`h-3.5 w-3.5 ${
-                  isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'
-                }`}
-              />
-              <span className="text-xs font-semibold text-muted-foreground">
-                {likeCount}
-              </span>
-            </div>
+          {secondary && (
+            <img
+              src={secondary}
+              alt={`${name} alternate`}
+              className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              loading="lazy"
+              decoding="async"
+            />
           )}
+
+          <button
+            type="button"
+            onClick={handleWishlist}
+            disabled={isLoading}
+            aria-label="Add to wishlist"
+            className="absolute top-3 right-3 z-10 h-9 w-9 grid place-items-center bg-background/70 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors ${
+                isLiked ? "fill-accent text-accent" : "text-foreground"
+              }`}
+              strokeWidth={1.5}
+            />
+          </button>
         </div>
       </Link>
-      <Button
-        onClick={handleBuyNow}
-        className="w-full h-9 rounded-full text-sm font-bold"
-      >
-        Buy Now
-      </Button>
+
+      <Link to={`/product/${id}`} className="block pt-4 pb-1">
+        <h3 className="eyebrow mb-2 truncate">{name}</h3>
+        <p className="text-sm font-light tracking-wide text-foreground">{price}</p>
+      </Link>
     </div>
   );
 };

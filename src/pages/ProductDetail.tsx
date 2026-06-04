@@ -223,8 +223,10 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen pb-24 pt-16">
+      <div className="md:grid md:grid-cols-2 md:gap-12 lg:gap-20 md:max-w-[1480px] md:mx-auto md:px-10 md:pt-8 md:items-start">
       {/* Product Image Carousel */}
-      <div className="relative">
+      <div className="relative md:sticky md:top-24">
+
         <Carousel opts={{ align: "start", loop: thumbnailImages.length > 1 }} className="w-full" setApi={setMainCarouselApi}>
           <CarouselContent>
             {thumbnailImages.map((thumb) => (
@@ -270,7 +272,10 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      <div className="container px-6 pb-6">
+      <div className="container px-6 pb-6 md:px-0 md:max-w-none md:pt-2">
+        {/* Eyebrow */}
+        <p className="eyebrow text-muted-foreground mb-3 hidden md:block">Northveiz</p>
+
         {/* Status Badge */}
         {product.stock_status === 'coming_soon' && (
           <Badge className="mb-3 bg-foreground text-background font-bold">COMING SOON</Badge>
@@ -280,7 +285,7 @@ const ProductDetail = () => {
         )}
 
         {/* Product Title */}
-        <h1 className="text-2xl font-bold mb-1 uppercase tracking-tight">{product.name}</h1>
+        <h1 className="text-2xl md:text-4xl lg:text-5xl font-display mb-1 tracking-tight normal-case">{product.name}</h1>
 
         {/* Rating */}
         {totalReviews > 0 && (
@@ -296,26 +301,28 @@ const ProductDetail = () => {
         )}
 
         {/* Price and Wishlist */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-2xl font-bold">{product.price}</p>
+        <div className="flex items-center justify-between mb-8 mt-4">
+          <p className="text-xl md:text-2xl font-light tracking-wide">{product.price}</p>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleLike} disabled={isLikeLoading} className="relative group">
-              <Heart className={`h-5 w-5 transition-all duration-300 ${isLiked ? 'fill-red-500 text-red-500 scale-110' : 'text-muted-foreground group-hover:text-red-500 group-hover:scale-110'}`} />
+            <Button variant="ghost" size="icon" onClick={toggleLike} disabled={isLikeLoading} className="relative group" aria-label="Wishlist">
+              <Heart className={`h-5 w-5 transition-all duration-300 ${isLiked ? 'fill-accent text-accent scale-110' : 'text-muted-foreground group-hover:text-accent'}`} strokeWidth={1.5} />
             </Button>
-            {likeCount > 0 && <span className="text-sm font-semibold text-muted-foreground">{likeCount}</span>}
+            {likeCount > 0 && <span className="text-sm font-light text-muted-foreground">{likeCount}</span>}
           </div>
         </div>
+
 
         {/* Size Selection */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Ukuran</h3>
+            <h3 className="eyebrow">Size</h3>
             {product.size_guide_url && (
-              <button onClick={() => setSizeGuideOpen(true)} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
-                Size Guide <ChevronRight className="w-4 h-4" />
+              <button onClick={() => setSizeGuideOpen(true)} className="flex items-center gap-1 eyebrow text-muted-foreground hover:text-foreground transition-colors">
+                Size guide <ChevronRight className="w-3 h-3" />
               </button>
             )}
           </div>
+
           <div className="grid grid-cols-5 gap-3">
             {SIZE_KEYS.map((size) => {
               const stock = getSizeStock(size);
@@ -386,11 +393,11 @@ const ProductDetail = () => {
 
         {/* Add to Cart Button */}
         <Button
-          className="w-full h-14 rounded-full text-base font-bold bg-foreground text-background hover:bg-foreground/90"
+          className="w-full h-14 rounded-none text-xs font-medium tracking-[0.2em] uppercase bg-foreground text-background hover:bg-foreground/90"
           onClick={handleAddToCart}
           disabled={product.stock_status === 'out_of_stock' || product.stock_status === 'coming_soon'}
         >
-          {product.stock_status === 'out_of_stock' ? 'Stok Habis' : product.stock_status === 'coming_soon' ? 'Coming Soon' : 'Tambah Ke Keranjang'}
+          {product.stock_status === 'out_of_stock' ? 'Sold out' : product.stock_status === 'coming_soon' ? 'Coming soon' : 'Add to bag'}
         </Button>
 
         {/* Product Reviews */}
@@ -398,6 +405,8 @@ const ProductDetail = () => {
           <ProductReviews productId={id!} productName={product.name} />
         </div>
       </div>
+      </div>
+
 
       {/* Size Guide Modal */}
       <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
