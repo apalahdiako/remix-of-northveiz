@@ -142,7 +142,7 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
   return (
     <>
       {showCallOverlay && (
-        <UserCallingOverlay sessionId={sessionId.current} onClose={() => setShowCallOverlay(false)} />
+        <UserCallingOverlay sessionId={sessionId.current} video={callIsVideo} onClose={() => setShowCallOverlay(false)} />
       )}
 
       {/* Incoming call from admin notification */}
