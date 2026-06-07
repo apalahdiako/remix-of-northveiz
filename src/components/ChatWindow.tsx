@@ -156,10 +156,12 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
           >
             <div className="flex items-center gap-3 mb-3">
               <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                <PhoneIncoming className="text-green-400" size={20} />
+                {incomingIsVideo ? <Video className="text-green-400" size={20} /> : <PhoneIncoming className="text-green-400" size={20} />}
               </motion.div>
               <div>
-                <p className="text-white font-semibold text-sm">Panggilan dari Admin</p>
+                <p className="text-white font-semibold text-sm">
+                  {incomingIsVideo ? "Panggilan Video dari Admin" : "Panggilan dari Admin"}
+                </p>
                 <p className="text-white/50 text-xs">NORTHVEIZ Support</p>
               </div>
             </div>
@@ -171,7 +173,7 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
                 Tolak
               </button>
               <button
-                onClick={() => { setIncomingAdminCall(false); setShowCallOverlay(true); }}
+                onClick={() => { setIncomingAdminCall(false); setCallIsVideo(incomingIsVideo); setShowCallOverlay(true); }}
                 className="flex-1 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
               >
                 Terima
@@ -187,13 +189,22 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
           <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
             <div className="w-8" />
             <h3 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Dukungan Chat</h3>
-            <button
-              onClick={() => setShowCallOverlay(true)}
-              className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
-              title="Panggilan Suara"
-            >
-              <Phone size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { setCallIsVideo(false); setShowCallOverlay(true); }}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                title="Panggilan Suara"
+              >
+                <Phone size={18} />
+              </button>
+              <button
+                onClick={() => { setCallIsVideo(true); setShowCallOverlay(true); }}
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                title="Panggilan Video"
+              >
+                <Video size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
