@@ -248,6 +248,13 @@ function AdminCallManager({
     }
   };
 
+  const toggleVideo = () => {
+    if (localStream.current) {
+      const t = localStream.current.getVideoTracks()[0];
+      if (t) { t.enabled = !t.enabled; setVideoOff(!t.enabled); }
+    }
+  };
+
   return (
     <>
       <audio ref={remoteAudioRef} autoPlay className="hidden" />
@@ -257,7 +264,12 @@ function AdminCallManager({
         status={status}
         duration={duration}
         muted={muted}
+        isVideo={isVideo}
+        videoOff={videoOff}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
         onToggleMute={toggleMute}
+        onToggleVideo={toggleVideo}
         onEndCall={endCall}
       />
     </>
