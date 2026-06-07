@@ -492,11 +492,6 @@ export const AdminIncomingCall = ({
   onAccept: () => void;
   onReject: () => void;
 }) => {
-  customerName?: string | null;
-  customerEmail?: string | null;
-  onAccept: () => void;
-  onReject: () => void;
-}) => {
   // Play admin ringtone while this notification is mounted
   useEffect(() => {
     startRingtone("admin", 0.6);
