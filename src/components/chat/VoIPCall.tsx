@@ -185,14 +185,23 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
     channelRef.current = channel;
   }, [sessionId, role, createPeerConnection, cleanup, onClose]);
 
+  const attachLocalVideo = useCallback(() => {
+    if (localVideoRef.current && localStream.current) {
+      localVideoRef.current.srcObject = localStream.current;
+      localVideoRef.current.play().catch(() => {});
+    }
+  }, []);
+
   const initiateCall = useCallback(async () => {
     setStatus("requesting");
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: isVideo.current ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
       });
       localStream.current = stream;
+      attachLocalVideo();
       setupSignaling();
 
       // Fetch authenticated customer info for the admin notification
@@ -222,7 +231,7 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
           notifyChannel.send({
             type: "broadcast",
             event: "admin_call_notify",
-            payload: { type: "CALL_INITIATED", sessionId, customerName, customerEmail },
+            payload: { type: "CALL_INITIATED", sessionId, customerName, customerEmail, isVideo: isVideo.current },
           });
           setTimeout(() => supabase.removeChannel(notifyChannel), 2000);
         }
@@ -230,17 +239,20 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
 
       setStatus("ringing");
     } catch {
-      setError("Izin mikrofon diperlukan. Aktifkan di pengaturan browser Anda.");
+      setError(isVideo.current ? "Izin kamera & mikrofon diperlukan." : "Izin mikrofon diperlukan. Aktifkan di pengaturan browser Anda.");
       setStatus("idle");
     }
-  }, [setupSignaling, sessionId]);
+  }, [setupSignaling, sessionId, attachLocalVideo]);
 
-  const acceptCall = useCallback(async () => {
+  const acceptCall = useCallback(async (acceptVideo?: boolean) => {
+    if (typeof acceptVideo === "boolean") isVideo.current = acceptVideo;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: isVideo.current ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
       });
       localStream.current = stream;
+      attachLocalVideo();
       setupSignaling();
 
       // small delay to ensure channel is subscribed
@@ -253,9 +265,9 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
       }, 500);
       setStatus("active");
     } catch {
-      setError("Izin mikrofon diperlukan.");
+      setError(isVideo.current ? "Izin kamera & mikrofon diperlukan." : "Izin mikrofon diperlukan.");
     }
-  }, [setupSignaling]);
+  }, [setupSignaling, attachLocalVideo]);
 
   const rejectCall = useCallback(() => {
     setupSignaling();
@@ -277,9 +289,16 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
     }
   }, []);
 
+  const toggleVideo = useCallback(() => {
+    if (localStream.current) {
+      const t = localStream.current.getVideoTracks()[0];
+      if (t) { t.enabled = !t.enabled; setVideoOff(!t.enabled); }
+    }
+  }, []);
+
   useEffect(() => { return cleanup; }, [cleanup]);
 
-  return { status, duration, muted, error, initiateCall, acceptCall, rejectCall, handleEndCall, toggleMute, remoteAudioRef };
+  return { status, duration, muted, videoOff, error, isVideo: isVideo.current, initiateCall, acceptCall, rejectCall, handleEndCall, toggleMute, toggleVideo, remoteAudioRef, localVideoRef, remoteVideoRef };
 }
 
 // ─── User Calling Overlay (Full screen, Shopee CS style) ───
