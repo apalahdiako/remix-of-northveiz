@@ -1,4 +1,4 @@
-import { Menu, ShoppingBag, User, Search, MessageCircle, Phone } from "lucide-react";
+import { Menu, ShoppingBag, User, Search, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import logo from "@/assets/logo.png";
