@@ -51,6 +51,7 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
     });
     channel.on("broadcast", { event: "incoming_call" }, ({ payload }) => {
       if (payload?.type === "ADMIN_CALLING") {
+        setIncomingIsVideo(!!payload.isVideo);
         setIncomingAdminCall(true);
         setTimeout(() => setIncomingAdminCall(prev => prev ? false : prev), 30000);
       }
