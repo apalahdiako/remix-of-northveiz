@@ -550,17 +550,25 @@ export default function AdminChatDashboard() {
             </div>
             <button
               onClick={() => {
-                if (selected) {
-                  handleCallBackUser(selected);
-                } else {
-                  toast.error("Pilih percakapan terlebih dahulu");
-                }
+                if (selected) handleCallBackUser(selected, false);
+                else toast.error("Pilih percakapan terlebih dahulu");
               }}
               disabled={!!activeCall}
               className="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors disabled:opacity-30 shrink-0"
-              title="Telepon User Aktif"
+              title="Panggilan Suara"
             >
               <Phone size={20} />
+            </button>
+            <button
+              onClick={() => {
+                if (selected) handleCallBackUser(selected, true);
+                else toast.error("Pilih percakapan terlebih dahulu");
+              }}
+              disabled={!!activeCall}
+              className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors disabled:opacity-30 shrink-0"
+              title="Panggilan Video"
+            >
+              <Video size={20} />
             </button>
           </div>
         </div>
