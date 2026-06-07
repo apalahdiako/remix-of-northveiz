@@ -37,7 +37,9 @@ const ChatWindow = ({ open, onClose }: ChatWindowProps) => {
   const [input, setInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const [showCallOverlay, setShowCallOverlay] = useState(false);
+  const [callIsVideo, setCallIsVideo] = useState(false);
   const [incomingAdminCall, setIncomingAdminCall] = useState(false);
+  const [incomingIsVideo, setIncomingIsVideo] = useState(false);
   const sessionId = useRef(getSessionId());
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
