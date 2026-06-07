@@ -292,8 +292,9 @@ export default function AdminChatDashboard() {
     sessionId: string;
     customerName?: string | null;
     customerEmail?: string | null;
+    isVideo?: boolean;
   } | null>(null);
-  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate"; customerName?: string | null; customerEmail?: string | null } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate"; isVideo?: boolean; customerName?: string | null; customerEmail?: string | null } | null>(null);
 
   // Listen for incoming calls from users
   useEffect(() => {
@@ -306,10 +307,9 @@ export default function AdminChatDashboard() {
           sessionId: payload.sessionId,
           customerName: payload.customerName ?? null,
           customerEmail: payload.customerEmail ?? null,
+          isVideo: !!payload.isVideo,
         });
-        // Auto-dismiss after 30s
         setTimeout(() => setIncomingCall(prev => prev?.sessionId === payload.sessionId ? null : prev), 30000);
-        // Play ring sound
         try {
           const audio = new Audio(PING_SOUND_URL);
           audio.volume = 0.7;
@@ -326,6 +326,7 @@ export default function AdminChatDashboard() {
       setActiveCall({
         sessionId: incomingCall.sessionId,
         mode: "accept",
+        isVideo: incomingCall.isVideo,
         customerName: incomingCall.customerName,
         customerEmail: incomingCall.customerEmail,
       });
@@ -342,7 +343,6 @@ export default function AdminChatDashboard() {
           setTimeout(() => supabase.removeChannel(ch), 1000);
         }
       });
-      // Log missed call
       supabase.from("chat_messages").insert({
         session_id: incomingCall.sessionId,
         role: "admin",
@@ -353,13 +353,13 @@ export default function AdminChatDashboard() {
     }
   };
 
-  const handleCallBackUser = (sessionId: string) => {
+  const handleCallBackUser = (sessionId: string, withVideo: boolean = false) => {
     if (activeCall) {
       toast.error("Sedang dalam panggilan aktif");
       return;
     }
-    setActiveCall({ sessionId, mode: "initiate" });
-    toast.success("Menghubungi user...");
+    setActiveCall({ sessionId, mode: "initiate", isVideo: withVideo });
+    toast.success(withVideo ? "Memulai panggilan video..." : "Menghubungi user...");
   };
 
   const loadSessions = useCallback(async () => {
