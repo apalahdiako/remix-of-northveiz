@@ -13,10 +13,11 @@ function formatDuration(seconds: number): string {
 }
 
 // ─── Hook ───
-export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: () => void) {
+export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: () => void, withVideo: boolean = false) {
   const [status, setStatus] = useState<CallStatus>("idle");
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [videoOff, setVideoOff] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const localStream = useRef<MediaStream | null>(null);
@@ -25,6 +26,9 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
   const timerRef = useRef<number | null>(null);
   const callStartTime = useRef<number>(0);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const isVideo = useRef<boolean>(withVideo);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
