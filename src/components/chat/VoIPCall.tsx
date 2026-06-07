@@ -481,10 +481,17 @@ export const AdminIncomingCall = ({
   sessionId,
   customerName,
   customerEmail,
+  isVideo,
   onAccept,
   onReject,
 }: {
   sessionId: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  isVideo?: boolean;
+  onAccept: () => void;
+  onReject: () => void;
+}) => {
   customerName?: string | null;
   customerEmail?: string | null;
   onAccept: () => void;
