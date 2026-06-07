@@ -1,4 +1,4 @@
-import { Menu, ShoppingBag, User, Search, MessageCircle } from "lucide-react";
+import { Menu, ShoppingBag, User, Search, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import logo from "@/assets/logo.png";
@@ -93,17 +93,20 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick, onChatClick }: Header
         </Link>
 
         {/* Right: icons */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3 sm:gap-5">
           <button onClick={onSearchClick} aria-label="Search" className={`${iconClass} transition-opacity`}>
             <Search size={18} strokeWidth={1.5} />
           </button>
-          <button onClick={onChatClick} aria-label="Chat" className={`hidden sm:inline-flex ${iconClass} transition-opacity`}>
+          <button onClick={onChatClick} aria-label="Call" className={`${iconClass} transition-opacity`}>
+            <Phone size={18} strokeWidth={1.5} />
+          </button>
+          <button onClick={onChatClick} aria-label="Chat" className={`${iconClass} transition-opacity`}>
             <MessageCircle size={18} strokeWidth={1.5} />
           </button>
           <Link
             to={user ? "/account" : "/auth"}
             aria-label={user ? "Account" : "Login"}
-            className={`hidden sm:inline-flex ${iconClass} transition-opacity`}
+            className={`${iconClass} transition-opacity`}
           >
             <User size={18} strokeWidth={1.5} />
           </Link>
