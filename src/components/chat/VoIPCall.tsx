@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Phone, PhoneOff, Mic, MicOff, Mail } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, Mail, Video, VideoOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { startRingtone, stopRingtone } from "@/lib/ringtone";
@@ -13,10 +13,11 @@ function formatDuration(seconds: number): string {
 }
 
 // ─── Hook ───
-export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: () => void) {
+export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: () => void, withVideo: boolean = false) {
   const [status, setStatus] = useState<CallStatus>("idle");
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [videoOff, setVideoOff] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const localStream = useRef<MediaStream | null>(null);
@@ -25,6 +26,9 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
   const timerRef = useRef<number | null>(null);
   const callStartTime = useRef<number>(0);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const isVideo = useRef<boolean>(withVideo);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -76,9 +80,14 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
     };
 
     pc.ontrack = (e) => {
+      const stream = e.streams[0];
       if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = e.streams[0];
+        remoteAudioRef.current.srcObject = stream;
         remoteAudioRef.current.play().catch(() => {});
+      }
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch(() => {});
       }
     };
 
@@ -176,14 +185,23 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
     channelRef.current = channel;
   }, [sessionId, role, createPeerConnection, cleanup, onClose]);
 
+  const attachLocalVideo = useCallback(() => {
+    if (localVideoRef.current && localStream.current) {
+      localVideoRef.current.srcObject = localStream.current;
+      localVideoRef.current.play().catch(() => {});
+    }
+  }, []);
+
   const initiateCall = useCallback(async () => {
     setStatus("requesting");
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: isVideo.current ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
       });
       localStream.current = stream;
+      attachLocalVideo();
       setupSignaling();
 
       // Fetch authenticated customer info for the admin notification
@@ -213,7 +231,7 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
           notifyChannel.send({
             type: "broadcast",
             event: "admin_call_notify",
-            payload: { type: "CALL_INITIATED", sessionId, customerName, customerEmail },
+            payload: { type: "CALL_INITIATED", sessionId, customerName, customerEmail, isVideo: isVideo.current },
           });
           setTimeout(() => supabase.removeChannel(notifyChannel), 2000);
         }
@@ -221,17 +239,20 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
 
       setStatus("ringing");
     } catch {
-      setError("Izin mikrofon diperlukan. Aktifkan di pengaturan browser Anda.");
+      setError(isVideo.current ? "Izin kamera & mikrofon diperlukan." : "Izin mikrofon diperlukan. Aktifkan di pengaturan browser Anda.");
       setStatus("idle");
     }
-  }, [setupSignaling, sessionId]);
+  }, [setupSignaling, sessionId, attachLocalVideo]);
 
-  const acceptCall = useCallback(async () => {
+  const acceptCall = useCallback(async (acceptVideo?: boolean) => {
+    if (typeof acceptVideo === "boolean") isVideo.current = acceptVideo;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: isVideo.current ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
       });
       localStream.current = stream;
+      attachLocalVideo();
       setupSignaling();
 
       // small delay to ensure channel is subscribed
@@ -244,9 +265,9 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
       }, 500);
       setStatus("active");
     } catch {
-      setError("Izin mikrofon diperlukan.");
+      setError(isVideo.current ? "Izin kamera & mikrofon diperlukan." : "Izin mikrofon diperlukan.");
     }
-  }, [setupSignaling]);
+  }, [setupSignaling, attachLocalVideo]);
 
   const rejectCall = useCallback(() => {
     setupSignaling();
@@ -268,14 +289,21 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
     }
   }, []);
 
+  const toggleVideo = useCallback(() => {
+    if (localStream.current) {
+      const t = localStream.current.getVideoTracks()[0];
+      if (t) { t.enabled = !t.enabled; setVideoOff(!t.enabled); }
+    }
+  }, []);
+
   useEffect(() => { return cleanup; }, [cleanup]);
 
-  return { status, duration, muted, error, initiateCall, acceptCall, rejectCall, handleEndCall, toggleMute, remoteAudioRef };
+  return { status, duration, muted, videoOff, error, isVideo: isVideo.current, initiateCall, acceptCall, rejectCall, handleEndCall, toggleMute, toggleVideo, remoteAudioRef, localVideoRef, remoteVideoRef };
 }
 
 // ─── User Calling Overlay (Full screen, Shopee CS style) ───
-export const UserCallingOverlay = ({ sessionId, onClose }: { sessionId: string; onClose: () => void }) => {
-  const call = useVoIPCall(sessionId, "user", onClose);
+export const UserCallingOverlay = ({ sessionId, onClose, video = false }: { sessionId: string; onClose: () => void; video?: boolean }) => {
+  const call = useVoIPCall(sessionId, "user", onClose, video);
   const started = useRef(false);
 
   useEffect(() => {
@@ -294,6 +322,98 @@ export const UserCallingOverlay = ({ sessionId, onClose }: { sessionId: string; 
     }
     return () => stopRingtone();
   }, [call.status]);
+
+  if (video) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] bg-black flex flex-col"
+        >
+          <audio ref={call.remoteAudioRef} autoPlay className="hidden" />
+          {/* Remote video full-screen */}
+          <video
+            ref={call.remoteVideoRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover bg-gray-900"
+          />
+          {/* Dark overlay when not active */}
+          {call.status !== "active" && (
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800/90 to-black flex flex-col items-center justify-center">
+              <p className="text-white/60 text-sm tracking-widest uppercase mb-4">
+                {call.status === "requesting" && "Meminta izin kamera..."}
+                {call.status === "ringing" && "Menghubungi..."}
+                {call.status === "ended" && "Panggilan berakhir"}
+              </p>
+              <div className="relative mb-4">
+                {call.status === "ringing" && (
+                  <>
+                    <motion.div animate={{ scale: [1, 1.5], opacity: [0.4, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="absolute inset-0 rounded-full bg-green-500/30" />
+                  </>
+                )}
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center border-2 border-white/20">
+                  <span className="text-white text-3xl font-bold">CS</span>
+                </div>
+              </div>
+              <h2 className="text-white text-xl font-semibold">NORTHVEIZ Support</h2>
+              {call.status === "ringing" && (
+                <p className="text-white/40 text-sm mt-2">Menunggu admin menerima panggilan video...</p>
+              )}
+            </div>
+          )}
+
+          {/* Top bar: name + duration */}
+          {call.status === "active" && (
+            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-5 pt-5 pb-8">
+              <p className="text-white font-semibold">NORTHVEIZ Support</p>
+              <p className="text-green-400 text-sm font-mono">{formatDuration(call.duration)}</p>
+            </div>
+          )}
+
+          {/* Local video PIP */}
+          <div className="absolute top-4 right-4 z-20 w-28 h-40 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-gray-800">
+            <video
+              ref={call.localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${call.videoOff ? "opacity-0" : ""}`}
+            />
+            {call.videoOff && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white/60">
+                <VideoOff size={28} />
+              </div>
+            )}
+          </div>
+
+          {call.error && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-red-500/20 border border-red-500/30 rounded-xl px-6 py-3 max-w-[300px]">
+              <p className="text-red-300 text-sm text-center">{call.error}</p>
+            </div>
+          )}
+
+          {/* Bottom controls */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent pb-10 pt-12 flex items-center justify-center gap-5">
+            <button onClick={call.toggleMute} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${call.muted ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+              {call.muted ? <MicOff size={22} /> : <Mic size={22} />}
+            </button>
+            <button onClick={call.toggleVideo} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${call.videoOff ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+              {call.videoOff ? <VideoOff size={22} /> : <Video size={22} />}
+            </button>
+            <button
+              onClick={call.status === "idle" || call.status === "ended" ? onClose : call.handleEndCall}
+              className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg shadow-red-600/30 transition-colors"
+            >
+              <PhoneOff size={26} />
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -361,12 +481,14 @@ export const AdminIncomingCall = ({
   sessionId,
   customerName,
   customerEmail,
+  isVideo,
   onAccept,
   onReject,
 }: {
   sessionId: string;
   customerName?: string | null;
   customerEmail?: string | null;
+  isVideo?: boolean;
   onAccept: () => void;
   onReject: () => void;
 }) => {
@@ -401,7 +523,9 @@ export const AdminIncomingCall = ({
           <span className="text-green-300 font-bold text-sm">{initials || <Phone size={20} />}</span>
         </motion.div>
         <div className="min-w-0 flex-1">
-          <p className="text-white/60 text-[11px] uppercase tracking-wider">Panggilan Masuk</p>
+          <p className="text-white/60 text-[11px] uppercase tracking-wider flex items-center gap-1">
+            {isVideo ? <><Video size={11} /> Panggilan Video Masuk</> : <>Panggilan Masuk</>}
+          </p>
           <p className="text-white font-semibold text-sm truncate">{displayName}</p>
           {customerEmail && (
             <p className="text-white/50 text-xs flex items-center gap-1 truncate">
@@ -456,7 +580,12 @@ export const AdminCallingOverlay = ({
   status,
   duration,
   muted,
+  isVideo = false,
+  videoOff = false,
+  localVideoRef,
+  remoteVideoRef,
   onToggleMute,
+  onToggleVideo,
   onEndCall,
 }: {
   customerName?: string | null;
@@ -464,7 +593,12 @@ export const AdminCallingOverlay = ({
   status: "connecting" | "active" | "ended";
   duration: number;
   muted: boolean;
+  isVideo?: boolean;
+  videoOff?: boolean;
+  localVideoRef?: React.RefObject<HTMLVideoElement>;
+  remoteVideoRef?: React.RefObject<HTMLVideoElement>;
   onToggleMute: () => void;
+  onToggleVideo?: () => void;
   onEndCall: () => void;
 }) => {
   const displayName = customerName?.trim() || "Customer";
@@ -475,6 +609,77 @@ export const AdminCallingOverlay = ({
     .slice(0, 2)
     .join("")
     .toUpperCase() || "CS";
+
+  if (isVideo) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] bg-black flex flex-col"
+        >
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover bg-gray-900"
+          />
+          {status !== "active" && (
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800/90 to-black flex flex-col items-center justify-center">
+              <p className="text-white/60 text-sm tracking-widest uppercase mb-4">
+                {status === "connecting" && "Menghubungkan video..."}
+                {status === "ended" && "Panggilan berakhir"}
+              </p>
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center border-2 border-white/20 mb-3">
+                <span className="text-white text-3xl font-bold">{initials}</span>
+              </div>
+              <h2 className="text-white text-xl font-semibold">{displayName}</h2>
+            </div>
+          )}
+
+          {status === "active" && (
+            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-5 pt-5 pb-8">
+              <p className="text-white font-semibold">{displayName}</p>
+              <p className="text-green-400 text-sm font-mono">{formatDuration(duration)}</p>
+            </div>
+          )}
+
+          <div className="absolute top-4 right-4 z-20 w-28 h-40 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-gray-800">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${videoOff ? "opacity-0" : ""}`}
+            />
+            {videoOff && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white/60">
+                <VideoOff size={28} />
+              </div>
+            )}
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent pb-10 pt-12 flex items-center justify-center gap-5">
+            <button onClick={onToggleMute} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${muted ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+              {muted ? <MicOff size={22} /> : <Mic size={22} />}
+            </button>
+            {onToggleVideo && (
+              <button onClick={onToggleVideo} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${videoOff ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+                {videoOff ? <VideoOff size={22} /> : <Video size={22} />}
+              </button>
+            )}
+            <button
+              onClick={onEndCall}
+              className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg shadow-red-600/30 transition-colors"
+            >
+              <PhoneOff size={26} />
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -540,6 +745,7 @@ export type IncomingCallInfo = {
   sessionId: string;
   customerName?: string | null;
   customerEmail?: string | null;
+  isVideo?: boolean;
 };
 
 // ─── Hook for admin to listen for incoming calls ───
@@ -556,6 +762,7 @@ export function useIncomingCall() {
           sessionId: payload.sessionId,
           customerName: payload.customerName ?? null,
           customerEmail: payload.customerEmail ?? null,
+          isVideo: !!payload.isVideo,
         });
         setTimeout(() => setIncomingCall(null), 30000);
       }

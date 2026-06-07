@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Send, Smile, ImageIcon, X, Phone, PhoneOff, PhoneMissed } from "lucide-react";
+import { Search, Send, Smile, ImageIcon, X, Phone, PhoneOff, PhoneMissed, Video } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -45,12 +45,14 @@ function formatCallDuration(seconds: number): string {
 function AdminCallManager({
   sessionId,
   mode,
+  isVideo = false,
   customerName,
   customerEmail,
   onEnd,
 }: {
   sessionId: string;
   mode: "accept" | "initiate";
+  isVideo?: boolean;
   customerName?: string | null;
   customerEmail?: string | null;
   onEnd: () => void;
@@ -58,12 +60,15 @@ function AdminCallManager({
   const [status, setStatus] = useState<"connecting" | "active" | "ended">("connecting");
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [videoOff, setVideoOff] = useState(false);
   const localStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const timerRef = useRef<number | null>(null);
   const callStartTime = useRef<number>(0);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -111,9 +116,14 @@ function AdminCallManager({
       }
     };
     pc.ontrack = (e) => {
+      const stream = e.streams[0];
       if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = e.streams[0];
+        remoteAudioRef.current.srcObject = stream;
         remoteAudioRef.current.play().catch(() => {});
+      }
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch(() => {});
       }
     };
     pc.onconnectionstatechange = () => {
@@ -142,9 +152,14 @@ function AdminCallManager({
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
         });
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         localStream.current = stream;
+        if (localVideoRef.current && isVideo) {
+          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch(() => {});
+        }
 
         const channel = supabase.channel(`voip-${sessionId}`, {
           config: { broadcast: { self: false } },
@@ -208,7 +223,7 @@ function AdminCallManager({
                 if (nst === "SUBSCRIBED") {
                   notify.send({
                     type: "broadcast", event: "incoming_call",
-                    payload: { type: "ADMIN_CALLING", sessionId },
+                    payload: { type: "ADMIN_CALLING", sessionId, isVideo },
                   });
                   setTimeout(() => supabase.removeChannel(notify), 2000);
                 }
@@ -233,6 +248,13 @@ function AdminCallManager({
     }
   };
 
+  const toggleVideo = () => {
+    if (localStream.current) {
+      const t = localStream.current.getVideoTracks()[0];
+      if (t) { t.enabled = !t.enabled; setVideoOff(!t.enabled); }
+    }
+  };
+
   return (
     <>
       <audio ref={remoteAudioRef} autoPlay className="hidden" />
@@ -242,7 +264,12 @@ function AdminCallManager({
         status={status}
         duration={duration}
         muted={muted}
+        isVideo={isVideo}
+        videoOff={videoOff}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
         onToggleMute={toggleMute}
+        onToggleVideo={toggleVideo}
         onEndCall={endCall}
       />
     </>
@@ -265,8 +292,9 @@ export default function AdminChatDashboard() {
     sessionId: string;
     customerName?: string | null;
     customerEmail?: string | null;
+    isVideo?: boolean;
   } | null>(null);
-  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate"; customerName?: string | null; customerEmail?: string | null } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ sessionId: string; mode: "accept" | "initiate"; isVideo?: boolean; customerName?: string | null; customerEmail?: string | null } | null>(null);
 
   // Listen for incoming calls from users
   useEffect(() => {
@@ -279,10 +307,9 @@ export default function AdminChatDashboard() {
           sessionId: payload.sessionId,
           customerName: payload.customerName ?? null,
           customerEmail: payload.customerEmail ?? null,
+          isVideo: !!payload.isVideo,
         });
-        // Auto-dismiss after 30s
         setTimeout(() => setIncomingCall(prev => prev?.sessionId === payload.sessionId ? null : prev), 30000);
-        // Play ring sound
         try {
           const audio = new Audio(PING_SOUND_URL);
           audio.volume = 0.7;
@@ -299,6 +326,7 @@ export default function AdminChatDashboard() {
       setActiveCall({
         sessionId: incomingCall.sessionId,
         mode: "accept",
+        isVideo: incomingCall.isVideo,
         customerName: incomingCall.customerName,
         customerEmail: incomingCall.customerEmail,
       });
@@ -315,7 +343,6 @@ export default function AdminChatDashboard() {
           setTimeout(() => supabase.removeChannel(ch), 1000);
         }
       });
-      // Log missed call
       supabase.from("chat_messages").insert({
         session_id: incomingCall.sessionId,
         role: "admin",
@@ -326,13 +353,13 @@ export default function AdminChatDashboard() {
     }
   };
 
-  const handleCallBackUser = (sessionId: string) => {
+  const handleCallBackUser = (sessionId: string, withVideo: boolean = false) => {
     if (activeCall) {
       toast.error("Sedang dalam panggilan aktif");
       return;
     }
-    setActiveCall({ sessionId, mode: "initiate" });
-    toast.success("Menghubungi user...");
+    setActiveCall({ sessionId, mode: "initiate", isVideo: withVideo });
+    toast.success(withVideo ? "Memulai panggilan video..." : "Menghubungi user...");
   };
 
   const loadSessions = useCallback(async () => {
@@ -491,6 +518,7 @@ export default function AdminChatDashboard() {
             sessionId={incomingCall.sessionId}
             customerName={incomingCall.customerName}
             customerEmail={incomingCall.customerEmail}
+            isVideo={incomingCall.isVideo}
             onAccept={handleAcceptCall}
             onReject={handleRejectCall}
           />
@@ -502,6 +530,7 @@ export default function AdminChatDashboard() {
         <AdminCallManager
           sessionId={activeCall.sessionId}
           mode={activeCall.mode}
+          isVideo={activeCall.isVideo}
           customerName={activeCall.customerName}
           customerEmail={activeCall.customerEmail}
           onEnd={() => setActiveCall(null)}
@@ -521,17 +550,25 @@ export default function AdminChatDashboard() {
             </div>
             <button
               onClick={() => {
-                if (selected) {
-                  handleCallBackUser(selected);
-                } else {
-                  toast.error("Pilih percakapan terlebih dahulu");
-                }
+                if (selected) handleCallBackUser(selected, false);
+                else toast.error("Pilih percakapan terlebih dahulu");
               }}
               disabled={!!activeCall}
               className="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors disabled:opacity-30 shrink-0"
-              title="Telepon User Aktif"
+              title="Panggilan Suara"
             >
               <Phone size={20} />
+            </button>
+            <button
+              onClick={() => {
+                if (selected) handleCallBackUser(selected, true);
+                else toast.error("Pilih percakapan terlebih dahulu");
+              }}
+              disabled={!!activeCall}
+              className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors disabled:opacity-30 shrink-0"
+              title="Panggilan Video"
+            >
+              <Video size={20} />
             </button>
           </div>
         </div>
@@ -594,14 +631,22 @@ export default function AdminChatDashboard() {
                 <p className="text-sm font-semibold text-foreground">User {selected.slice(0, 8)}</p>
                 <p className="text-[11px] text-muted-foreground">Session: {selected.slice(0, 16)}...</p>
               </div>
-              {/* Call Back Button */}
+              {/* Call Back Buttons */}
               <button
-                onClick={() => handleCallBackUser(selected)}
+                onClick={() => handleCallBackUser(selected, false)}
                 disabled={!!activeCall}
                 className="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors disabled:opacity-30"
-                title="Telepon User"
+                title="Panggilan Suara"
               >
                 <Phone size={20} />
+              </button>
+              <button
+                onClick={() => handleCallBackUser(selected, true)}
+                disabled={!!activeCall}
+                className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors disabled:opacity-30"
+                title="Panggilan Video"
+              >
+                <Video size={20} />
               </button>
             </div>
 
