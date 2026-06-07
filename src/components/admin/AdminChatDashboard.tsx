@@ -631,14 +631,22 @@ export default function AdminChatDashboard() {
                 <p className="text-sm font-semibold text-foreground">User {selected.slice(0, 8)}</p>
                 <p className="text-[11px] text-muted-foreground">Session: {selected.slice(0, 16)}...</p>
               </div>
-              {/* Call Back Button */}
+              {/* Call Back Buttons */}
               <button
-                onClick={() => handleCallBackUser(selected)}
+                onClick={() => handleCallBackUser(selected, false)}
                 disabled={!!activeCall}
                 className="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors disabled:opacity-30"
-                title="Telepon User"
+                title="Panggilan Suara"
               >
                 <Phone size={20} />
+              </button>
+              <button
+                onClick={() => handleCallBackUser(selected, true)}
+                disabled={!!activeCall}
+                className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors disabled:opacity-30"
+                title="Panggilan Video"
+              >
+                <Video size={20} />
               </button>
             </div>
 
