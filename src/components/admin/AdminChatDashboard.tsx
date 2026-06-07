@@ -116,9 +116,14 @@ function AdminCallManager({
       }
     };
     pc.ontrack = (e) => {
+      const stream = e.streams[0];
       if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = e.streams[0];
+        remoteAudioRef.current.srcObject = stream;
         remoteAudioRef.current.play().catch(() => {});
+      }
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch(() => {});
       }
     };
     pc.onconnectionstatechange = () => {
