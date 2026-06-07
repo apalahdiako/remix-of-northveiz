@@ -518,6 +518,7 @@ export default function AdminChatDashboard() {
             sessionId={incomingCall.sessionId}
             customerName={incomingCall.customerName}
             customerEmail={incomingCall.customerEmail}
+            isVideo={incomingCall.isVideo}
             onAccept={handleAcceptCall}
             onReject={handleRejectCall}
           />
@@ -529,6 +530,7 @@ export default function AdminChatDashboard() {
         <AdminCallManager
           sessionId={activeCall.sessionId}
           mode={activeCall.mode}
+          isVideo={activeCall.isVideo}
           customerName={activeCall.customerName}
           customerEmail={activeCall.customerEmail}
           onEnd={() => setActiveCall(null)}
