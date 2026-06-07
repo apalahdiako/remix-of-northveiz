@@ -93,7 +93,7 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick, onChatClick }: Header
         </Link>
 
         {/* Right: icons */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3 sm:gap-5">
           <button onClick={onSearchClick} aria-label="Search" className={`${iconClass} transition-opacity`}>
             <Search size={18} strokeWidth={1.5} />
           </button>
