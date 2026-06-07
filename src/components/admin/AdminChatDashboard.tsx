@@ -45,12 +45,14 @@ function formatCallDuration(seconds: number): string {
 function AdminCallManager({
   sessionId,
   mode,
+  isVideo = false,
   customerName,
   customerEmail,
   onEnd,
 }: {
   sessionId: string;
   mode: "accept" | "initiate";
+  isVideo?: boolean;
   customerName?: string | null;
   customerEmail?: string | null;
   onEnd: () => void;
@@ -58,12 +60,15 @@ function AdminCallManager({
   const [status, setStatus] = useState<"connecting" | "active" | "ended">("connecting");
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [videoOff, setVideoOff] = useState(false);
   const localStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const timerRef = useRef<number | null>(null);
   const callStartTime = useRef<number>(0);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
