@@ -97,13 +97,16 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick, onChatClick }: Header
           <button onClick={onSearchClick} aria-label="Search" className={`${iconClass} transition-opacity`}>
             <Search size={18} strokeWidth={1.5} />
           </button>
-          <button onClick={onChatClick} aria-label="Chat" className={`hidden sm:inline-flex ${iconClass} transition-opacity`}>
+          <button onClick={onChatClick} aria-label="Call" className={`${iconClass} transition-opacity`}>
+            <Phone size={18} strokeWidth={1.5} />
+          </button>
+          <button onClick={onChatClick} aria-label="Chat" className={`${iconClass} transition-opacity`}>
             <MessageCircle size={18} strokeWidth={1.5} />
           </button>
           <Link
             to={user ? "/account" : "/auth"}
             aria-label={user ? "Account" : "Login"}
-            className={`hidden sm:inline-flex ${iconClass} transition-opacity`}
+            className={`${iconClass} transition-opacity`}
           >
             <User size={18} strokeWidth={1.5} />
           </Link>
