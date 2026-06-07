@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Send, Smile, ImageIcon, X, Phone, PhoneOff, PhoneMissed } from "lucide-react";
+import { Search, Send, Smile, ImageIcon, X, Phone, PhoneOff, PhoneMissed, Video } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
