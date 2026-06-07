@@ -660,6 +660,7 @@ export type IncomingCallInfo = {
   sessionId: string;
   customerName?: string | null;
   customerEmail?: string | null;
+  isVideo?: boolean;
 };
 
 // ─── Hook for admin to listen for incoming calls ───
@@ -676,6 +677,7 @@ export function useIncomingCall() {
           sessionId: payload.sessionId,
           customerName: payload.customerName ?? null,
           customerEmail: payload.customerEmail ?? null,
+          isVideo: !!payload.isVideo,
         });
         setTimeout(() => setIncomingCall(null), 30000);
       }
