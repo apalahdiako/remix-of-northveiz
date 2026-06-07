@@ -97,19 +97,20 @@ const Header = ({ onMenuClick, onCartClick, onSearchClick, onChatClick }: Header
           <button onClick={onSearchClick} aria-label="Search" className={`${iconClass} transition-opacity`}>
             <Search size={18} strokeWidth={1.5} />
           </button>
-          <button onClick={onChatClick} aria-label="Call" className={`${iconClass} transition-opacity`}>
-            <Phone size={18} strokeWidth={1.5} />
-          </button>
-          <button onClick={onChatClick} aria-label="Chat" className={`${iconClass} transition-opacity`}>
-            <MessageCircle size={18} strokeWidth={1.5} />
-          </button>
-          <Link
-            to={user ? "/account" : "/auth"}
-            aria-label={user ? "Account" : "Login"}
-            className={`${iconClass} transition-opacity`}
-          >
-            <User size={18} strokeWidth={1.5} />
-          </Link>
+          {isHomePage && (
+            <button onClick={onChatClick} aria-label="Chat" className={`${iconClass} transition-opacity`}>
+              <MessageCircle size={18} strokeWidth={1.5} />
+            </button>
+          )}
+          {isHomePage && (
+            <Link
+              to={user ? "/account" : "/auth"}
+              aria-label={user ? "Account" : "Login"}
+              className={`${iconClass} transition-opacity`}
+            >
+              <User size={18} strokeWidth={1.5} />
+            </Link>
+          )}
           <button onClick={onCartClick} aria-label="Cart" className={`relative ${iconClass} transition-opacity`}>
             <ShoppingBag size={18} strokeWidth={1.5} />
             {cartItemCount > 0 && (
