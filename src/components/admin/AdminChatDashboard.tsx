@@ -152,9 +152,14 @@ function AdminCallManager({
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
         });
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         localStream.current = stream;
+        if (localVideoRef.current && isVideo) {
+          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch(() => {});
+        }
 
         const channel = supabase.channel(`voip-${sessionId}`, {
           config: { broadcast: { self: false } },
