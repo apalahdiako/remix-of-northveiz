@@ -523,7 +523,9 @@ export const AdminIncomingCall = ({
           <span className="text-green-300 font-bold text-sm">{initials || <Phone size={20} />}</span>
         </motion.div>
         <div className="min-w-0 flex-1">
-          <p className="text-white/60 text-[11px] uppercase tracking-wider">Panggilan Masuk</p>
+          <p className="text-white/60 text-[11px] uppercase tracking-wider flex items-center gap-1">
+            {isVideo ? <><Video size={11} /> Panggilan Video Masuk</> : <>Panggilan Masuk</>}
+          </p>
           <p className="text-white font-semibold text-sm truncate">{displayName}</p>
           {customerEmail && (
             <p className="text-white/50 text-xs flex items-center gap-1 truncate">
