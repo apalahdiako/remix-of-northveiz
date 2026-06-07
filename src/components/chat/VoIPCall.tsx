@@ -580,7 +580,12 @@ export const AdminCallingOverlay = ({
   status,
   duration,
   muted,
+  isVideo = false,
+  videoOff = false,
+  localVideoRef,
+  remoteVideoRef,
   onToggleMute,
+  onToggleVideo,
   onEndCall,
 }: {
   customerName?: string | null;
@@ -588,7 +593,12 @@ export const AdminCallingOverlay = ({
   status: "connecting" | "active" | "ended";
   duration: number;
   muted: boolean;
+  isVideo?: boolean;
+  videoOff?: boolean;
+  localVideoRef?: React.RefObject<HTMLVideoElement>;
+  remoteVideoRef?: React.RefObject<HTMLVideoElement>;
   onToggleMute: () => void;
+  onToggleVideo?: () => void;
   onEndCall: () => void;
 }) => {
   const displayName = customerName?.trim() || "Customer";
@@ -599,6 +609,77 @@ export const AdminCallingOverlay = ({
     .slice(0, 2)
     .join("")
     .toUpperCase() || "CS";
+
+  if (isVideo) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] bg-black flex flex-col"
+        >
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover bg-gray-900"
+          />
+          {status !== "active" && (
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800/90 to-black flex flex-col items-center justify-center">
+              <p className="text-white/60 text-sm tracking-widest uppercase mb-4">
+                {status === "connecting" && "Menghubungkan video..."}
+                {status === "ended" && "Panggilan berakhir"}
+              </p>
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center border-2 border-white/20 mb-3">
+                <span className="text-white text-3xl font-bold">{initials}</span>
+              </div>
+              <h2 className="text-white text-xl font-semibold">{displayName}</h2>
+            </div>
+          )}
+
+          {status === "active" && (
+            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-5 pt-5 pb-8">
+              <p className="text-white font-semibold">{displayName}</p>
+              <p className="text-green-400 text-sm font-mono">{formatDuration(duration)}</p>
+            </div>
+          )}
+
+          <div className="absolute top-4 right-4 z-20 w-28 h-40 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-gray-800">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${videoOff ? "opacity-0" : ""}`}
+            />
+            {videoOff && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white/60">
+                <VideoOff size={28} />
+              </div>
+            )}
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent pb-10 pt-12 flex items-center justify-center gap-5">
+            <button onClick={onToggleMute} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${muted ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+              {muted ? <MicOff size={22} /> : <Mic size={22} />}
+            </button>
+            {onToggleVideo && (
+              <button onClick={onToggleVideo} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${videoOff ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+                {videoOff ? <VideoOff size={22} /> : <Video size={22} />}
+              </button>
+            )}
+            <button
+              onClick={onEndCall}
+              className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg shadow-red-600/30 transition-colors"
+            >
+              <PhoneOff size={26} />
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
