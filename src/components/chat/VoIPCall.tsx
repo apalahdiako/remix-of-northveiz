@@ -302,8 +302,8 @@ export function useVoIPCall(sessionId: string, role: "user" | "admin", onClose: 
 }
 
 // ─── User Calling Overlay (Full screen, Shopee CS style) ───
-export const UserCallingOverlay = ({ sessionId, onClose }: { sessionId: string; onClose: () => void }) => {
-  const call = useVoIPCall(sessionId, "user", onClose);
+export const UserCallingOverlay = ({ sessionId, onClose, video = false }: { sessionId: string; onClose: () => void; video?: boolean }) => {
+  const call = useVoIPCall(sessionId, "user", onClose, video);
   const started = useRef(false);
 
   useEffect(() => {
@@ -322,6 +322,98 @@ export const UserCallingOverlay = ({ sessionId, onClose }: { sessionId: string; 
     }
     return () => stopRingtone();
   }, [call.status]);
+
+  if (video) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] bg-black flex flex-col"
+        >
+          <audio ref={call.remoteAudioRef} autoPlay className="hidden" />
+          {/* Remote video full-screen */}
+          <video
+            ref={call.remoteVideoRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover bg-gray-900"
+          />
+          {/* Dark overlay when not active */}
+          {call.status !== "active" && (
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800/90 to-black flex flex-col items-center justify-center">
+              <p className="text-white/60 text-sm tracking-widest uppercase mb-4">
+                {call.status === "requesting" && "Meminta izin kamera..."}
+                {call.status === "ringing" && "Menghubungi..."}
+                {call.status === "ended" && "Panggilan berakhir"}
+              </p>
+              <div className="relative mb-4">
+                {call.status === "ringing" && (
+                  <>
+                    <motion.div animate={{ scale: [1, 1.5], opacity: [0.4, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="absolute inset-0 rounded-full bg-green-500/30" />
+                  </>
+                )}
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center border-2 border-white/20">
+                  <span className="text-white text-3xl font-bold">CS</span>
+                </div>
+              </div>
+              <h2 className="text-white text-xl font-semibold">NORTHVEIZ Support</h2>
+              {call.status === "ringing" && (
+                <p className="text-white/40 text-sm mt-2">Menunggu admin menerima panggilan video...</p>
+              )}
+            </div>
+          )}
+
+          {/* Top bar: name + duration */}
+          {call.status === "active" && (
+            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-5 pt-5 pb-8">
+              <p className="text-white font-semibold">NORTHVEIZ Support</p>
+              <p className="text-green-400 text-sm font-mono">{formatDuration(call.duration)}</p>
+            </div>
+          )}
+
+          {/* Local video PIP */}
+          <div className="absolute top-4 right-4 z-20 w-28 h-40 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-gray-800">
+            <video
+              ref={call.localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${call.videoOff ? "opacity-0" : ""}`}
+            />
+            {call.videoOff && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white/60">
+                <VideoOff size={28} />
+              </div>
+            )}
+          </div>
+
+          {call.error && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-red-500/20 border border-red-500/30 rounded-xl px-6 py-3 max-w-[300px]">
+              <p className="text-red-300 text-sm text-center">{call.error}</p>
+            </div>
+          )}
+
+          {/* Bottom controls */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent pb-10 pt-12 flex items-center justify-center gap-5">
+            <button onClick={call.toggleMute} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${call.muted ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+              {call.muted ? <MicOff size={22} /> : <Mic size={22} />}
+            </button>
+            <button onClick={call.toggleVideo} className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${call.videoOff ? "bg-red-500/30 text-red-400" : "bg-white/15 text-white"}`}>
+              {call.videoOff ? <VideoOff size={22} /> : <Video size={22} />}
+            </button>
+            <button
+              onClick={call.status === "idle" || call.status === "ended" ? onClose : call.handleEndCall}
+              className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg shadow-red-600/30 transition-colors"
+            >
+              <PhoneOff size={26} />
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
