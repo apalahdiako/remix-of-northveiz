@@ -223,7 +223,7 @@ function AdminCallManager({
                 if (nst === "SUBSCRIBED") {
                   notify.send({
                     type: "broadcast", event: "incoming_call",
-                    payload: { type: "ADMIN_CALLING", sessionId },
+                    payload: { type: "ADMIN_CALLING", sessionId, isVideo },
                   });
                   setTimeout(() => supabase.removeChannel(notify), 2000);
                 }
