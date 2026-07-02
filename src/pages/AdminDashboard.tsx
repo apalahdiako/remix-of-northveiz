@@ -28,6 +28,7 @@ import AdminMarketing from "@/components/admin/AdminMarketing";
 import AdminShipping from "@/components/admin/AdminShipping";
 import AdminContent from "@/components/admin/AdminContent";
 import AdminSettings from "@/components/admin/AdminSettings";
+import LiveStreamStudio from "@/components/admin/LiveStreamStudio";
 
 interface UserProfile {
   id: string;
@@ -242,6 +243,7 @@ Tim NORTHVEIZ`);
             <TabsTrigger value="analytics"><BarChart3 className="mr-1.5 h-3.5 w-3.5" />Analytics</TabsTrigger>
             <TabsTrigger value="customers"><Users className="mr-1.5 h-3.5 w-3.5" />Customer</TabsTrigger>
             <TabsTrigger value="chat">💬 Live Chat</TabsTrigger>
+            <TabsTrigger value="live"><Radio className="mr-1.5 h-3.5 w-3.5" />Live Stream</TabsTrigger>
             <TabsTrigger value="calls" className="relative">
               <Phone className="mr-1.5 h-3.5 w-3.5" />Panggilan
               {missedCallCount > 0 && (
@@ -287,6 +289,10 @@ Tim NORTHVEIZ`);
 
         <TabsContent value="chat">
           <AdminChatDashboard />
+        </TabsContent>
+
+        <TabsContent value="live">
+          <LiveStreamStudio />
         </TabsContent>
 
         <TabsContent value="calls">

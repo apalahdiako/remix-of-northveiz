@@ -1,64 +1,139 @@
-# NORTHVEIZ Redesign + Feature Build — Phased Plan
 
-Estetika referensi Calle de Larache: typography editorial tipis, banyak whitespace, hover halus, kartu produk minimal. Home page **tidak diubah**. Accent tetap orange (`#FF5722`).
+# Fitur Live Streaming NORTHVEIZ (Shopee-style)
 
-Karena permintaan sangat besar, saya pecah jadi 4 fase. Setiap fase dieksekusi terpisah agar bisa Anda review sebelum lanjut. Plan ini hanya mencakup **Fase 1**; fase berikut akan diajukan plan baru saat siap.
+## Ringkasan
 
----
+Admin menyiarkan video langsung dari dashboard. User di halaman utama melihat banner "LIVE" saat siaran aktif, membuka viewer full-screen untuk menonton, like, komentar, share, dan langsung tambah produk yang ditayangkan ke keranjang / checkout. Semua realtime, tanpa data dummy.
 
-## Fase 1 — Visual Redesign (Header + Catalog + Product Detail)
+## Arsitektur Teknis
 
-### 1. Design tokens (`src/index.css`, `tailwind.config.ts`)
-- Tambah font editorial: **Playfair Display** (display) + **Inter** (body), via `<link>` di `index.html`.
-- Token baru: `--font-display`, `--font-body`, spacing scale 8px, letter-spacing wide untuk uppercase eyebrow.
-- Tidak mengubah HSL primary/accent existing (orange stay).
+**Media:** WebRTC mesh — admin (broadcaster) membuat 1 RTCPeerConnection per viewer, signaling lewat Supabase Realtime (broadcast channel `live:<streamId>`). Cocok untuk skala puluhan viewer tanpa media server. Video/audio: `getUserMedia({ video: true, audio: true })` di admin, viewer hanya menerima track (recv-only).
 
-### 2. Header (`src/components/Header.tsx`)
-- Logo center kecil, nav links kiri (Catalog · Community · About · Contact), icon group kanan (Search · Chat · Cart · Account).
-- Tipografi uppercase tracking-widest text-xs.
-- Sticky + transparent → solid putih saat scroll (sudah ada).
-- Mobile: hamburger tetap di kiri, logo center.
+**Signaling events (Realtime broadcast):**
+- `viewer-join` (viewer → admin) — viewer masuk, minta offer
+- `offer` (admin → viewer spesifik)
+- `answer` (viewer → admin)
+- `ice` (dua arah)
+- `viewer-leave`
 
-### 3. Catalog (`src/pages/Catalog.tsx` + `ProductCard.tsx`)
-- Layout: sidebar filter desktop (sticky kiri) + grid 4 kolom; mobile drawer filter.
-- Filter: Availability, Sort. (Color/Material/Size filter skip — schema produk belum punya kolom itu; kalau mau saya tambah di Fase 3.)
-- Sort dropdown kanan-atas (bukan tombol pill).
-- Product card: gambar aspect 3:4, nama uppercase tipis, harga, hover reveal "Add to wishlist" + secondary image kalau ada.
-- Lazy load image, skeleton loader.
+**Persistensi & interaksi:** Supabase tables + Realtime `postgres_changes` untuk chat, like counter, pinned products.
 
-### 4. Product Detail (`src/pages/ProductDetail.tsx`)
-- Layout 2 kolom desktop: gallery sticky kiri (main + thumbnail vertical), info kanan.
-- Info: nama display font besar, harga, stock indicator, size selector pill, qty stepper, Add to Cart full-width black, Wishlist icon, Share row (WhatsApp/Copy).
-- Accordion: Description · Material & Care · Shipping & Returns.
-- Section "You might also like" pakai 4 produk random dari catalog.
+## Skema Database (migration baru)
 
-### 5. QA
-- Cek tiap halaman di mobile 360px + desktop 1280px via browser tool.
-- Pastikan dashboard `/admin` tidak ikut berubah visual (scope tokens harus tidak conflict).
+```sql
+-- Sesi siaran
+CREATE TABLE public.live_streams (
+  id uuid PK default gen_random_uuid(),
+  admin_id uuid NOT NULL,             -- auth.users.id host
+  title text NOT NULL,
+  cover_url text,
+  status text NOT NULL DEFAULT 'live',-- 'live' | 'ended'
+  viewer_count int NOT NULL DEFAULT 0,
+  like_count int NOT NULL DEFAULT 0,
+  started_at timestamptz DEFAULT now(),
+  ended_at timestamptz
+);
 
----
+-- Produk yang di-"pin" untuk dibeli selama siaran
+CREATE TABLE public.live_stream_products (
+  id uuid PK,
+  stream_id uuid REFERENCES live_streams ON DELETE CASCADE,
+  product_id uuid REFERENCES products,
+  position int DEFAULT 0,
+  is_flash boolean DEFAULT false,     -- highlight "flash sale"
+  created_at timestamptz DEFAULT now()
+);
 
-## Fase 2 — Wishlist Page (planned, not in this run)
-Halaman `/wishlist` pakai `useProductLikes`, tombol heart aktif di ProductCard & ProductDetail, link di account menu.
+-- Komentar realtime
+CREATE TABLE public.live_stream_messages (
+  id uuid PK,
+  stream_id uuid REFERENCES live_streams ON DELETE CASCADE,
+  user_id uuid,                       -- nullable → guest
+  display_name text NOT NULL,
+  content text NOT NULL,
+  type text DEFAULT 'chat',           -- 'chat' | 'join' | 'like' | 'system'
+  created_at timestamptz DEFAULT now()
+);
 
-## Fase 3 — Live Search Autocomplete (planned)
-Upgrade `SearchSheet` jadi instant search: query Supabase debounce 200ms, tampil thumbnail + nama + harga, klik → product detail.
+-- Like (log per user; counter di live_streams update lewat RPC)
+CREATE TABLE public.live_stream_likes (
+  stream_id uuid,
+  user_id uuid,
+  created_at timestamptz DEFAULT now(),
+  PRIMARY KEY (stream_id, user_id)
+);
+```
 
-## Fase 4 — Coupon + Multi-step Checkout (planned, paling berisiko)
-- Tabel baru `coupons` + `order_coupons`, validasi server-side via edge function.
-- Refactor `Checkout.tsx` jadi stepper Address → Payment → Review, **mempertahankan** integrasi Midtrans Snap existing (hanya UI di-wrap, logic submit tidak berubah).
+Grants + RLS:
+- `live_streams`: SELECT anon+authenticated; INSERT/UPDATE hanya admin (`has_role('admin')`).
+- `live_stream_products`: SELECT publik; write admin.
+- `live_stream_messages`: SELECT publik; INSERT authenticated (user_id = auth.uid()).
+- `live_stream_likes`: SELECT publik; INSERT authenticated.
+- Enable Realtime publication untuk 4 tabel.
+- RPC `increment_live_like(stream_id)` SECURITY DEFINER untuk atomic counter.
 
----
+## Struktur File Baru
 
-## Yang TIDAK dikerjakan (perlu konfirmasi terpisah kalau mau)
-- Reviews schema baru (sudah ada `product_reviews`, hanya butuh UI extras — bisa fase 5).
-- Dark/light theme toggle (existing default dark, redesign ini light editorial — saya pilih satu, default jadi light untuk pages publik agar match referensi; dashboard tetap dark seperti sekarang).
-- Saved payment methods, address book full CRUD, Instagram embed, lookbook, product comparison, push notifications, 360 view, video preview, PWA — semuanya butuh effort besar dan/atau integrasi eksternal; saya akan skip kecuali Anda minta eksplisit.
+```text
+src/
+  hooks/
+    useLiveStream.ts          # subscribe stream aktif + realtime updates
+    useLiveBroadcaster.ts     # admin: getUserMedia + peer per viewer
+    useLiveViewer.ts          # user: terima track dari admin
+  components/live/
+    LiveBadge.tsx             # banner "LIVE" di Home
+    LiveViewerOverlay.tsx     # full-screen viewer (video + chat + produk)
+    LiveChatPanel.tsx         # komentar realtime + input
+    LiveProductRail.tsx       # daftar produk pinned + tombol beli
+    LikeBurst.tsx             # animasi hati floating
+    ShareSheet.tsx            # share link siaran (Web Share API + copy)
+  components/admin/
+    LiveStreamStudio.tsx      # UI broadcaster (start/stop, kamera, mic, pin produk, moderasi chat)
+```
 
----
+Integrasi:
+- `src/pages/Home.tsx` → tambah `<LiveBadge />` di atas hero.
+- `src/pages/AdminDashboard.tsx` → tab baru **"Live"** memuat `LiveStreamStudio`.
+- `useCart` dipakai `LiveProductRail` untuk "Add to Cart" langsung; tombol "Beli Sekarang" navigate ke `/checkout` dengan item terpilih.
 
-## Risiko & catatan
-- Mengganti default page theme dari dark → light hanya untuk public pages bisa menggeser banyak komponen. Saya akan pakai class `light` di route public dan biarkan admin/community tetap dark.
-- Saya **tidak akan** menyentuh: Home hero, `AdminDashboard`, edge functions, Midtrans, schema database (di Fase 1).
+## Fitur User (Viewer)
 
-Konfirmasi untuk lanjut **Fase 1** saja dulu?
+- Banner LIVE di home → klik → overlay fullscreen.
+- Video stream + jumlah viewer + like realtime.
+- Chat: kirim komentar (harus login; guest baca-only + prompt login).
+- Like: tap hati → animasi burst + counter naik (throttle 1 like/user, tap ulang = tambah animasi lokal saja).
+- Share: Web Share API (`navigator.share`) fallback copy link `?live=<id>`.
+- Rail produk horizontal di bawah video → **Add to Cart** atau **Beli Sekarang** (checkout).
+- Flash-sale highlight untuk produk yang admin tandai.
+
+## Fitur Admin (Studio)
+
+- Start Live: input judul + cover → buat row `live_streams` status `live` → mulai `getUserMedia` → siap terima `viewer-join`.
+- Pin/unpin produk dari katalog (search + add).
+- Toggle Flash Sale per produk.
+- Preview jumlah viewer + list peserta.
+- Panel chat live + hapus komentar (moderasi).
+- Toggle kamera/mic, ganti kamera depan/belakang.
+- End Live: tutup semua peer, update status `ended`, set `ended_at`.
+
+## Realtime Flow
+
+1. Admin start → INSERT `live_streams` → viewers Home menerima update via `postgres_changes` → banner muncul.
+2. Viewer buka overlay → subscribe channel `live:<id>` → kirim `viewer-join` → admin buat RTCPeerConnection, addTrack lokal, kirim `offer` → viewer setRemoteDescription, kirim `answer`, ICE dua arah → video muncul.
+3. Chat & like: INSERT tabel → semua client dapat event `postgres_changes` INSERT.
+4. Add-to-cart: viewer klik → `useCart.addItem(product)` (existing).
+5. End: admin kirim `stream-ended` broadcast + UPDATE status; viewers auto-close overlay.
+
+## Batas & Catatan
+
+- WebRTC mesh: ideal < 30 viewer simultan (STUN publik `stun:stun.l.google.com:19302`). Untuk skala besar butuh SFU eksternal — di luar scope.
+- Tidak ada rekaman siaran (bisa ditambah nanti via MediaRecorder).
+- Guest bisa menonton & like, harus login untuk komentar / checkout (memakai flow auth existing).
+
+## Deliverables
+
+- 1 migration SQL (4 tabel + RPC + policies + grants + realtime publication).
+- 3 hook + 6 komponen live baru.
+- Tab "Live" di Admin Dashboard.
+- Banner + overlay di Home.
+- Integrasi `useCart` untuk beli langsung dari siaran.

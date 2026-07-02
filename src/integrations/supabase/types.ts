@@ -375,6 +375,148 @@ export type Database = {
         }
         Relationships: []
       }
+      live_stream_likes: {
+        Row: {
+          created_at: string
+          stream_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          stream_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          stream_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_stream_likes_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "live_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_stream_messages: {
+        Row: {
+          content: string
+          created_at: string
+          display_name: string
+          id: string
+          stream_id: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          display_name: string
+          id?: string
+          stream_id: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          stream_id?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_stream_messages_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "live_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_stream_products: {
+        Row: {
+          created_at: string
+          id: string
+          is_flash: boolean
+          position: number
+          product_id: string
+          stream_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_flash?: boolean
+          position?: number
+          product_id: string
+          stream_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_flash?: boolean
+          position?: number
+          product_id?: string
+          stream_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_stream_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_stream_products_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "live_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_streams: {
+        Row: {
+          admin_id: string
+          cover_url: string | null
+          ended_at: string | null
+          id: string
+          like_count: number
+          started_at: string
+          status: string
+          title: string
+          viewer_count: number
+        }
+        Insert: {
+          admin_id: string
+          cover_url?: string | null
+          ended_at?: string | null
+          id?: string
+          like_count?: number
+          started_at?: string
+          status?: string
+          title: string
+          viewer_count?: number
+        }
+        Update: {
+          admin_id?: string
+          cover_url?: string | null
+          ended_at?: string | null
+          id?: string
+          like_count?: number
+          started_at?: string
+          status?: string
+          title?: string
+          viewer_count?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -1034,6 +1176,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_live_like: { Args: { p_stream_id: string }; Returns: number }
+      set_live_viewer_count: {
+        Args: { p_count: number; p_stream_id: string }
+        Returns: undefined
       }
     }
     Enums: {

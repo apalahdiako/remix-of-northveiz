@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalTimer } from "@/components/GlobalTimer";
 import { allPaymentLogos } from "@/components/payment/PaymentMethodSelector";
+import LiveBadge from "@/components/live/LiveBadge";
 
 // Shipping method logos
 import jneLogo from "@/assets/shipping/jne-new.jpg";
@@ -14,6 +15,7 @@ const Home = () => {
   
   return (
     <div className="min-h-screen">
+      <LiveBadge />
       {/* Hero Section - entire area is clickable */}
       <Link to="/catalog" className="block">
         <section className="relative h-[600px] md:h-[700px] bg-foreground overflow-hidden cursor-pointer">
