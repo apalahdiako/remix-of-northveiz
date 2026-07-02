@@ -14,7 +14,7 @@ interface Row {
     id: string;
     name: string;
     price: string;
-    image_url: string | null;
+    image: string | null;
     stock: number;
   } | null;
 }
@@ -32,7 +32,7 @@ const LiveProductRail = ({ streamId }: Props) => {
     const load = async () => {
       const { data } = await supabase
         .from("live_stream_products")
-        .select("id, product_id, is_flash, position, products(id, name, price, image_url, stock)")
+        .select("id, product_id, is_flash, position, products(id, name, price, image, stock)")
         .eq("stream_id", streamId)
         .order("position", { ascending: true });
       setRows((data as unknown as Row[]) ?? []);
@@ -57,7 +57,7 @@ const LiveProductRail = ({ streamId }: Props) => {
     id: p.id,
     name: p.name,
     price: parseFloat(p.price.replace(/[^0-9]/g, "")) || 0,
-    image: p.image_url || "/placeholder.svg",
+    image: p.image || "/placeholder.svg",
     size: "M",
   });
 
@@ -100,7 +100,7 @@ const LiveProductRail = ({ streamId }: Props) => {
             >
               <div className="relative aspect-square bg-muted">
                 <img
-                  src={p.image_url || "/placeholder.svg"}
+                  src={p.image || "/placeholder.svg"}
                   alt={p.name}
                   className="w-full h-full object-cover"
                   loading="lazy"

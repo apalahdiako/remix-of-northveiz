@@ -28,7 +28,7 @@ interface Product {
   id: string;
   name: string;
   price: string;
-  image_url: string | null;
+  image: string | null;
   stock: number;
 }
 
@@ -83,7 +83,7 @@ const LiveStreamStudio = () => {
     (async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, price, image_url, stock")
+        .select("id, name, price, image, stock")
         .order("created_at", { ascending: false })
         .limit(50);
       setProducts((data as Product[]) ?? []);
@@ -100,7 +100,7 @@ const LiveStreamStudio = () => {
     const loadPinned = async () => {
       const { data } = await supabase
         .from("live_stream_products")
-        .select("id, product_id, is_flash, position, products(id, name, price, image_url, stock)")
+        .select("id, product_id, is_flash, position, products(id, name, price, image, stock)")
         .eq("stream_id", streamId)
         .order("position", { ascending: true });
       setPinned((data as unknown as PinnedRow[]) ?? []);
@@ -285,7 +285,7 @@ const LiveStreamStudio = () => {
                   return (
                     <div key={row.id} className="relative border rounded-lg p-2 flex gap-2">
                       <img
-                        src={p.image_url || "/placeholder.svg"}
+                        src={p.image || "/placeholder.svg"}
                         alt={p.name}
                         className="h-14 w-14 object-cover rounded"
                       />
@@ -337,7 +337,7 @@ const LiveStreamStudio = () => {
                   className="w-full flex items-center gap-2 p-1.5 hover:bg-accent/10 rounded text-left"
                 >
                   <img
-                    src={p.image_url || "/placeholder.svg"}
+                    src={p.image || "/placeholder.svg"}
                     alt={p.name}
                     className="h-8 w-8 object-cover rounded"
                   />
