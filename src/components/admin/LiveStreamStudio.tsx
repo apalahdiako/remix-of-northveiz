@@ -261,12 +261,12 @@ const LiveStreamStudio = () => {
     );
   }
 
-  // ============ FULLSCREEN STUDIO ============
+  // ============ FULLSCREEN STUDIO (portrait, TikTok-style) ============
   return (
-    <div className="fixed inset-0 z-[100] bg-black text-white flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-200">
-      {/* Video area */}
-      <div className="relative flex-1 min-h-0 flex flex-col">
-        <div className="relative flex-1 bg-black">
+    <div className="fixed inset-0 z-[100] bg-black text-white overflow-hidden animate-in fade-in duration-200">
+      {/* Portrait stage — centered 9:16, fills viewport height */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative h-full aspect-[9/16] max-w-full bg-black overflow-hidden shadow-2xl">
           <video
             ref={previewRef}
             autoPlay
@@ -286,7 +286,7 @@ const LiveStreamStudio = () => {
           )}
 
           {/* Top bar */}
-          <div className="absolute top-0 inset-x-0 p-3 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent z-10">
+          <div className="absolute top-0 inset-x-0 p-3 flex items-center gap-2 bg-gradient-to-b from-black/80 to-transparent z-20">
             <span className="flex items-center gap-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Live
             </span>
@@ -307,19 +307,51 @@ const LiveStreamStudio = () => {
             </button>
             <button
               onClick={endStream}
-              className="h-9 px-3 grid place-items-center rounded-full bg-red-600 hover:bg-red-500 text-xs font-semibold flex items-center gap-1"
+              className="h-9 px-3 rounded-full bg-red-600 hover:bg-red-500 text-xs font-semibold flex items-center gap-1"
               aria-label="End live"
             >
               <Square className="h-3.5 w-3.5" /> End
             </button>
           </div>
 
+          {/* Pinned products strip — sits above chat */}
+          {pinned.length > 0 && (
+            <div className="absolute left-2 right-2 bottom-40 z-20 flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+              {pinned.slice(0, 6).map((row) => {
+                const p = row.products;
+                if (!p) return null;
+                return (
+                  <div
+                    key={row.id}
+                    className="shrink-0 flex items-center gap-2 bg-black/70 backdrop-blur border border-white/10 rounded-lg p-1.5 pr-2.5"
+                  >
+                    <img src={p.image || "/placeholder.svg"} alt={p.name} className="h-9 w-9 rounded object-cover" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] leading-tight truncate max-w-[110px]">{p.name}</p>
+                      <p className="text-[11px] text-accent font-semibold flex items-center gap-1">
+                        {row.is_flash && <Zap className="h-2.5 w-2.5" />}
+                        {p.price}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Chat overlay — bottom, translucent, TikTok-style */}
+          <div className="absolute left-0 right-0 bottom-16 h-40 z-10 pointer-events-none">
+            <div className="h-full mx-2 rounded-xl bg-gradient-to-t from-black/70 via-black/40 to-transparent pointer-events-auto overflow-hidden">
+              <LiveChatPanel streamId={streamId} canModerate />
+            </div>
+          </div>
+
           {/* Bottom control rail */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+          <div className="absolute inset-x-0 bottom-2 z-30 flex items-center justify-center gap-2 px-3">
             <button
               onClick={toggleMic}
               className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur transition ${
-                micOn ? "bg-black/50 hover:bg-black/70" : "bg-red-600 hover:bg-red-500"
+                micOn ? "bg-black/60 hover:bg-black/80" : "bg-red-600 hover:bg-red-500"
               }`}
               aria-label="Toggle mic"
             >
@@ -328,7 +360,7 @@ const LiveStreamStudio = () => {
             <button
               onClick={toggleCam}
               className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur transition ${
-                camOn ? "bg-black/50 hover:bg-black/70" : "bg-red-600 hover:bg-red-500"
+                camOn ? "bg-black/60 hover:bg-black/80" : "bg-red-600 hover:bg-red-500"
               }`}
               aria-label="Toggle camera"
             >
@@ -336,13 +368,12 @@ const LiveStreamStudio = () => {
             </button>
             <button
               onClick={flipCamera}
-              className="h-11 w-11 grid place-items-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur"
+              className="h-11 w-11 grid place-items-center rounded-full bg-black/60 hover:bg-black/80 backdrop-blur"
               aria-label="Flip camera"
             >
               <RefreshCw className="h-5 w-5" />
             </button>
 
-            {/* Products drawer trigger */}
             <Sheet>
               <SheetTrigger asChild>
                 <button
@@ -352,12 +383,11 @@ const LiveStreamStudio = () => {
                   <Package className="h-4 w-4" /> Produk ({pinned.length})
                 </button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-[80vh] bg-background text-foreground">
+              <SheetContent side="bottom" className="h-[80vh] bg-background text-foreground z-[110]">
                 <SheetHeader>
                   <SheetTitle>Kelola Produk Live</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-4 overflow-y-auto max-h-[calc(80vh-6rem)] pr-1">
-                  {/* Pinned */}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                       Produk Terpasang ({pinned.length})
@@ -405,7 +435,6 @@ const LiveStreamStudio = () => {
                     )}
                   </div>
 
-                  {/* Picker */}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                       Tambah Produk
@@ -442,42 +471,8 @@ const LiveStreamStudio = () => {
               </SheetContent>
             </Sheet>
           </div>
-
-          {/* Pinned products overlay strip (bottom-left, above controls) */}
-          {pinned.length > 0 && (
-            <div className="absolute bottom-20 left-3 right-3 md:right-auto md:max-w-md z-10 flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-              {pinned.slice(0, 6).map((row) => {
-                const p = row.products;
-                if (!p) return null;
-                return (
-                  <div
-                    key={row.id}
-                    className="shrink-0 flex items-center gap-2 bg-black/70 backdrop-blur border border-white/10 rounded-lg p-1.5 pr-2.5"
-                  >
-                    <img src={p.image || "/placeholder.svg"} alt={p.name} className="h-9 w-9 rounded object-cover" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] leading-tight truncate max-w-[110px]">{p.name}</p>
-                      <p className="text-[11px] text-accent font-semibold flex items-center gap-1">
-                        {row.is_flash && <Zap className="h-2.5 w-2.5" />}
-                        {p.price}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Chat side (desktop) / bottom drawer (mobile via inline panel) */}
-      <aside className="md:w-96 md:border-l border-white/10 bg-black/85 md:bg-black flex flex-col h-64 md:h-auto shrink-0">
-        <div className="flex items-center gap-2 p-3 border-b border-white/10">
-          <MessageSquare className="h-4 w-4" />
-          <span className="text-sm font-semibold">Live Chat & Moderasi</span>
-        </div>
-        <LiveChatPanel streamId={streamId} canModerate />
-      </aside>
     </div>
   );
 };
