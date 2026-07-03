@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import {
   Radio,
@@ -18,9 +25,11 @@ import {
   Plus,
   X,
   Zap,
-  Users,
   Eye,
   Heart,
+  Minimize2,
+  Package,
+  MessageSquare,
 } from "lucide-react";
 import LiveChatPanel from "@/components/live/LiveChatPanel";
 
@@ -49,6 +58,7 @@ const LiveStreamStudio = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [meta, setMeta] = useState<{ viewer_count: number; like_count: number } | null>(null);
+  const [minimized, setMinimized] = useState(false);
   const previewRef = useRef<HTMLVideoElement>(null);
 
   const { localStream, viewerCount, micOn, camOn, error, toggleMic, toggleCam, flipCamera, stop } =
@@ -78,7 +88,18 @@ const LiveStreamStudio = () => {
     }
   }, [localStream]);
 
-  // Load products for pinning
+  // Prevent body scroll when fullscreen
+  useEffect(() => {
+    if (streamId && !minimized) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [streamId, minimized]);
+
+  // Load products
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -151,6 +172,7 @@ const LiveStreamStudio = () => {
       return;
     }
     setStreamId(data.id);
+    setMinimized(false);
     toast.success("Siaran dimulai!");
   };
 
@@ -184,6 +206,7 @@ const LiveStreamStudio = () => {
     (p) => p.name.toLowerCase().includes(search.toLowerCase()) && !pinned.find((r) => r.product_id === p.id)
   );
 
+  // ============ NOT LIVE — start form ============
   if (!streamId) {
     return (
       <Card>
@@ -208,161 +231,253 @@ const LiveStreamStudio = () => {
             {starting ? "Memulai..." : "Mulai Siaran"}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Kamera & mikrofon akan diminta izinnya setelah siaran dimulai. Siaran hanya bisa dilakukan oleh admin dan
-            langsung tampil di halaman utama.
+            Setelah dimulai, studio akan terbuka fullscreen seperti TikTok Live. Kamera & mikrofon akan diminta izin.
           </p>
         </CardContent>
       </Card>
     );
   }
 
+  // ============ MINIMIZED — small resumer card ============
+  if (minimized) {
+    return (
+      <Card className="border-accent/40">
+        <CardContent className="p-4 flex items-center gap-3">
+          <span className="flex items-center gap-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Live
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">Siaran sedang berjalan</p>
+            <p className="text-xs text-muted-foreground">
+              {meta?.viewer_count ?? viewerCount} penonton · {meta?.like_count ?? 0} like
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setMinimized(false)}>Buka Studio</Button>
+          <Button size="sm" variant="destructive" onClick={endStream}>
+            <Square className="h-3.5 w-3.5" />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ============ FULLSCREEN STUDIO ============
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      {/* Preview + controls */}
-      <Card className="lg:col-span-2">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="flex items-center gap-2">
-            <span className="flex items-center gap-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase">
+    <div className="fixed inset-0 z-[100] bg-black text-white flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-200">
+      {/* Video area */}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div className="relative flex-1 bg-black">
+          <video
+            ref={previewRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {!localStream && !error && (
+            <div className="absolute inset-0 grid place-items-center text-white/70 text-sm">
+              Menunggu kamera...
+            </div>
+          )}
+          {error && (
+            <div className="absolute inset-0 grid place-items-center text-red-400 text-sm px-4 text-center">
+              {error}
+            </div>
+          )}
+
+          {/* Top bar */}
+          <div className="absolute top-0 inset-x-0 p-3 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent z-10">
+            <span className="flex items-center gap-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Live
             </span>
-            <span className="text-sm">Broadcast Studio</span>
-          </CardTitle>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Eye className="h-3.5 w-3.5" /> {meta?.viewer_count ?? viewerCount}
+            <span className="flex items-center gap-1 bg-black/50 backdrop-blur text-xs px-2 py-1 rounded-full">
+              <Eye className="h-3 w-3" /> {meta?.viewer_count ?? viewerCount}
             </span>
-            <span className="flex items-center gap-1">
-              <Heart className="h-3.5 w-3.5" /> {meta?.like_count ?? 0}
+            <span className="flex items-center gap-1 bg-black/50 backdrop-blur text-xs px-2 py-1 rounded-full">
+              <Heart className="h-3 w-3" /> {meta?.like_count ?? 0}
             </span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" /> {viewerCount} peer
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-            <video ref={previewRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-            {!localStream && !error && (
-              <div className="absolute inset-0 grid place-items-center text-white/70 text-sm">
-                Menunggu kamera...
-              </div>
-            )}
-            {error && (
-              <div className="absolute inset-0 grid place-items-center text-red-400 text-sm px-4 text-center">
-                {error}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant={micOn ? "secondary" : "destructive"} size="sm" onClick={toggleMic}>
-              {micOn ? <Mic className="h-4 w-4 mr-1" /> : <MicOff className="h-4 w-4 mr-1" />}
-              {micOn ? "Mic On" : "Mic Off"}
-            </Button>
-            <Button variant={camOn ? "secondary" : "destructive"} size="sm" onClick={toggleCam}>
-              {camOn ? <Video className="h-4 w-4 mr-1" /> : <VideoOff className="h-4 w-4 mr-1" />}
-              {camOn ? "Camera On" : "Camera Off"}
-            </Button>
-            <Button variant="secondary" size="sm" onClick={flipCamera}>
-              <RefreshCw className="h-4 w-4 mr-1" /> Flip
-            </Button>
-            <Button variant="destructive" size="sm" onClick={endStream} className="ml-auto">
-              <Square className="h-4 w-4 mr-1" /> End Live
-            </Button>
+            <div className="flex-1" />
+            <button
+              onClick={() => setMinimized(true)}
+              className="h-9 w-9 grid place-items-center rounded-full bg-black/50 hover:bg-black/70"
+              aria-label="Minimize"
+              title="Kecilkan"
+            >
+              <Minimize2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={endStream}
+              className="h-9 px-3 grid place-items-center rounded-full bg-red-600 hover:bg-red-500 text-xs font-semibold flex items-center gap-1"
+              aria-label="End live"
+            >
+              <Square className="h-3.5 w-3.5" /> End
+            </button>
           </div>
 
-          {/* Pinned */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Produk Terpasang ({pinned.length})
-            </p>
-            {pinned.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Belum ada produk. Tambahkan dari daftar di kanan.</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {pinned.map((row) => {
-                  const p = row.products;
-                  if (!p) return null;
-                  return (
-                    <div key={row.id} className="relative border rounded-lg p-2 flex gap-2">
-                      <img
-                        src={p.image || "/placeholder.svg"}
-                        alt={p.name}
-                        className="h-14 w-14 object-cover rounded"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium line-clamp-2">{p.name}</p>
-                        <p className="text-xs text-accent font-semibold">{p.price}</p>
-                        <div className="flex gap-1 mt-1">
-                          <button
-                            onClick={() => toggleFlash(row)}
-                            className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                              row.is_flash
-                                ? "bg-accent text-accent-foreground border-accent"
-                                : "border-muted-foreground/30"
-                            }`}
-                          >
-                            <Zap className="h-2.5 w-2.5 inline -mt-0.5" /> Flash
-                          </button>
-                          <button
-                            onClick={() => unpin(row.id)}
-                            className="text-[10px] px-1.5 py-0.5 rounded border border-destructive/40 text-destructive"
-                          >
-                            <X className="h-2.5 w-2.5 inline -mt-0.5" /> Hapus
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Bottom control rail */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+            <button
+              onClick={toggleMic}
+              className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur transition ${
+                micOn ? "bg-black/50 hover:bg-black/70" : "bg-red-600 hover:bg-red-500"
+              }`}
+              aria-label="Toggle mic"
+            >
+              {micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={toggleCam}
+              className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur transition ${
+                camOn ? "bg-black/50 hover:bg-black/70" : "bg-red-600 hover:bg-red-500"
+              }`}
+              aria-label="Toggle camera"
+            >
+              {camOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={flipCamera}
+              className="h-11 w-11 grid place-items-center rounded-full bg-black/50 hover:bg-black/70 backdrop-blur"
+              aria-label="Flip camera"
+            >
+              <RefreshCw className="h-5 w-5" />
+            </button>
 
-          {/* Product picker */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Tambah Produk
-            </p>
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari produk..."
-              className="mb-2"
-            />
-            <div className="max-h-56 overflow-y-auto space-y-1">
-              {filteredProducts.slice(0, 30).map((p) => (
+            {/* Products drawer trigger */}
+            <Sheet>
+              <SheetTrigger asChild>
                 <button
-                  key={p.id}
-                  onClick={() => pinProduct(p)}
-                  className="w-full flex items-center gap-2 p-1.5 hover:bg-accent/10 rounded text-left"
+                  className="h-11 px-4 rounded-full bg-accent text-accent-foreground text-xs font-semibold flex items-center gap-1.5"
+                  aria-label="Kelola produk"
                 >
-                  <img
-                    src={p.image || "/placeholder.svg"}
-                    alt={p.name}
-                    className="h-8 w-8 object-cover rounded"
-                  />
-                  <span className="flex-1 text-xs truncate">{p.name}</span>
-                  <span className="text-xs text-accent font-medium">{p.price}</span>
-                  <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Package className="h-4 w-4" /> Produk ({pinned.length})
                 </button>
-              ))}
-              {filteredProducts.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">Tidak ada produk lain.</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[80vh] bg-background text-foreground">
+                <SheetHeader>
+                  <SheetTitle>Kelola Produk Live</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-4 overflow-y-auto max-h-[calc(80vh-6rem)] pr-1">
+                  {/* Pinned */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Produk Terpasang ({pinned.length})
+                    </p>
+                    {pinned.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Belum ada produk.</p>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {pinned.map((row) => {
+                          const p = row.products;
+                          if (!p) return null;
+                          return (
+                            <div key={row.id} className="relative border rounded-lg p-2 flex gap-2">
+                              <img
+                                src={p.image || "/placeholder.svg"}
+                                alt={p.name}
+                                className="h-14 w-14 object-cover rounded"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium line-clamp-2">{p.name}</p>
+                                <p className="text-xs text-accent font-semibold">{p.price}</p>
+                                <div className="flex gap-1 mt-1">
+                                  <button
+                                    onClick={() => toggleFlash(row)}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                                      row.is_flash
+                                        ? "bg-accent text-accent-foreground border-accent"
+                                        : "border-muted-foreground/30"
+                                    }`}
+                                  >
+                                    <Zap className="h-2.5 w-2.5 inline -mt-0.5" /> Flash
+                                  </button>
+                                  <button
+                                    onClick={() => unpin(row.id)}
+                                    className="text-[10px] px-1.5 py-0.5 rounded border border-destructive/40 text-destructive"
+                                  >
+                                    <X className="h-2.5 w-2.5 inline -mt-0.5" /> Hapus
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
-      {/* Chat + moderasi */}
-      <Card className="flex flex-col min-h-[500px]">
-        <CardHeader>
-          <CardTitle className="text-sm">Live Chat & Moderasi</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 min-h-0 p-0 bg-black rounded-b-lg overflow-hidden">
-          <LiveChatPanel streamId={streamId} canModerate />
-        </CardContent>
-      </Card>
+                  {/* Picker */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Tambah Produk
+                    </p>
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Cari produk..."
+                      className="mb-2"
+                    />
+                    <div className="space-y-1">
+                      {filteredProducts.slice(0, 30).map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => pinProduct(p)}
+                          className="w-full flex items-center gap-2 p-1.5 hover:bg-accent/10 rounded text-left"
+                        >
+                          <img
+                            src={p.image || "/placeholder.svg"}
+                            alt={p.name}
+                            className="h-8 w-8 object-cover rounded"
+                          />
+                          <span className="flex-1 text-xs truncate">{p.name}</span>
+                          <span className="text-xs text-accent font-medium">{p.price}</span>
+                          <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                      ))}
+                      {filteredProducts.length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-4">Tidak ada produk lain.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Pinned products overlay strip (bottom-left, above controls) */}
+          {pinned.length > 0 && (
+            <div className="absolute bottom-20 left-3 right-3 md:right-auto md:max-w-md z-10 flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+              {pinned.slice(0, 6).map((row) => {
+                const p = row.products;
+                if (!p) return null;
+                return (
+                  <div
+                    key={row.id}
+                    className="shrink-0 flex items-center gap-2 bg-black/70 backdrop-blur border border-white/10 rounded-lg p-1.5 pr-2.5"
+                  >
+                    <img src={p.image || "/placeholder.svg"} alt={p.name} className="h-9 w-9 rounded object-cover" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] leading-tight truncate max-w-[110px]">{p.name}</p>
+                      <p className="text-[11px] text-accent font-semibold flex items-center gap-1">
+                        {row.is_flash && <Zap className="h-2.5 w-2.5" />}
+                        {p.price}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat side (desktop) / bottom drawer (mobile via inline panel) */}
+      <aside className="md:w-96 md:border-l border-white/10 bg-black/85 md:bg-black flex flex-col h-64 md:h-auto shrink-0">
+        <div className="flex items-center gap-2 p-3 border-b border-white/10">
+          <MessageSquare className="h-4 w-4" />
+          <span className="text-sm font-semibold">Live Chat & Moderasi</span>
+        </div>
+        <LiveChatPanel streamId={streamId} canModerate />
+      </aside>
     </div>
   );
 };
