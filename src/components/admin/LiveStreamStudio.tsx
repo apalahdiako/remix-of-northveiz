@@ -25,13 +25,18 @@ import {
   Plus,
   X,
   Zap,
-  Eye,
   Heart,
-  Minimize2,
+  ChevronDown,
   Package,
-  MessageSquare,
+  ShoppingBag,
 } from "lucide-react";
-import LiveChatPanel from "@/components/live/LiveChatPanel";
+import LiveChatFeed from "@/components/live/LiveChatFeed";
+import LiveFeaturedProduct from "@/components/live/LiveFeaturedProduct";
+
+const formatCount = (n: number) => {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return String(n);
+};
 
 interface Product {
   id: string;
