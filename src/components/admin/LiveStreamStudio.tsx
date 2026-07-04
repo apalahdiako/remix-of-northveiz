@@ -25,13 +25,18 @@ import {
   Plus,
   X,
   Zap,
-  Eye,
   Heart,
-  Minimize2,
+  ChevronDown,
   Package,
-  MessageSquare,
+  ShoppingBag,
 } from "lucide-react";
-import LiveChatPanel from "@/components/live/LiveChatPanel";
+import LiveChatFeed from "@/components/live/LiveChatFeed";
+import LiveFeaturedProduct from "@/components/live/LiveFeaturedProduct";
+
+const formatCount = (n: number) => {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return String(n);
+};
 
 interface Product {
   id: string;
@@ -261,12 +266,12 @@ const LiveStreamStudio = () => {
     );
   }
 
-  // ============ FULLSCREEN STUDIO (portrait, TikTok-style) ============
+  // ============ FULLSCREEN STUDIO (TikTok-style portrait) ============
   return (
     <div className="fixed inset-0 z-[100] bg-black text-white overflow-hidden animate-in fade-in duration-200">
-      {/* Portrait stage — centered 9:16, fills viewport height */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-full aspect-[9/16] max-w-full bg-black overflow-hidden shadow-2xl">
+        <div className="relative h-full aspect-[9/16] max-w-full bg-black overflow-hidden">
+          {/* Broadcaster preview */}
           <video
             ref={previewRef}
             autoPlay
@@ -275,83 +280,88 @@ const LiveStreamStudio = () => {
             className="absolute inset-0 w-full h-full object-cover"
           />
           {!localStream && !error && (
-            <div className="absolute inset-0 grid place-items-center text-white/70 text-sm">
+            <div className="absolute inset-0 grid place-items-center text-white/70 text-sm z-10">
               Menunggu kamera...
             </div>
           )}
           {error && (
-            <div className="absolute inset-0 grid place-items-center text-red-400 text-sm px-4 text-center">
+            <div className="absolute inset-0 grid place-items-center text-red-400 text-sm px-4 text-center z-10">
               {error}
             </div>
           )}
 
+          {/* Gradient scrims */}
+          <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-black/70 via-black/30 to-transparent pointer-events-none z-10" />
+          <div className="absolute bottom-0 inset-x-0 h-72 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none z-10" />
+
           {/* Top bar */}
-          <div className="absolute top-0 inset-x-0 p-3 flex items-center gap-2 bg-gradient-to-b from-black/80 to-transparent z-20">
-            <span className="flex items-center gap-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Live
-            </span>
-            <span className="flex items-center gap-1 bg-black/50 backdrop-blur text-xs px-2 py-1 rounded-full">
-              <Eye className="h-3 w-3" /> {meta?.viewer_count ?? viewerCount}
-            </span>
-            <span className="flex items-center gap-1 bg-black/50 backdrop-blur text-xs px-2 py-1 rounded-full">
-              <Heart className="h-3 w-3" /> {meta?.like_count ?? 0}
-            </span>
+          <div className="absolute top-0 inset-x-0 p-3 z-30 flex items-start gap-2">
+            <div className="flex items-center gap-2 bg-black/45 backdrop-blur rounded-full pr-3 pl-1 py-1">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-accent to-pink-500 grid place-items-center text-xs font-bold ring-2 ring-white/20">
+                N
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-semibold leading-none truncate max-w-[110px]">NORTHVEIZ</p>
+                <p className="text-[10px] leading-tight text-white/70 flex items-center gap-1 mt-0.5">
+                  <Heart className="h-2.5 w-2.5 fill-white/70" /> {formatCount(meta?.like_count ?? 0)}
+                </p>
+              </div>
+              <span className="ml-1 h-7 px-2.5 rounded-full text-[11px] font-bold bg-accent text-accent-foreground flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> LIVE
+              </span>
+            </div>
+
             <div className="flex-1" />
+
+            <div className="flex items-center gap-1 bg-black/45 backdrop-blur rounded-full pl-1 pr-2.5 py-1">
+              <div className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 grid place-items-center text-[10px] font-bold">
+                {formatCount(meta?.viewer_count ?? viewerCount).slice(0, 1)}
+              </div>
+              <span className="text-[12px] font-semibold">{formatCount(meta?.viewer_count ?? viewerCount)}</span>
+            </div>
+
             <button
               onClick={() => setMinimized(true)}
-              className="h-9 w-9 grid place-items-center rounded-full bg-black/50 hover:bg-black/70"
-              aria-label="Minimize"
+              className="h-8 w-8 grid place-items-center rounded-full bg-black/45 backdrop-blur hover:bg-black/70"
+              aria-label="Kecilkan"
               title="Kecilkan"
             >
-              <Minimize2 className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4" />
             </button>
             <button
               onClick={endStream}
-              className="h-9 px-3 rounded-full bg-red-600 hover:bg-red-500 text-xs font-semibold flex items-center gap-1"
-              aria-label="End live"
+              className="h-8 px-3 rounded-full bg-red-600 hover:bg-red-500 text-[11px] font-semibold flex items-center gap-1"
+              aria-label="Akhiri siaran"
             >
-              <Square className="h-3.5 w-3.5" /> End
+              <Square className="h-3 w-3" /> End
             </button>
           </div>
 
-          {/* Pinned products strip — sits above chat */}
-          {pinned.length > 0 && (
-            <div className="absolute left-2 right-2 bottom-40 z-20 flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-              {pinned.slice(0, 6).map((row) => {
-                const p = row.products;
-                if (!p) return null;
-                return (
-                  <div
-                    key={row.id}
-                    className="shrink-0 flex items-center gap-2 bg-black/70 backdrop-blur border border-white/10 rounded-lg p-1.5 pr-2.5"
-                  >
-                    <img src={p.image || "/placeholder.svg"} alt={p.name} className="h-9 w-9 rounded object-cover" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] leading-tight truncate max-w-[110px]">{p.name}</p>
-                      <p className="text-[11px] text-accent font-semibold flex items-center gap-1">
-                        {row.is_flash && <Zap className="h-2.5 w-2.5" />}
-                        {p.price}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Title chip */}
+          <div className="absolute top-16 inset-x-0 px-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+            <div className="flex items-center gap-1.5 bg-black/45 backdrop-blur rounded-full pl-1.5 pr-3 py-1 text-[11px] font-medium pointer-events-auto">
+              <ShoppingBag className="h-3 w-3 text-amber-300" />
+              Peringkat Belanja
             </div>
-          )}
-
-          {/* Chat overlay — bottom, translucent, TikTok-style */}
-          <div className="absolute left-0 right-0 bottom-16 h-40 z-10 pointer-events-none">
-            <div className="h-full mx-2 rounded-xl bg-gradient-to-t from-black/70 via-black/40 to-transparent pointer-events-auto overflow-hidden">
-              <LiveChatPanel streamId={streamId} canModerate />
+            <div className="flex items-center gap-1 bg-black/45 backdrop-blur rounded-full px-3 py-1 text-[11px] font-medium truncate max-w-[45%] pointer-events-auto">
+              {title || "Siaran Langsung"}
             </div>
           </div>
 
-          {/* Bottom control rail */}
-          <div className="absolute inset-x-0 bottom-2 z-30 flex items-center justify-center gap-2 px-3">
+          {/* Chat feed */}
+          <div className="absolute left-2 right-24 bottom-[168px] h-[38%] z-20">
+            <LiveChatFeed streamId={streamId} canModerate />
+          </div>
+
+          {/* Featured product card (same as viewer) */}
+          <LiveFeaturedProduct streamId={streamId} />
+
+          {/* Bottom control bar (broadcaster controls replace user actions) */}
+          <div className="absolute inset-x-0 bottom-0 z-30 px-2.5 pb-3 pt-2 flex items-center justify-center gap-2">
             <button
               onClick={toggleMic}
-              className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur transition ${
-                micOn ? "bg-black/60 hover:bg-black/80" : "bg-red-600 hover:bg-red-500"
+              className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur-md transition ${
+                micOn ? "bg-white/12 hover:bg-white/20" : "bg-red-600 hover:bg-red-500"
               }`}
               aria-label="Toggle mic"
             >
@@ -359,8 +369,8 @@ const LiveStreamStudio = () => {
             </button>
             <button
               onClick={toggleCam}
-              className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur transition ${
-                camOn ? "bg-black/60 hover:bg-black/80" : "bg-red-600 hover:bg-red-500"
+              className={`h-11 w-11 grid place-items-center rounded-full backdrop-blur-md transition ${
+                camOn ? "bg-white/12 hover:bg-white/20" : "bg-red-600 hover:bg-red-500"
               }`}
               aria-label="Toggle camera"
             >
@@ -368,7 +378,7 @@ const LiveStreamStudio = () => {
             </button>
             <button
               onClick={flipCamera}
-              className="h-11 w-11 grid place-items-center rounded-full bg-black/60 hover:bg-black/80 backdrop-blur"
+              className="h-11 w-11 grid place-items-center rounded-full bg-white/12 backdrop-blur-md hover:bg-white/20"
               aria-label="Flip camera"
             >
               <RefreshCw className="h-5 w-5" />
@@ -377,13 +387,13 @@ const LiveStreamStudio = () => {
             <Sheet>
               <SheetTrigger asChild>
                 <button
-                  className="h-11 px-4 rounded-full bg-accent text-accent-foreground text-xs font-semibold flex items-center gap-1.5"
+                  className="h-11 px-4 rounded-full bg-accent text-accent-foreground text-xs font-bold flex items-center gap-1.5 shadow-lg"
                   aria-label="Kelola produk"
                 >
                   <Package className="h-4 w-4" /> Produk ({pinned.length})
                 </button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-[80vh] bg-background text-foreground z-[110]">
+              <SheetContent side="bottom" className="h-[80vh] bg-background text-foreground z-[130]">
                 <SheetHeader>
                   <SheetTitle>Kelola Produk Live</SheetTitle>
                 </SheetHeader>
