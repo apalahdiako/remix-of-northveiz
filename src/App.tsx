@@ -26,6 +26,7 @@ import Payment from "./pages/Payment";
 import AdminDashboard from "./pages/AdminDashboard";
 import PetaGlobal from "./pages/PetaGlobal";
 import TrackingPage from "./pages/TrackingPage";
+import OAuthConsent from "./pages/OAuthConsent";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 
@@ -73,6 +74,7 @@ function AppContent() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/peta-global" element={<PetaGlobal />} />
         <Route path="/track/:resi" element={<TrackingPage />} />
+        <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

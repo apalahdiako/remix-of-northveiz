@@ -76,7 +76,7 @@ const ProductManagement = () => {
 
   const updateSizeStock = async (productId: string, sizeKey: string, value: number) => {
     try {
-      const { error } = await supabase.from('products').update({ [sizeKey]: Math.max(0, value) }).eq('id', productId);
+      const { error } = await supabase.from('products').update({ [sizeKey]: Math.max(0, value) } as any).eq('id', productId);
       if (error) throw error;
     } catch (error) {
       toast.error('Gagal memperbarui stok');
