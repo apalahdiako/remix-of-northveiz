@@ -8,7 +8,7 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.24.0";
 // src/lib/mcp/tools/list-products.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z } from "npm:zod@^4.4.3";
+import { z } from "npm:zod@^3.23.8";
 function client(ctx) {
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
     global: ctx.isAuthenticated() ? { headers: { Authorization: `Bearer ${ctx.getToken()}` } } : void 0,
@@ -37,7 +37,7 @@ var list_products_default = defineTool({
 // src/lib/mcp/tools/get-product.ts
 import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z2 } from "npm:zod@^4.4.3";
+import { z as z2 } from "npm:zod@^3.23.8";
 function client2(ctx) {
   return createClient2(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
     global: ctx.isAuthenticated() ? { headers: { Authorization: `Bearer ${ctx.getToken()}` } } : void 0,
@@ -61,7 +61,7 @@ var get_product_default = defineTool2({
 // src/lib/mcp/tools/list-my-orders.ts
 import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.24.0";
-import { z as z3 } from "npm:zod@^4.4.3";
+import { z as z3 } from "npm:zod@^3.23.8";
 var list_my_orders_default = defineTool3({
   name: "list_my_orders",
   title: "List my orders",
