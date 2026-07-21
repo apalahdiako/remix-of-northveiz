@@ -6,7 +6,7 @@
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // src/lib/mcp/tools/list-products.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.76.1";
+import { createClient } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { z } from "npm:zod@^4.4.3";
 function client(ctx) {
@@ -35,7 +35,7 @@ var list_products_default = defineTool({
 });
 
 // src/lib/mcp/tools/get-product.ts
-import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.76.1";
+import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { z as z2 } from "npm:zod@^4.4.3";
 function client2(ctx) {
@@ -59,7 +59,7 @@ var get_product_default = defineTool2({
 });
 
 // src/lib/mcp/tools/list-my-orders.ts
-import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.76.1";
+import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { z as z3 } from "npm:zod@^4.4.3";
 var list_my_orders_default = defineTool3({
@@ -81,7 +81,7 @@ var list_my_orders_default = defineTool3({
 });
 
 // src/lib/mcp/tools/get-my-profile.ts
-import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.76.1";
+import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.110.8";
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.24.0";
 var get_my_profile_default = defineTool4({
   name: "get_my_profile",
