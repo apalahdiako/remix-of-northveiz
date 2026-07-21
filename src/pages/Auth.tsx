@@ -80,7 +80,7 @@ const Auth = () => {
           toast({
             variant: "destructive",
             title: "Error Validasi",
-            description: validation.error.issues[0].message,
+            description: validation.error.errors[0].message,
           });
           setLoading(false);
           return;
@@ -116,7 +116,7 @@ const Auth = () => {
           toast({
             variant: "destructive",
             title: "Error Validasi",
-            description: validation.error.issues[0].message,
+            description: validation.error.errors[0].message,
           });
           setLoading(false);
           return;
@@ -268,7 +268,7 @@ const Auth = () => {
       toast({
         variant: "destructive",
         title: "Error Validasi",
-        description: validation.error.issues[0].message,
+        description: validation.error.errors[0].message,
       });
       return;
     }
