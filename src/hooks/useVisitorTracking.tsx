@@ -1,80 +1,66 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Visitor tracking hook.
+ * All IP + geolocation resolution is performed server-side by the
+ * `visitor-track` edge function using the real client IP. The browser
+ * never sends location data, never caches it, and never inherits it
+ * from other visitors.
+ */
 export function useVisitorTracking() {
   const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
-    // Generate or retrieve session ID
     let sid = sessionStorage.getItem("visitor_session_id");
     if (!sid) {
-      sid = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sid = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       sessionStorage.setItem("visitor_session_id", sid);
     }
     setSessionId(sid);
 
-    // Track visitor session
     trackVisitor(sid);
 
-    // Update activity periodically
     const interval = setInterval(() => {
-      updateActivity(sid);
-    }, 30000); // Update every 30 seconds
+      touch(sid!, true);
+    }, 30000);
 
-    // Mark session as inactive on unmount
+    const onUnload = () => touch(sid!, false);
+    window.addEventListener("beforeunload", onUnload);
+
     return () => {
       clearInterval(interval);
-      markInactive(sid);
+      window.removeEventListener("beforeunload", onUnload);
+      touch(sid!, false);
     };
   }, []);
 
   const trackVisitor = async (sid: string) => {
     try {
-      // Get approximate location using ipapi
-      const locationResponse = await fetch("https://ipapi.co/json/");
-      const locationData = await locationResponse.json();
-
-      await supabase.from("visitor_sessions").upsert({
-        session_id: sid,
-        ip_address: locationData.ip,
-        country_code: locationData.country_code,
-        country_name: locationData.country_name,
-        city: locationData.city,
-        latitude: locationData.latitude,
-        longitude: locationData.longitude,
-        user_agent: navigator.userAgent,
-        page_path: window.location.pathname,
-        referrer: document.referrer,
-        is_active: true,
-        last_activity_at: new Date().toISOString(),
+      const { data: userRes } = await supabase.auth.getUser();
+      await supabase.functions.invoke("visitor-track", {
+        body: {
+          session_id: sid,
+          page_path: window.location.pathname,
+          referrer: document.referrer || null,
+          user_agent: navigator.userAgent,
+          user_id: userRes?.user?.id ?? null,
+        },
       });
     } catch (error) {
-      console.error("Error tracking visitor:", error);
+      console.error("visitor-track invoke failed:", error);
     }
   };
 
-  const updateActivity = async (sid: string) => {
+  const touch = async (sid: string, active: boolean) => {
     try {
-      await supabase
-        .from("visitor_sessions")
-        .update({
-          last_activity_at: new Date().toISOString(),
-          page_path: window.location.pathname,
-        })
-        .eq("session_id", sid);
+      await supabase.rpc("touch_visitor_session", {
+        p_sid: sid,
+        p_path: window.location.pathname,
+        p_active: active,
+      });
     } catch (error) {
-      console.error("Error updating activity:", error);
-    }
-  };
-
-  const markInactive = async (sid: string) => {
-    try {
-      await supabase
-        .from("visitor_sessions")
-        .update({ is_active: false })
-        .eq("session_id", sid);
-    } catch (error) {
-      console.error("Error marking inactive:", error);
+      console.error("touch_visitor_session failed:", error);
     }
   };
 
