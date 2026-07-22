@@ -1095,6 +1095,7 @@ export type Database = {
       }
       visitor_sessions: {
         Row: {
+          asn: string | null
           city: string | null
           country_code: string | null
           country_name: string | null
@@ -1102,17 +1103,26 @@ export type Database = {
           id: string
           ip_address: string | null
           is_active: boolean | null
+          isp: string | null
           last_activity_at: string | null
           latitude: number | null
           longitude: number | null
+          lookup_at: string | null
+          lookup_error: string | null
+          lookup_status: string | null
           page_path: string | null
+          provider: string | null
+          raw_response: Json | null
           referrer: string | null
+          region: string | null
           session_id: string
+          timezone: string | null
           updated_at: string
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
+          asn?: string | null
           city?: string | null
           country_code?: string | null
           country_name?: string | null
@@ -1120,17 +1130,26 @@ export type Database = {
           id?: string
           ip_address?: string | null
           is_active?: boolean | null
+          isp?: string | null
           last_activity_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          lookup_at?: string | null
+          lookup_error?: string | null
+          lookup_status?: string | null
           page_path?: string | null
+          provider?: string | null
+          raw_response?: Json | null
           referrer?: string | null
+          region?: string | null
           session_id: string
+          timezone?: string | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
+          asn?: string | null
           city?: string | null
           country_code?: string | null
           country_name?: string | null
@@ -1138,12 +1157,20 @@ export type Database = {
           id?: string
           ip_address?: string | null
           is_active?: boolean | null
+          isp?: string | null
           last_activity_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          lookup_at?: string | null
+          lookup_error?: string | null
+          lookup_status?: string | null
           page_path?: string | null
+          provider?: string | null
+          raw_response?: Json | null
           referrer?: string | null
+          region?: string | null
           session_id?: string
+          timezone?: string | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
@@ -1180,6 +1207,10 @@ export type Database = {
       increment_live_like: { Args: { p_stream_id: string }; Returns: number }
       set_live_viewer_count: {
         Args: { p_count: number; p_stream_id: string }
+        Returns: undefined
+      }
+      touch_visitor_session: {
+        Args: { p_active: boolean; p_path: string; p_sid: string }
         Returns: undefined
       }
     }
