@@ -103,7 +103,7 @@ var get_my_profile_default = defineTool4({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "wjxbabjwibgoihxjcpyx";
+var projectRef = "cjmnekckfzldnrsluhvg";
 var mcp_default = defineMcp({
   name: "northveiz-mcp",
   title: "NORTHVEIZ",
